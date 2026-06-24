@@ -1,11 +1,32 @@
-import React, { memo } from 'react'
+import React, { memo, useEffect } from 'react'
 import { Platform, StyleSheet, Text, View } from 'react-native'
+import Animated, {
+  useAnimatedProps,
+  useSharedValue,
+  withTiming,
+} from 'react-native-reanimated'
 import { Marker } from 'react-native-maps'
 import type { ClusterFeature } from '../geojson/types'
 
 const BUBBLE_BORDER_WIDTH = 2.5
 const HALO_SCALE = 1.18
 const SHADOW_PADDING = 6
+
+/**
+ * `react-native-maps` markers are native annotations: on zoom the cluster set is
+ * rebuilt with new `cluster_id`s, so React unmounts/remounts every bubble and the
+ * native side removes/adds annotations in one commit, producing a visible blink.
+ *
+ * Animating the bubble `<View>` opacity does not help because `tracksViewChanges`
+ * is `false` (a single bitmap snapshot is taken). The only lever that affects the
+ * live annotation is the native `opacity` prop.
+ *
+ * The fade is driven by Reanimated (`useAnimatedProps`) so the per-frame opacity
+ * update runs on the UI thread. A previous JS-driven `Animated` implementation
+ * pushed `setNativeProps` from JS every frame for every bubble, which dominated
+ * the CPU profile (~23% self-time) when dozens of clusters remounted on each zoom.
+ */
+const AnimatedMarker = Animated.createAnimatedComponent(Marker)
 
 function clusterBubbleMetrics(pointCount: number): {
   width: number
@@ -49,6 +70,26 @@ export interface ClusterMarkerProps {
   clusterTextColor: string
   clusterFontFamily?: string
   tracksViewChanges?: boolean
+  /**
+   * Fade-in duration (ms) applied to the native marker `opacity` when this bubble
+   * mounts. `0` disables the animation and renders a plain (non-animated) marker.
+   *
+   * @default 0
+   */
+  fadeInDuration?: number
+  /**
+   * Fade-out duration (ms) used when {@linkcode exiting} becomes `true`.
+   *
+   * @default `fadeInDuration`
+   */
+  fadeOutDuration?: number
+  /**
+   * When `true`, the bubble animates its opacity to `0` (cross-fade out). The
+   * caller is responsible for keeping it mounted until the animation finishes.
+   *
+   * @default false
+   */
+  exiting?: boolean
 }
 
 function ClusterMarker({
@@ -58,6 +99,9 @@ function ClusterMarker({
   clusterTextColor,
   clusterFontFamily,
   tracksViewChanges = false,
+  fadeInDuration = 0,
+  fadeOutDuration = fadeInDuration,
+  exiting = false,
 }: ClusterMarkerProps) {
   const points = feature.properties.point_count
   const { width, height, fontSize, size, haloSize } =
@@ -65,11 +109,31 @@ function ClusterMarker({
   const [longitude, latitude] = feature.geometry.coordinates
   const label = formatClusterCount(points)
 
+  const fadeEnabled = fadeInDuration > 0
+  const opacity = useSharedValue(fadeEnabled ? 0 : 1)
+
+  useEffect(() => {
+    if (!fadeEnabled) {
+      return
+    }
+    if (exiting) {
+      opacity.value = withTiming(0, { duration: fadeOutDuration })
+    } else {
+      opacity.value = withTiming(1, { duration: fadeInDuration })
+    }
+  }, [fadeEnabled, exiting, fadeInDuration, fadeOutDuration, opacity])
+
+  const animatedProps = useAnimatedProps(() => ({ opacity: opacity.value }))
+
+  const MarkerComponent = fadeEnabled ? AnimatedMarker : Marker
+
   return (
-    <Marker
+    <MarkerComponent
       coordinate={{ latitude, longitude }}
       onPress={() => onPress(feature)}
       tracksViewChanges={tracksViewChanges}
+      // Drive the native `opacity` prop on the UI thread; omit when fade is off.
+      animatedProps={fadeEnabled ? animatedProps : undefined}
     >
       <View style={[styles.container, { width, height }]}>
         <View
@@ -110,7 +174,7 @@ function ClusterMarker({
           </Text>
         </View>
       </View>
-    </Marker>
+    </MarkerComponent>
   )
 }
 
@@ -169,7 +233,10 @@ function areClusterMarkerPropsEqual(
     prev.clusterColor === next.clusterColor &&
     prev.clusterTextColor === next.clusterTextColor &&
     prev.clusterFontFamily === next.clusterFontFamily &&
-    prev.tracksViewChanges === next.tracksViewChanges
+    prev.tracksViewChanges === next.tracksViewChanges &&
+    prev.fadeInDuration === next.fadeInDuration &&
+    prev.fadeOutDuration === next.fadeOutDuration &&
+    prev.exiting === next.exiting
   )
 }
 
