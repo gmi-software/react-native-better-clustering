@@ -38,23 +38,38 @@ export function useFadePresence<T>(
   exitDurationMs: number
 ): Array<PresenceEntry<T>> {
   const [, forceRender] = useReducer((count: number) => count + 1, 0)
-  const entriesRef = useRef<Map<string, PresenceEntry<T>>>(new Map())
+  const entriesRef = useRef<Map<string, PresenceItem<T>>>(new Map())
   const timersRef = useRef<Map<string, ReturnType<typeof setTimeout>>>(
     new Map()
   )
 
+  const output: Array<PresenceEntry<T>> = []
+  const currentKeys = new Set<string>()
+
+  for (const item of items) {
+    currentKeys.add(item.key)
+    output.push({ key: item.key, data: item.data, exiting: false })
+  }
+
+  // Append keys dropped from `items` in this render so they stay mounted for
+  // fade-out. Removed keys must be detected here — not only in the effect —
+  // otherwise React commits one frame without the bubble before the effect runs.
+  if (exitDurationMs > 0) {
+    for (const [key, entry] of entriesRef.current) {
+      if (!currentKeys.has(key)) {
+        output.push({ key: entry.key, data: entry.data, exiting: true })
+      }
+    }
+  }
+
   useEffect(() => {
     const entries = entriesRef.current
     const timers = timersRef.current
-    const currentKeys = new Set<string>()
+    const keysInItems = new Set<string>()
 
     for (const item of items) {
-      currentKeys.add(item.key)
-      entries.set(item.key, {
-        key: item.key,
-        data: item.data,
-        exiting: false,
-      })
+      keysInItems.add(item.key)
+      entries.set(item.key, { key: item.key, data: item.data })
       const pendingTimer = timers.get(item.key)
       if (pendingTimer != null) {
         clearTimeout(pendingTimer)
@@ -62,8 +77,8 @@ export function useFadePresence<T>(
       }
     }
 
-    for (const [key, entry] of entries) {
-      if (currentKeys.has(key)) {
+    for (const key of [...entries.keys()]) {
+      if (keysInItems.has(key)) {
         continue
       }
       if (exitDurationMs <= 0) {
@@ -75,7 +90,6 @@ export function useFadePresence<T>(
         entries.delete(key)
         continue
       }
-      entry.exiting = true
       if (!timers.has(key)) {
         const timer = setTimeout(() => {
           timers.delete(key)
@@ -85,8 +99,6 @@ export function useFadePresence<T>(
         timers.set(key, timer)
       }
     }
-
-    forceRender()
   }, [items, exitDurationMs])
 
   useEffect(() => {
@@ -98,23 +110,6 @@ export function useFadePresence<T>(
       timers.clear()
     }
   }, [])
-
-  // Render the current set immediately (with the latest data) even before the
-  // reconciliation effect runs, then append still-exiting entries from prior
-  // sets so they can finish fading out.
-  const output: Array<PresenceEntry<T>> = []
-  const seen = new Set<string>()
-
-  for (const item of items) {
-    seen.add(item.key)
-    output.push({ key: item.key, data: item.data, exiting: false })
-  }
-
-  for (const [key, entry] of entriesRef.current) {
-    if (!seen.has(key) && entry.exiting) {
-      output.push(entry)
-    }
-  }
 
   return output
 }

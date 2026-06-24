@@ -86,6 +86,8 @@ export interface ClusterMarkerProps {
   /**
    * When `true`, the bubble animates its opacity to `0` (cross-fade out). The
    * caller is responsible for keeping it mounted until the animation finishes.
+   * Press handling is disabled while exiting so stale cluster data cannot fire
+   * `onPress` during the fade.
    *
    * @default false
    */
@@ -130,7 +132,7 @@ function ClusterMarker({
   return (
     <MarkerComponent
       coordinate={{ latitude, longitude }}
-      onPress={() => onPress(feature)}
+      onPress={exiting ? undefined : () => onPress(feature)}
       tracksViewChanges={tracksViewChanges}
       // Drive the native `opacity` prop on the UI thread; omit when fade is off.
       animatedProps={fadeEnabled ? animatedProps : undefined}

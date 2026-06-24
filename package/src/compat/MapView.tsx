@@ -283,7 +283,7 @@ const CompatMapView = forwardRef(function CompatMapView(
   // gesture. While moving we suppress cross-fade exit ghosts (see
   // `effectiveFadeOut`) so a continuous zoom does not stack multiple bubble
   // generations and saturate the JS thread.
-  const isMovingRef = useRef(false)
+  const [isMapMoving, setIsMapMoving] = useState(false)
   const regionThrottleStateRef = useRef(createThrottleRegionSyncState())
   const clusterLayoutSignatureRef = useRef('')
   const [mapDimensions, setMapDimensions] = useState(() => ({
@@ -403,9 +403,8 @@ const CompatMapView = forwardRef(function CompatMapView(
   // the map is actively moving we drop removed bubbles immediately (duration 0):
   // at a ~100ms recompute cadence, a 250ms exit would keep 2-3 bubble
   // generations mounted at once, which is what dragged the JS thread to ~30fps
-  // on continuous zoom-out. `currentRegion` re-renders on every throttle tick
-  // and on settle, so reading the ref here always reflects the live state.
-  const effectiveFadeOut = isMovingRef.current ? 0 : clusterFadeIn
+  // on continuous zoom-out.
+  const effectiveFadeOut = isMapMoving ? 0 : clusterFadeIn
 
   useEffect(() => {
     if (superClusterRef) {
@@ -483,7 +482,7 @@ const CompatMapView = forwardRef(function CompatMapView(
 
   const handleRegionChange = useCallback(
     (region: Region, details: Details) => {
-      isMovingRef.current = true
+      setIsMapMoving(true)
       // Keep clusters in sync while the map moves, but throttle recomputation so
       // pinch/pan does not trigger a full re-cluster on every native frame.
       scheduleThrottledRegionSync(
@@ -501,7 +500,7 @@ const CompatMapView = forwardRef(function CompatMapView(
     (region: Region, details: Details) => {
       // Gesture settled: re-enable cross-fade so the final cluster transition
       // animates, while intermediate frames during the move stayed instant.
-      isMovingRef.current = false
+      setIsMapMoving(false)
       flushThrottledRegionSync(
         region,
         syncCurrentRegion,
@@ -672,7 +671,7 @@ const CompatMapView = forwardRef(function CompatMapView(
         clusterFontFamily={data.clusterFontFamily}
         tracksViewChanges={data.tracksViewChanges}
         fadeInDuration={clusterFadeIn}
-        fadeOutDuration={clusterFadeIn}
+        fadeOutDuration={effectiveFadeOut}
         exiting={exiting}
       />
     )
