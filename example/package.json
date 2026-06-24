@@ -1,0 +1,29 @@
+{
+  "name": "nitro-map-cluster-example",
+  "version": "0.0.1",
+  "private": true,
+  "main": "index.js",
+  "scripts": {
+    "start": "expo start --dev-client",
+    "android": "expo run:android",
+    "ios": "expo run:ios",
+    "prebuild": "expo prebuild --clean"
+  },
+  "dependencies": {
+    "@gmisoftware/react-native-better-clustering": "*",
+    "expo": "~56.0.12",
+    "expo-dev-client": "~56.0.20",
+    "expo-status-bar": "~56.0.4",
+    "react": "19.2.3",
+    "react-native": "0.85.3",
+    "react-native-maps": "^1.26.0",
+    "react-native-nitro-modules": "*"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.25.0",
+    "@types/react": "^19.2.15",
+    "babel-preset-expo": "~56.0.15",
+    "metro-resolver": "0.84.4",
+    "typescript": "^6.0.3"
+  }
+}

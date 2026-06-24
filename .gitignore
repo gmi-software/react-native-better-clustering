@@ -1,0 +1,98 @@
+# Dependencies
+node_modules/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editors / local tooling
+.cursor/
+.vscode/
+.idea/
+*.swp
+*.swo
+.claude/
+.agents/
+.mcp.json
+
+# Environment / secrets
+.env
+.env.*
+!.env.example
+
+# Logs / caches
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+*.tsbuildinfo
+.turbo/
+.eslintcache
+.cache/
+
+# Expo
+.expo/
+dist/
+web-build/
+
+# TypeScript / library build output
+lib/
+
+# Android
+**/android/build/
+**/android/.gradle/
+**/android/app/build/
+**/android/local.properties
+**/.cxx/
+*.hprof
+*.jks
+*.keystore
+!**/android/app/debug.keystore
+
+# iOS / Xcode
+**/ios/build/
+**/ios/Pods/
+**/ios/DerivedData/
+**/ios/*.xcworkspace/xcuserdata/
+**/ios/*.xcodeproj/xcuserdata/
+**/ios/*.xcodeproj/project.xcworkspace/xcuserdata/
+*.pbxuser
+!default.pbxuser
+*.mode1v3
+!default.mode1v3
+*.mode2v3
+!default.mode2v3
+*.perspectivev3
+!default.perspectivev3
+xcuserdata/
+*.xccheckout
+*.moved-aside
+DerivedData/
+*.hmap
+*.ipa
+*.xcuserstate
+project.xcworkspace/
+.xcode.env.local
+
+# Apple signing (never commit production certs)
+*.p8
+*.p12
+*.key
+*.mobileprovision
+
+# C++ local binaries
+package/cpp/cluster_test
+package/cpp/cluster_bench
+
+# npm pack artifacts
+*.tgz
+
+# Test coverage
+coverage/
+
+# Docusaurus
+docs/.docusaurus/
+docs/build/
+
+# Ruby / CocoaPods vendor (if used)
+vendor/

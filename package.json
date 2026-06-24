@@ -1,0 +1,40 @@
+{
+  "name": "monorepo",
+  "private": true,
+  "version": "1.0.0",
+  "workspaces": [
+    "package",
+    "example",
+    "docs"
+  ],
+  "trustedDependencies": [
+    "@gmisoftware/react-native-better-clustering"
+  ],
+  "scripts": {
+    "android": "cd example && expo run:android",
+    "ios": "cd example && expo run:ios",
+    "start": "cd example && expo start --dev-client",
+    "docs:start": "cd docs && bun run start",
+    "docs:build": "cd docs && bun run build"
+  },
+  "dependencies": {
+    "expo": "~56.0.12",
+    "react": "19.2.3",
+    "react-native": "0.85.3"
+  },
+  "overrides": {
+    "webpack": "5.105.4",
+    "webpackbar": "6.0.1",
+    "@docusaurus/core": "3.9.2",
+    "@docusaurus/bundler": "3.9.2",
+    "@docusaurus/plugin-content-docs": "3.9.2",
+    "@docusaurus/theme-translations": "3.9.2",
+    "@docusaurus/utils": "3.9.2",
+    "@docusaurus/utils-common": "3.9.2",
+    "@docusaurus/utils-validation": "3.9.2"
+  },
+  "devDependencies": {
+    "@types/react": "~19.2.14",
+    "typescript": "~6.0.3"
+  }
+}

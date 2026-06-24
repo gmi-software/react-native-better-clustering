@@ -1,0 +1,98 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quality:
+    name: Lint, Typecheck and Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install
+
+      - name: Lint
+        run: cd package && bun run lint-ci
+
+      - name: Typecheck
+        run: cd package && bun run typecheck
+
+      - name: Tests
+        run: cd package && bun run test:ci
+
+  cpp:
+    name: C++ engine test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Compile and run ClusterEngineCore test
+        working-directory: package/cpp
+        run: |
+          c++ -std=c++20 -I. ClusterEngineCore.test.cpp -o cluster_test
+          ./cluster_test
+
+  android:
+    name: Android example build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+      - uses: android-actions/setup-android@v3
+      - name: Install dependencies
+        run: bun install
+      - name: Prebuild Android project
+        working-directory: example
+        run: bunx expo prebuild -p android --clean
+      - name: Assemble debug APK
+        working-directory: example/android
+        run: ./gradlew assembleDebug --no-daemon
+
+  ios:
+    name: iOS example build
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+      - name: Install dependencies
+        run: bun install
+      - name: Prebuild iOS project
+        working-directory: example
+        run: bunx expo prebuild -p ios --clean
+      - name: Install CocoaPods
+        working-directory: example/ios
+        run: pod install
+      - name: Build for simulator
+        working-directory: example/ios
+        run: |
+          xcodebuild build \
+            -workspace NitroMapClusterExample.xcworkspace \
+            -scheme NitroMapClusterExample \
+            -configuration Debug \
+            -sdk iphonesimulator \
+            -destination 'generic/platform=iOS Simulator' \
+            CODE_SIGNING_ALLOWED=NO

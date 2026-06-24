@@ -1,0 +1,17 @@
+# Expo
+.expo/
+dist/
+web-build/
+
+# Native build output (also covered by root .gitignore)
+android/app/build/
+android/build/
+android/.gradle/
+ios/build/
+ios/Pods/
+
+# Local Xcode env (machine-specific Node path)
+ios/.xcode.env.local
+
+# Metro
+.metro-health-check*

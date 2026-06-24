@@ -1,0 +1,158 @@
+{
+  "name": "@gmisoftware/react-native-better-clustering",
+  "version": "0.1.0",
+  "description": "A faster react-native-map-clustering — same MapView API, C++/Nitro supercluster engine under the hood",
+  "author": "gmi.software",
+  "license": "MIT",
+  "homepage": "https://github.com/gmi-software/react-native-better-clustering#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/gmi-software/react-native-better-clustering.git"
+  },
+  "bugs": {
+    "url": "https://github.com/gmi-software/react-native-better-clustering/issues"
+  },
+  "main": "lib/index",
+  "module": "lib/index",
+  "types": "lib/index.d.ts",
+  "react-native": "src/index",
+  "source": "src/index",
+  "exports": {
+    ".": {
+      "react-native": "./src/index.ts",
+      "types": "./lib/index.d.ts",
+      "default": "./lib/index.js"
+    },
+    "./utils": {
+      "react-native": "./src/utils/index.ts",
+      "types": "./lib/utils/index.d.ts",
+      "default": "./lib/utils/index.js"
+    },
+    "./engine": {
+      "react-native": "./src/engine/index.ts",
+      "types": "./lib/engine/index.d.ts",
+      "default": "./lib/engine/index.js"
+    },
+    "./geojson": {
+      "react-native": "./src/geojson/index.ts",
+      "types": "./lib/geojson/index.d.ts",
+      "default": "./lib/geojson/index.js"
+    },
+    "./hooks": {
+      "react-native": "./src/hooks/index.ts",
+      "types": "./lib/hooks/index.d.ts",
+      "default": "./lib/hooks/index.js"
+    },
+    "./compat": {
+      "react-native": "./src/compat/index.ts",
+      "types": "./lib/compat/index.d.ts",
+      "default": "./lib/compat/index.js"
+    },
+    "./clusterer": {
+      "react-native": "./src/clusterer/index.ts",
+      "types": "./lib/clusterer/index.d.ts",
+      "default": "./lib/clusterer/index.js"
+    }
+  },
+  "files": [
+    "src",
+    "react-native.config.js",
+    "lib",
+    "nitrogen",
+    "android/build.gradle",
+    "android/gradle.properties",
+    "android/fix-prefab.gradle",
+    "android/CMakeLists.txt",
+    "android/src",
+    "cpp",
+    "ios/**/*.h",
+    "ios/**/*.m",
+    "ios/**/*.mm",
+    "ios/**/*.cpp",
+    "ios/**/*.cpp",
+    "nitro.json",
+    "*.podspec",
+    "README.md",
+    "!**/*.test.ts",
+    "!**/*.test.tsx",
+    "!**/*.test.js",
+    "!**/*.test.d.ts",
+    "!cpp/*.test.cpp",
+    "!cpp/cluster_test"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "prepare": "tsc",
+    "prepack": "cp ../README.md ./README.md && tsc",
+    "postpack": "rm ./README.md",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf android/build node_modules/**/android/build lib",
+    "lint": "eslint \"**/*.{js,ts,tsx}\" --fix",
+    "lint-ci": "eslint \"**/*.{js,ts,tsx}\" --max-warnings 0",
+    "specs": "tsc --noEmit false && nitrogen --logLevel=\"debug\"",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:ci": "jest --runInBand --ci && node scripts/verify-main-entry.mjs",
+    "verify:build": "node scripts/verify-build.mjs",
+    "verify:exports": "node scripts/verify-main-entry.mjs",
+    "verify:pack": "npm pack --dry-run",
+    "release": "release-it"
+  },
+  "keywords": [
+    "react-native",
+    "nitro",
+    "map",
+    "clustering",
+    "react-native-maps",
+    "supercluster"
+  ],
+  "publishConfig": {
+    "registry": "https://registry.npmjs.org/"
+  },
+  "devDependencies": {
+    "@babel/runtime": "^7.28.4",
+    "@react-native/babel-preset": "0.85.3",
+    "@react-native/eslint-config": "0.85.3",
+    "@testing-library/react": "^16.3.2",
+    "@types/jest": "^29.5.14",
+    "@types/react": "^19.2.15",
+    "@typescript-eslint/eslint-plugin": "^8.61.1",
+    "@typescript-eslint/parser": "^8.61.1",
+    "babel-jest": "^29.7.0",
+    "eslint": "^9.39.4",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-prettier": "^5.5.5",
+    "eslint-plugin-react-hooks": "^5.2.0",
+    "jest": "^29.7.0",
+    "jest-environment-jsdom": "^29.7.0",
+    "nitrogen": "*",
+    "prettier": "^3.8.3",
+    "react": "19.2.3",
+    "react-dom": "19.2.3",
+    "react-native": "0.85.3",
+    "react-native-maps": "^1.26.0",
+    "react-native-nitro-modules": "*",
+    "react-test-renderer": "19.2.3",
+    "release-it": "^19.0.0",
+    "typescript": "^6.0.3"
+  },
+  "peerDependencies": {
+    "react": "*",
+    "react-native": "*",
+    "react-native-maps": "*",
+    "react-native-nitro-modules": "*"
+  },
+  "peerDependenciesMeta": {
+    "react-native-maps": {
+      "optional": true
+    }
+  },
+  "prettier": {
+    "quoteProps": "consistent",
+    "singleQuote": true,
+    "tabWidth": 2,
+    "trailingComma": "es5",
+    "useTabs": false,
+    "semi": false
+  }
+}

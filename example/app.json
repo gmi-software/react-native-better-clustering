@@ -1,0 +1,26 @@
+{
+  "expo": {
+    "name": "Nitro Map Cluster Example",
+    "slug": "nitro-map-cluster-example",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "scheme": "nitro-map-cluster-example",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.nitromapcluster.example",
+      "appleTeamId": "7D3A3N8459"
+    },
+    "android": {
+      "package": "com.nitromapcluster.example"
+    },
+    "plugins": [
+      [
+        "react-native-maps",
+        {
+          "googleMapsApiKey": "YOUR_GOOGLE_MAPS_API_KEY"
+        }
+      ],
+      "expo-status-bar"
+    ]
+  }
+}
