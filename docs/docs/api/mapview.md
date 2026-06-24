@@ -66,6 +66,7 @@ are supported, plus:
 | `clusterFontFamily` | — | Font family for cluster count label |
 | `animationEnabled` | `true` | Animate cluster changes (iOS only) |
 | `layoutAnimationConf` | 200ms easeInEaseOut create/delete + scale update | LayoutAnimation config when `animationEnabled` (tuned for cluster bubble transitions; pass a custom config to override) |
+| `clusterFadeInDuration` | `250` | Cross-fade duration (ms) for default cluster bubbles on zoom: new bubbles fade in while removed ones linger and fade out, eliminating the blink from native annotations being added/removed (iOS + Android). Driven by Reanimated on the UI thread. The fade-out cross-fade is applied to the settled cluster set only — during an active pinch/pan, removed bubbles are dropped immediately so a continuous zoom does not stack multiple bubble generations and overload the JS thread. Gated by `animationEnabled`; ignored with a custom `renderCluster`. Set to `0` to disable |
 | `tracksViewChanges` | `false` | Forwarded to default cluster markers |
 | `edgePadding` | 50px each side | Padding for `fitToCoordinates` on cluster press |
 | `preserveClusterPressBehavior` | `false` | Skip auto `fitToCoordinates` on cluster press |

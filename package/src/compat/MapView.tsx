@@ -42,6 +42,7 @@ import {
   markerToGeoJSONFeature,
 } from './helpers'
 import { renderSpiderClusterMarkers } from './renderSpiderClusterMarkers'
+import { useFadePresence } from './useFadePresence'
 import {
   cancelThrottledRegionSync,
   createThrottleRegionSyncState,
@@ -171,6 +172,16 @@ export interface ClusteredMapViewProps extends Omit<
   animationEnabled?: boolean
   /** LayoutAnimation preset/config used when `animationEnabled` (iOS only). */
   layoutAnimationConf?: LayoutAnimationConfig
+  /**
+   * Fade-in duration (ms) for cluster bubbles when they (re)mount on zoom, which
+   * softens the blink caused by native annotations being removed/added. Applies
+   * on both iOS and Android to the default cluster markers; ignored when
+   * {@linkcode animationEnabled} is `false` or a custom {@linkcode renderCluster}
+   * is provided. Set to `0` to disable.
+   *
+   * @default `250`
+   */
+  clusterFadeInDuration?: number
   /** Forwarded to default cluster markers. @default `false` for performance */
   tracksViewChanges?: boolean
   /** Seed initial map width before `onLayout` measures. @default window width */
@@ -184,6 +195,15 @@ export interface ClusteredMapViewProps extends Omit<
    * @default `100`
    */
   clusterUpdateIntervalMs?: number
+}
+
+/** Data retained per default cluster bubble so it can be cross-faded out. */
+interface ClusterBubbleData {
+  feature: ClusterFeature
+  clusterColor: string
+  clusterTextColor: string
+  clusterFontFamily?: string
+  tracksViewChanges: boolean
 }
 
 function toMapRegion(region?: Region): MapRegion {
@@ -235,6 +255,7 @@ const CompatMapView = forwardRef(function CompatMapView(
     selectedClusterColor = '#FF5722',
     animationEnabled = true,
     layoutAnimationConf = DEFAULT_LAYOUT_ANIMATION,
+    clusterFadeInDuration = 250,
     tracksViewChanges = false,
     width,
     height,
@@ -258,6 +279,11 @@ const CompatMapView = forwardRef(function CompatMapView(
     region: Region
     details: Details
   } | null>(null)
+  // `true` between the first `onRegionChange` and `onRegionChangeComplete` of a
+  // gesture. While moving we suppress cross-fade exit ghosts (see
+  // `effectiveFadeOut`) so a continuous zoom does not stack multiple bubble
+  // generations and saturate the JS thread.
+  const [isMapMoving, setIsMapMoving] = useState(false)
   const regionThrottleStateRef = useRef(createThrottleRegionSyncState())
   const clusterLayoutSignatureRef = useRef('')
   const [mapDimensions, setMapDimensions] = useState(() => ({
@@ -371,6 +397,15 @@ const CompatMapView = forwardRef(function CompatMapView(
 
   const isAtMaxZoom = currentZoom >= maxZoom
 
+  const clusterFadeIn = animationEnabled ? clusterFadeInDuration : 0
+
+  // Cross-fade exit ghosts are only kept around once the gesture settles. While
+  // the map is actively moving we drop removed bubbles immediately (duration 0):
+  // at a ~100ms recompute cadence, a 250ms exit would keep 2-3 bubble
+  // generations mounted at once, which is what dragged the JS thread to ~30fps
+  // on continuous zoom-out.
+  const effectiveFadeOut = isMapMoving ? 0 : clusterFadeIn
+
   useEffect(() => {
     if (superClusterRef) {
       superClusterRef.current = clusteringEnabled ? supercluster : null
@@ -447,6 +482,7 @@ const CompatMapView = forwardRef(function CompatMapView(
 
   const handleRegionChange = useCallback(
     (region: Region, details: Details) => {
+      setIsMapMoving(true)
       // Keep clusters in sync while the map moves, but throttle recomputation so
       // pinch/pan does not trigger a full re-cluster on every native frame.
       scheduleThrottledRegionSync(
@@ -462,6 +498,9 @@ const CompatMapView = forwardRef(function CompatMapView(
 
   const handleRegionChangeComplete = useCallback(
     (region: Region, details: Details) => {
+      // Gesture settled: re-enable cross-fade so the final cluster transition
+      // animates, while intermediate frames during the move stayed instant.
+      setIsMapMoving(false)
       flushThrottledRegionSync(
         region,
         syncCurrentRegion,
@@ -523,35 +562,43 @@ const CompatMapView = forwardRef(function CompatMapView(
     [spiralEnabled, isAtMaxZoom, supercluster, maxZoom]
   )
 
-  const renderedMarkers = useMemo(() => {
+  // Split rendering: everything except the default cluster bubbles is rendered
+  // immediately, while the default bubbles go through `useFadePresence` so a
+  // removed bubble lingers and cross-fades out as its replacements fade in.
+  const { immediateMarkers, clusterBubbleItems } = useMemo(() => {
+    const immediate: ReactNode[] = []
+    const bubbles: Array<{ key: string; data: ClusterBubbleData }> = []
+
     if (!clusteringEnabled) {
-      return propsChildren.filter(isMarker)
+      return {
+        immediateMarkers: propsChildren.filter(isMarker),
+        clusterBubbleItems: bubbles,
+      }
     }
 
-    return clusters.flatMap((feature) => {
+    for (const feature of clusters) {
       if (!isClusterFeature(feature)) {
         const index = feature.properties.index
         const child = typeof index === 'number' ? propsChildren[index] : null
         if (isMarker(child)) {
-          return [
-            React.cloneElement(child, {
-              key: `marker-${index}`,
-            }),
-          ]
+          immediate.push(React.cloneElement(child, { key: `marker-${index}` }))
         }
-        return []
+        continue
       }
 
       const cluster = feature as ClusterFeature
       const clusterId = cluster.properties.cluster_id
 
       if (shouldSpiderCluster(clusterId)) {
-        return renderSpiderClusterMarkers(
-          cluster,
-          propsChildren,
-          supercluster,
-          spiderLineColor
+        immediate.push(
+          ...renderSpiderClusterMarkers(
+            cluster,
+            propsChildren,
+            supercluster,
+            spiderLineColor
+          )
         )
+        continue
       }
 
       const clusterKey = `cluster-${cluster.id}`
@@ -563,7 +610,7 @@ const CompatMapView = forwardRef(function CompatMapView(
         : clusterColor
 
       if (renderCluster) {
-        return [
+        immediate.push(
           React.cloneElement(
             renderCluster({
               ...cluster,
@@ -573,22 +620,24 @@ const CompatMapView = forwardRef(function CompatMapView(
               tracksViewChanges,
             }),
             { key: clusterKey }
-          ),
-        ]
+          )
+        )
+        continue
       }
 
-      return [
-        <ClusterMarker
-          key={clusterKey}
-          feature={cluster}
-          onPress={handleClusterPress}
-          clusterColor={effectiveClusterColor}
-          clusterTextColor={clusterTextColor}
-          clusterFontFamily={clusterFontFamily}
-          tracksViewChanges={tracksViewChanges}
-        />,
-      ]
-    })
+      bubbles.push({
+        key: clusterKey,
+        data: {
+          feature: cluster,
+          clusterColor: effectiveClusterColor,
+          clusterTextColor,
+          clusterFontFamily,
+          tracksViewChanges,
+        },
+      })
+    }
+
+    return { immediateMarkers: immediate, clusterBubbleItems: bubbles }
   }, [
     clusteringEnabled,
     clusters,
@@ -606,6 +655,28 @@ const CompatMapView = forwardRef(function CompatMapView(
     spiderLineColor,
   ])
 
+  const clusterBubbleEntries = useFadePresence(
+    clusterBubbleItems,
+    effectiveFadeOut
+  )
+
+  const clusterBubbleMarkers = clusterBubbleEntries.map(
+    ({ key, data, exiting }) => (
+      <ClusterMarker
+        key={key}
+        feature={data.feature}
+        onPress={handleClusterPress}
+        clusterColor={data.clusterColor}
+        clusterTextColor={data.clusterTextColor}
+        clusterFontFamily={data.clusterFontFamily}
+        tracksViewChanges={data.tracksViewChanges}
+        fadeInDuration={clusterFadeIn}
+        fadeOutDuration={effectiveFadeOut}
+        exiting={exiting}
+      />
+    )
+  )
+
   return (
     <View style={[styles.container, style]} onLayout={handleLayout}>
       <MapView
@@ -618,7 +689,8 @@ const CompatMapView = forwardRef(function CompatMapView(
         onRegionChange={handleRegionChange}
         onRegionChangeComplete={handleRegionChangeComplete}
       >
-        {renderedMarkers}
+        {immediateMarkers}
+        {clusterBubbleMarkers}
         {otherChildren}
       </MapView>
     </View>

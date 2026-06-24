@@ -5,6 +5,14 @@ jest.mock('react-native', () => ({
   View: 'View',
 }))
 
+jest.mock('react-native-reanimated', () => ({
+  __esModule: true,
+  default: { createAnimatedComponent: (component: unknown) => component },
+  useSharedValue: (value: unknown) => ({ value }),
+  useAnimatedProps: (worklet: () => unknown) => worklet(),
+  withTiming: (value: unknown) => value,
+}))
+
 jest.mock('react-native-maps', () => ({
   Marker: 'Marker',
 }))
@@ -57,6 +65,14 @@ describe('areClusterMarkerPropsEqual', () => {
   it('returns false when onPress reference changes', () => {
     const prev = baseProps({ onPress: jest.fn() })
     const next = baseProps({ onPress: jest.fn() })
+
+    expect(areClusterMarkerPropsEqual(prev, next)).toBe(false)
+  })
+
+  it('returns false when fadeInDuration changes', () => {
+    const onPress = jest.fn()
+    const prev = baseProps({ onPress, fadeInDuration: 0 })
+    const next = baseProps({ onPress, fadeInDuration: 250 })
 
     expect(areClusterMarkerPropsEqual(prev, next)).toBe(false)
   })

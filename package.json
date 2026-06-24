@@ -23,6 +23,8 @@
     "react-native": "0.85.3"
   },
   "overrides": {
+    "react-native-reanimated": "4.5.0",
+    "react-native-worklets": "0.10.0",
     "webpack": "5.105.4",
     "webpackbar": "6.0.1",
     "@docusaurus/core": "3.9.2",

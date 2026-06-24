@@ -132,6 +132,7 @@
     "react-native": "0.85.3",
     "react-native-maps": "^1.26.0",
     "react-native-nitro-modules": "*",
+    "react-native-reanimated": "^4.5.0",
     "react-test-renderer": "19.2.3",
     "release-it": "^19.0.0",
     "typescript": "^6.0.3"
@@ -140,7 +141,9 @@
     "react": "*",
     "react-native": "*",
     "react-native-maps": "*",
-    "react-native-nitro-modules": "*"
+    "react-native-nitro-modules": "*",
+    "react-native-reanimated": ">=4.0.0",
+    "react-native-worklets": ">=0.6.0"
   },
   "peerDependenciesMeta": {
     "react-native-maps": {

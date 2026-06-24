@@ -220,6 +220,11 @@ PODS:
   - ExpoModulesWorklets (56.0.17):
     - ExpoModulesCore
     - ExpoModulesJSI
+  - ExpoModulesWorkletsAdapter (56.0.17):
+    - ExpoModulesCore
+    - ExpoModulesJSI
+    - ExpoModulesWorklets
+    - RNWorklets
   - EXUpdatesInterface (56.0.2):
     - ExpoModulesCore
   - FBLazyVector (0.85.3)
@@ -2104,27 +2109,198 @@ PODS:
     - React-utils (= 0.85.3)
     - ReactNativeDependencies
   - ReactNativeDependencies (0.85.3)
+  - RNReanimated (4.5.0):
+    - hermes-engine
+    - RCTRequired
+    - RCTTypeSafety
+    - React-Core
+    - React-Core-prebuilt
+    - React-debug
+    - React-Fabric
+    - React-featureflags
+    - React-graphics
+    - React-hermes
+    - React-ImageManager
+    - React-jsi
+    - React-NativeModulesApple
+    - React-RCTFabric
+    - React-renderercss
+    - React-rendererdebug
+    - React-utils
+    - ReactCodegen
+    - ReactCommon/turbomodule/bridging
+    - ReactCommon/turbomodule/core
+    - ReactNativeDependencies
+    - RNReanimated/apple (= 4.5.0)
+    - RNReanimated/common (= 4.5.0)
+    - RNReanimated/view (= 4.5.0)
+    - RNWorklets
+    - Yoga
+  - RNReanimated/apple (4.5.0):
+    - hermes-engine
+    - RCTRequired
+    - RCTTypeSafety
+    - React-Core
+    - React-Core-prebuilt
+    - React-debug
+    - React-Fabric
+    - React-featureflags
+    - React-graphics
+    - React-hermes
+    - React-ImageManager
+    - React-jsi
+    - React-NativeModulesApple
+    - React-RCTFabric
+    - React-renderercss
+    - React-rendererdebug
+    - React-utils
+    - ReactCodegen
+    - ReactCommon/turbomodule/bridging
+    - ReactCommon/turbomodule/core
+    - ReactNativeDependencies
+    - RNWorklets
+    - Yoga
+  - RNReanimated/common (4.5.0):
+    - hermes-engine
+    - RCTRequired
+    - RCTTypeSafety
+    - React-Core
+    - React-Core-prebuilt
+    - React-debug
+    - React-Fabric
+    - React-featureflags
+    - React-graphics
+    - React-hermes
+    - React-ImageManager
+    - React-jsi
+    - React-NativeModulesApple
+    - React-RCTFabric
+    - React-renderercss
+    - React-rendererdebug
+    - React-utils
+    - ReactCodegen
+    - ReactCommon/turbomodule/bridging
+    - ReactCommon/turbomodule/core
+    - ReactNativeDependencies
+    - RNWorklets
+    - Yoga
+  - RNReanimated/view (4.5.0):
+    - hermes-engine
+    - RCTRequired
+    - RCTTypeSafety
+    - React-Core
+    - React-Core-prebuilt
+    - React-debug
+    - React-Fabric
+    - React-featureflags
+    - React-graphics
+    - React-hermes
+    - React-ImageManager
+    - React-jsi
+    - React-NativeModulesApple
+    - React-RCTFabric
+    - React-renderercss
+    - React-rendererdebug
+    - React-utils
+    - ReactCodegen
+    - ReactCommon/turbomodule/bridging
+    - ReactCommon/turbomodule/core
+    - ReactNativeDependencies
+    - RNWorklets
+    - Yoga
+  - RNWorklets (0.10.0):
+    - hermes-engine
+    - RCTRequired
+    - RCTTypeSafety
+    - React-Core
+    - React-Core-prebuilt
+    - React-debug
+    - React-Fabric
+    - React-featureflags
+    - React-graphics
+    - React-hermes
+    - React-ImageManager
+    - React-jsi
+    - React-NativeModulesApple
+    - React-RCTFabric
+    - React-renderercss
+    - React-rendererdebug
+    - React-utils
+    - ReactCodegen
+    - ReactCommon/turbomodule/bridging
+    - ReactCommon/turbomodule/core
+    - ReactNativeDependencies
+    - RNWorklets/apple (= 0.10.0)
+    - RNWorklets/common (= 0.10.0)
+    - Yoga
+  - RNWorklets/apple (0.10.0):
+    - hermes-engine
+    - RCTRequired
+    - RCTTypeSafety
+    - React-Core
+    - React-Core-prebuilt
+    - React-debug
+    - React-Fabric
+    - React-featureflags
+    - React-graphics
+    - React-hermes
+    - React-ImageManager
+    - React-jsi
+    - React-NativeModulesApple
+    - React-RCTFabric
+    - React-renderercss
+    - React-rendererdebug
+    - React-utils
+    - ReactCodegen
+    - ReactCommon/turbomodule/bridging
+    - ReactCommon/turbomodule/core
+    - ReactNativeDependencies
+    - Yoga
+  - RNWorklets/common (0.10.0):
+    - hermes-engine
+    - RCTRequired
+    - RCTTypeSafety
+    - React-Core
+    - React-Core-prebuilt
+    - React-debug
+    - React-Fabric
+    - React-featureflags
+    - React-graphics
+    - React-hermes
+    - React-ImageManager
+    - React-jsi
+    - React-NativeModulesApple
+    - React-RCTFabric
+    - React-renderercss
+    - React-rendererdebug
+    - React-utils
+    - ReactCodegen
+    - ReactCommon/turbomodule/bridging
+    - ReactCommon/turbomodule/core
+    - ReactNativeDependencies
+    - Yoga
   - Yoga (0.0.0)
 
 DEPENDENCIES:
   - "EXConstants (from `../../node_modules/.bun/expo-constants@56.0.18+287a87011099de27/node_modules/expo-constants/ios`)"
   - "EXJSONUtils (from `../../node_modules/.bun/expo-json-utils@56.0.0/node_modules/expo-json-utils/ios`)"
-  - "EXManifests (from `../../node_modules/.bun/expo-manifests@56.0.4+1a41624cdfdc8fc7/node_modules/expo-manifests/ios`)"
-  - "Expo (from `../../node_modules/.bun/expo@56.0.12+1a41624cdfdc8fc7/node_modules/expo`)"
-  - "expo-dev-client (from `../../node_modules/.bun/expo-dev-client@56.0.20+1a41624cdfdc8fc7/node_modules/expo-dev-client/ios`)"
-  - "expo-dev-launcher (from `../../node_modules/.bun/expo-dev-launcher@56.0.20+1a41624cdfdc8fc7/node_modules/expo-dev-launcher`)"
-  - "expo-dev-menu (from `../../node_modules/.bun/expo-dev-menu@56.0.17+1a41624cdfdc8fc7/node_modules/expo-dev-menu`)"
-  - "expo-dev-menu-interface (from `../../node_modules/.bun/expo-dev-menu-interface@56.0.1+1a41624cdfdc8fc7/node_modules/expo-dev-menu-interface/ios`)"
+  - "EXManifests (from `../../node_modules/.bun/expo-manifests@56.0.4+f385c5a1661f58f1/node_modules/expo-manifests/ios`)"
+  - "Expo (from `../../node_modules/.bun/expo@56.0.12+f385c5a1661f58f1/node_modules/expo`)"
+  - "expo-dev-client (from `../../node_modules/.bun/expo-dev-client@56.0.20+f385c5a1661f58f1/node_modules/expo-dev-client/ios`)"
+  - "expo-dev-launcher (from `../../node_modules/.bun/expo-dev-launcher@56.0.20+f385c5a1661f58f1/node_modules/expo-dev-launcher`)"
+  - "expo-dev-menu (from `../../node_modules/.bun/expo-dev-menu@56.0.17+f385c5a1661f58f1/node_modules/expo-dev-menu`)"
+  - "expo-dev-menu-interface (from `../../node_modules/.bun/expo-dev-menu-interface@56.0.1+f385c5a1661f58f1/node_modules/expo-dev-menu-interface/ios`)"
   - "ExpoAsset (from `../../node_modules/.bun/expo-asset@56.0.17+a5a6ca0f9e29f499/node_modules/expo-asset/ios`)"
   - "ExpoDomWebView (from `../../node_modules/.bun/@expo+dom-webview@56.0.5+287a87011099de27/node_modules/@expo/dom-webview/ios`)"
   - "ExpoFileSystem (from `../../node_modules/.bun/expo-file-system@56.0.8+287a87011099de27/node_modules/expo-file-system/ios/ExpoFileSystem.podspec`)"
   - "ExpoFont (from `../../node_modules/.bun/expo-font@56.0.7+287a87011099de27/node_modules/expo-font/ios/ExpoFont.podspec`)"
   - "ExpoKeepAwake (from `../../node_modules/.bun/expo-keep-awake@56.0.3+dc3ec1c4670f0f17/node_modules/expo-keep-awake/ios`)"
   - "ExpoLogBox (from `../../node_modules/.bun/@expo+log-box@56.0.13+287a87011099de27/node_modules/@expo/log-box`)"
-  - "ExpoModulesCore (from `../../node_modules/.bun/expo-modules-core@56.0.17+1d41c862de1c46a9/node_modules/expo-modules-core/ExpoModulesCore.podspec`)"
+  - "ExpoModulesCore (from `../../node_modules/.bun/expo-modules-core@56.0.17+bf9138e48f00ea5c/node_modules/expo-modules-core/ExpoModulesCore.podspec`)"
   - "ExpoModulesJSI (from `../../node_modules/.bun/expo-modules-jsi@56.0.10+d6f903d171a23bdf/node_modules/expo-modules-jsi/apple`)"
-  - "ExpoModulesWorklets (from `../../node_modules/.bun/expo-modules-core@56.0.17+1d41c862de1c46a9/node_modules/expo-modules-core/ExpoModulesWorklets.podspec`)"
-  - "EXUpdatesInterface (from `../../node_modules/.bun/expo-updates-interface@56.0.2+1a41624cdfdc8fc7/node_modules/expo-updates-interface/ios`)"
+  - "ExpoModulesWorklets (from `../../node_modules/.bun/expo-modules-core@56.0.17+bf9138e48f00ea5c/node_modules/expo-modules-core/ExpoModulesWorklets.podspec`)"
+  - "ExpoModulesWorkletsAdapter (from `../../node_modules/.bun/expo-modules-core@56.0.17+bf9138e48f00ea5c/node_modules/expo-modules-core`)"
+  - "EXUpdatesInterface (from `../../node_modules/.bun/expo-updates-interface@56.0.2+f385c5a1661f58f1/node_modules/expo-updates-interface/ios`)"
   - "FBLazyVector (from `../../node_modules/.bun/react-native@0.85.3+d6f903d171a23bdf/node_modules/react-native/Libraries/FBLazyVector`)"
   - "hermes-engine (from `../../node_modules/.bun/react-native@0.85.3+d6f903d171a23bdf/node_modules/react-native/sdks/hermes-engine/hermes-engine.podspec`)"
   - NitroMapCluster (from `../../package`)
@@ -2202,6 +2378,8 @@ DEPENDENCIES:
   - ReactCodegen (from `build/generated/ios/ReactCodegen`)
   - "ReactCommon/turbomodule/core (from `../../node_modules/.bun/react-native@0.85.3+d6f903d171a23bdf/node_modules/react-native/ReactCommon`)"
   - "ReactNativeDependencies (from `../../node_modules/.bun/react-native@0.85.3+d6f903d171a23bdf/node_modules/react-native/third-party-podspecs/ReactNativeDependencies.podspec`)"
+  - "RNReanimated (from `../../node_modules/.bun/react-native-reanimated@4.5.0+bf9138e48f00ea5c/node_modules/react-native-reanimated`)"
+  - "RNWorklets (from `../../node_modules/.bun/react-native-worklets@0.10.0+fb96e01b5a95c1ee/node_modules/react-native-worklets`)"
   - "Yoga (from `../../node_modules/.bun/react-native@0.85.3+d6f903d171a23bdf/node_modules/react-native/ReactCommon/yoga`)"
 
 EXTERNAL SOURCES:
@@ -2210,17 +2388,17 @@ EXTERNAL SOURCES:
   EXJSONUtils:
     :path: "../../node_modules/.bun/expo-json-utils@56.0.0/node_modules/expo-json-utils/ios"
   EXManifests:
-    :path: "../../node_modules/.bun/expo-manifests@56.0.4+1a41624cdfdc8fc7/node_modules/expo-manifests/ios"
+    :path: "../../node_modules/.bun/expo-manifests@56.0.4+f385c5a1661f58f1/node_modules/expo-manifests/ios"
   Expo:
-    :path: "../../node_modules/.bun/expo@56.0.12+1a41624cdfdc8fc7/node_modules/expo"
+    :path: "../../node_modules/.bun/expo@56.0.12+f385c5a1661f58f1/node_modules/expo"
   expo-dev-client:
-    :path: "../../node_modules/.bun/expo-dev-client@56.0.20+1a41624cdfdc8fc7/node_modules/expo-dev-client/ios"
+    :path: "../../node_modules/.bun/expo-dev-client@56.0.20+f385c5a1661f58f1/node_modules/expo-dev-client/ios"
   expo-dev-launcher:
-    :path: "../../node_modules/.bun/expo-dev-launcher@56.0.20+1a41624cdfdc8fc7/node_modules/expo-dev-launcher"
+    :path: "../../node_modules/.bun/expo-dev-launcher@56.0.20+f385c5a1661f58f1/node_modules/expo-dev-launcher"
   expo-dev-menu:
-    :path: "../../node_modules/.bun/expo-dev-menu@56.0.17+1a41624cdfdc8fc7/node_modules/expo-dev-menu"
+    :path: "../../node_modules/.bun/expo-dev-menu@56.0.17+f385c5a1661f58f1/node_modules/expo-dev-menu"
   expo-dev-menu-interface:
-    :path: "../../node_modules/.bun/expo-dev-menu-interface@56.0.1+1a41624cdfdc8fc7/node_modules/expo-dev-menu-interface/ios"
+    :path: "../../node_modules/.bun/expo-dev-menu-interface@56.0.1+f385c5a1661f58f1/node_modules/expo-dev-menu-interface/ios"
   ExpoAsset:
     :path: "../../node_modules/.bun/expo-asset@56.0.17+a5a6ca0f9e29f499/node_modules/expo-asset/ios"
   ExpoDomWebView:
@@ -2234,13 +2412,15 @@ EXTERNAL SOURCES:
   ExpoLogBox:
     :path: "../../node_modules/.bun/@expo+log-box@56.0.13+287a87011099de27/node_modules/@expo/log-box"
   ExpoModulesCore:
-    :podspec: "../../node_modules/.bun/expo-modules-core@56.0.17+1d41c862de1c46a9/node_modules/expo-modules-core/ExpoModulesCore.podspec"
+    :podspec: "../../node_modules/.bun/expo-modules-core@56.0.17+bf9138e48f00ea5c/node_modules/expo-modules-core/ExpoModulesCore.podspec"
   ExpoModulesJSI:
     :path: "../../node_modules/.bun/expo-modules-jsi@56.0.10+d6f903d171a23bdf/node_modules/expo-modules-jsi/apple"
   ExpoModulesWorklets:
-    :podspec: "../../node_modules/.bun/expo-modules-core@56.0.17+1d41c862de1c46a9/node_modules/expo-modules-core/ExpoModulesWorklets.podspec"
+    :podspec: "../../node_modules/.bun/expo-modules-core@56.0.17+bf9138e48f00ea5c/node_modules/expo-modules-core/ExpoModulesWorklets.podspec"
+  ExpoModulesWorkletsAdapter:
+    :path: "../../node_modules/.bun/expo-modules-core@56.0.17+bf9138e48f00ea5c/node_modules/expo-modules-core"
   EXUpdatesInterface:
-    :path: "../../node_modules/.bun/expo-updates-interface@56.0.2+1a41624cdfdc8fc7/node_modules/expo-updates-interface/ios"
+    :path: "../../node_modules/.bun/expo-updates-interface@56.0.2+f385c5a1661f58f1/node_modules/expo-updates-interface/ios"
   FBLazyVector:
     :path: "../../node_modules/.bun/react-native@0.85.3+d6f903d171a23bdf/node_modules/react-native/Libraries/FBLazyVector"
   hermes-engine:
@@ -2394,6 +2574,10 @@ EXTERNAL SOURCES:
     :path: "../../node_modules/.bun/react-native@0.85.3+d6f903d171a23bdf/node_modules/react-native/ReactCommon"
   ReactNativeDependencies:
     :podspec: "../../node_modules/.bun/react-native@0.85.3+d6f903d171a23bdf/node_modules/react-native/third-party-podspecs/ReactNativeDependencies.podspec"
+  RNReanimated:
+    :path: "../../node_modules/.bun/react-native-reanimated@4.5.0+bf9138e48f00ea5c/node_modules/react-native-reanimated"
+  RNWorklets:
+    :path: "../../node_modules/.bun/react-native-worklets@0.10.0+fb96e01b5a95c1ee/node_modules/react-native-worklets"
   Yoga:
     :path: "../../node_modules/.bun/react-native@0.85.3+d6f903d171a23bdf/node_modules/react-native/ReactCommon/yoga"
 
@@ -2412,9 +2596,10 @@ SPEC CHECKSUMS:
   ExpoFont: 274487aa78f8c65d6551e2558eca3ec6ce3432ce
   ExpoKeepAwake: 359c47a1d9ccc3a3c519bca6e39562cce230c5bb
   ExpoLogBox: 63977cf56b04547c713535d2d4e9bbf2f012e3c6
-  ExpoModulesCore: 4000b285d673064a7d80b555e62086fd187c0aff
+  ExpoModulesCore: d4b015c057ef95845d205a5435519f35f0b0a32d
   ExpoModulesJSI: abc606cf32f6eeb4e2ad44ec3fc4b24143abd8f6
   ExpoModulesWorklets: 25d712f4e0a4eb37397d46c0ff5b450eca897fd1
+  ExpoModulesWorkletsAdapter: eb9f478fcf008d04b5c3d87ee8ee2e787b010a22
   EXUpdatesInterface: 25408a97d682355eb9fb37e5aa6e22caece1881f
   FBLazyVector: 24e62c765683b8d89006a88a2c8f5cf019f0074d
   hermes-engine: f01b7f0bdb4a77891db58997bd0d54ffc3a99844
@@ -2492,6 +2677,8 @@ SPEC CHECKSUMS:
   ReactCodegen: 81fd07902e3ea9bc36e065e2499d0c4a45d360b2
   ReactCommon: 7dfc3250793bf36cf221096ff59e1179e13eef7f
   ReactNativeDependencies: 35cbe5ef52fc7ad61a57e57898cebb7e30a2d4dd
+  RNReanimated: 3b671ec3c218e390def39d6a5dabc74446969568
+  RNWorklets: 539223047ed28fee7b7e26f606c6d6f6d7494354
   Yoga: 77dfa8673de2874e1855002ae59c68b8be9b007b
 
 PODFILE CHECKSUM: 702b2fc9965f7c16f678468e708b01cee7da9745

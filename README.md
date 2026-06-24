@@ -55,17 +55,23 @@ That is it. Your `<Marker>` children, cluster props, and `react-native-maps` opt
 ### Bare React Native
 
 ```bash
-npm install @gmisoftware/react-native-better-clustering react-native-nitro-modules react-native-maps
+npm install @gmisoftware/react-native-better-clustering react-native-nitro-modules react-native-maps react-native-reanimated react-native-worklets
 cd ios && pod install && cd ..
 ```
 
-Rebuild the native app after installing.
+Rebuild the native app after installing. Add the Worklets Babel plugin (last in the list) to `babel.config.js`:
+
+```js
+plugins: ['react-native-worklets/plugin']
+```
 
 ### Expo
 
 ```bash
-npx expo install @gmisoftware/react-native-better-clustering react-native-nitro-modules react-native-maps
+npx expo install @gmisoftware/react-native-better-clustering react-native-nitro-modules react-native-maps react-native-reanimated react-native-worklets
 ```
+
+`babel-preset-expo` wires up the Worklets plugin automatically.
 
 Add the `react-native-maps` plugin to `app.json`:
 
