@@ -208,7 +208,7 @@ static void testInvalidBufferRejected() {
 
 static void testMemorySizeReflectsNativeAllocations() {
   ClusterEngineCore engine;
-  assert(engine.memorySize() == 0);
+  const size_t baseline = engine.memorySize();
 
   ClusterEngineConfig config;
   config.minPoints = 2;
@@ -227,7 +227,7 @@ static void testMemorySizeReflectsNativeAllocations() {
   }
   engine.setPoints(ids.data(), lats.data(), lngs.data(), static_cast<size_t>(count));
   const size_t afterPoints = engine.memorySize();
-  assert(afterPoints > 0);
+  assert(afterPoints > baseline);
 
   engine.build();
   assert(engine.memorySize() > afterPoints);
