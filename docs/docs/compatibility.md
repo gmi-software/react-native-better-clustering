@@ -24,11 +24,11 @@ sidebar_position: 4
 ## Migrate from react-native-map-clustering
 
 The main export **is** the clustered `MapView`.
-`@gmisoftware/react-native-better-clustering/compat` is a backwards-compatible alias.
+`react-native-better-clustering/compat` is a backwards-compatible alias.
 
 ```diff
 - import MapView from 'react-native-map-clustering'
-+ import MapView from '@gmisoftware/react-native-better-clustering'
++ import MapView from 'react-native-better-clustering'
 ```
 
 Supported props include `radius`, `minPoints`, `minZoom`, `maxZoom`, `extent`,

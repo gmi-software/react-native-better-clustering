@@ -9,7 +9,7 @@ sidebar_position: 1
 ## Install packages
 
 ```bash
-npm install @gmisoftware/react-native-better-clustering react-native-nitro-modules
+npm install react-native-better-clustering react-native-nitro-modules
 ```
 
 For map rendering (required):
@@ -50,7 +50,7 @@ Confirm it is enabled and rebuild the native app.
 Use a [development build](https://docs.expo.dev/develop/development-builds/introduction/) — not Expo Go.
 
 ```bash
-npx expo install @gmisoftware/react-native-better-clustering react-native-nitro-modules react-native-maps react-native-reanimated react-native-worklets
+npx expo install react-native-better-clustering react-native-nitro-modules react-native-maps react-native-reanimated react-native-worklets
 ```
 
 Add the `react-native-maps` config plugin to `app.json`:

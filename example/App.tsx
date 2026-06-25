@@ -1,4 +1,4 @@
-import MapView from "@gmisoftware/react-native-better-clustering";
+import MapView from "react-native-better-clustering";
 import { StatusBar } from "expo-status-bar";
 import { useMemo } from "react";
 import { StyleSheet, View } from "react-native";

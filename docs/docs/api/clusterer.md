@@ -12,7 +12,7 @@ Use when you prefer a declarative component over
 Import from `/clusterer`:
 
 ```tsx
-import { Clusterer } from '@gmisoftware/react-native-better-clustering/clusterer'
+import { Clusterer } from 'react-native-better-clustering/clusterer'
 ```
 
 ## `Clusterer`

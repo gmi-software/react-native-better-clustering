@@ -12,7 +12,7 @@ sidebar_position: 4
 import type {
   ClusteredMapViewProps,
   RenderClusterProps,
-} from '@gmisoftware/react-native-better-clustering'
+} from 'react-native-better-clustering'
 ```
 
 `ClusteredMapViewProps` extends `react-native-maps` `MapViewProps` with clustering
@@ -29,7 +29,7 @@ import type {
   ClusterFeature,
   PointOrClusterFeature,
   BBox,
-} from '@gmisoftware/react-native-better-clustering/geojson'
+} from 'react-native-better-clustering/geojson'
 ```
 
 Cluster properties include `cluster`, `cluster_id`, `point_count`,
@@ -42,7 +42,7 @@ import type {
   SuperclusterOptions,
   ClusterPropertyConfig,
   MapDimensions,
-} from '@gmisoftware/react-native-better-clustering/engine'
+} from 'react-native-better-clustering/engine'
 ```
 
 ### `SuperclusterOptions`
@@ -70,7 +70,7 @@ import {
   type ClusterEngineOptions,
   type EngineClusterNode,
   type Viewport,
-} from '@gmisoftware/react-native-better-clustering/engine'
+} from 'react-native-better-clustering/engine'
 ```
 
 **Lifecycle:** `setOptions` → `setPoints` (`packPoints()` buffer) → `build()` → query.
