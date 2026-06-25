@@ -1,6 +1,6 @@
 {
   "name": "@gmisoftware/react-native-better-clustering",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "A faster react-native-map-clustering — same MapView API, C++/Nitro supercluster engine under the hood",
   "author": "gmi.software",
   "license": "MIT",

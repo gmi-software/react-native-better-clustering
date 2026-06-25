@@ -59,7 +59,7 @@
     },
     "package": {
       "name": "@gmisoftware/react-native-better-clustering",
-      "version": "0.1.0",
+      "version": "1.0.0",
       "devDependencies": {
         "@babel/runtime": "^7.28.4",
         "@react-native/babel-preset": "0.85.3",
@@ -94,6 +94,7 @@
         "react-native-maps": "*",
         "react-native-nitro-modules": "*",
         "react-native-reanimated": ">=4.0.0",
+        "react-native-worklets": ">=0.6.0",
       },
       "optionalPeers": [
         "react-native-maps",

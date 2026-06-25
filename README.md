@@ -18,6 +18,10 @@ Built with [Nitro Modules](https://nitro.margelo.com/) for high-performance nati
 
 </div>
 
+<div align="center">
+  <img src="./docs/static/img/demo.gif" alt="Clustering demo — pan and zoom with 2,000 markers" width="360" />
+</div>
+
 ---
 
 ## Migration
