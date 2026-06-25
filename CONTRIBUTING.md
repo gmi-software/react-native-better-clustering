@@ -1,6 +1,6 @@
 # Contributing to React Native Better Clustering
 
-Thank you for your interest in contributing to `@gmisoftware/react-native-better-clustering`! This document provides guidelines and instructions for contributing to the project.
+Thank you for your interest in contributing to `react-native-better-clustering`! This document provides guidelines and instructions for contributing to the project.
 
 ## Table of Contents
 
@@ -73,7 +73,7 @@ bunx expo run:android
 
 ```
 react-native-better-clustering/
-├── package/              # Main library package (@gmisoftware/react-native-better-clustering)
+├── package/              # Main library package (react-native-better-clustering)
 │   ├── src/              # TypeScript source
 │   │   ├── compat/       # Primary MapView entry (root export)
 │   │   ├── clusterer/    # Legacy render helper (undocumented subpath)

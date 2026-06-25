@@ -10,7 +10,7 @@
     "prebuild": "expo prebuild --clean"
   },
   "dependencies": {
-    "@gmisoftware/react-native-better-clustering": "*",
+    "react-native-better-clustering": "*",
     "expo": "~56.0.12",
     "expo-dev-client": "~56.0.20",
     "expo-status-bar": "~56.0.4",

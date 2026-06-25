@@ -15,14 +15,14 @@ sidebar_position: 2
 ## Install
 
 ```bash
-npm install @gmisoftware/react-native-better-clustering react-native-nitro-modules react-native-maps
+npm install react-native-better-clustering react-native-nitro-modules react-native-maps
 cd ios && pod install
 ```
 
 Expo requires a [development build](https://docs.expo.dev/develop/development-builds/introduction/):
 
 ```bash
-npx expo install @gmisoftware/react-native-better-clustering react-native-nitro-modules react-native-maps
+npx expo install react-native-better-clustering react-native-nitro-modules react-native-maps
 ```
 
 See [Platform Setup](./setup/installation.md) for `react-native-maps` plugin config.
@@ -30,7 +30,7 @@ See [Platform Setup](./setup/installation.md) for `react-native-maps` plugin con
 ## Clustered map
 
 ```tsx
-import MapView from '@gmisoftware/react-native-better-clustering'
+import MapView from 'react-native-better-clustering'
 import { Marker } from 'react-native-maps'
 
 const points = [
@@ -72,7 +72,7 @@ Change one import — props and `<Marker>` children stay the same:
 
 ```diff
 - import MapView from 'react-native-map-clustering'
-+ import MapView from '@gmisoftware/react-native-better-clustering'
++ import MapView from 'react-native-better-clustering'
 ```
 
 ## Custom map stack
@@ -83,11 +83,11 @@ computation, use `useClusterer` from `/hooks`:
 ```tsx
 import { useMemo, useState } from 'react'
 import MapView, { Marker } from 'react-native-maps'
-import { useClusterer } from '@gmisoftware/react-native-better-clustering/hooks'
+import { useClusterer } from 'react-native-better-clustering/hooks'
 import {
   coordsToGeoJSONFeature,
   isClusterFeature,
-} from '@gmisoftware/react-native-better-clustering/geojson'
+} from 'react-native-better-clustering/geojson'
 ```
 
 See [Hooks API](./api/hooks.md).

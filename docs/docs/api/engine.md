@@ -17,8 +17,8 @@ import {
   createClusterEngine,
   bboxToViewport,
   DEFAULT_SUPERCLUSTER_OPTIONS,
-} from '@gmisoftware/react-native-better-clustering/engine'
-import { packPoints } from '@gmisoftware/react-native-better-clustering/utils'
+} from 'react-native-better-clustering/engine'
+import { packPoints } from 'react-native-better-clustering/utils'
 ```
 
 For GeoJSON input and supercluster-compatible helpers, prefer

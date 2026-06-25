@@ -4,7 +4,7 @@ This guide helps automated agents submit high-quality PRs for this repo.
 
 ## Repo map
 
-- `package/` is the published library (`@gmisoftware/react-native-better-clustering`, TypeScript + native code via Nitro).
+- `package/` is the published library (`react-native-better-clustering`, TypeScript + native code via Nitro).
 - `example/` is an Expo app used for manual verification.
 - `docs/` is the technical documentation (Docusaurus, English). User-facing docs live under `docs/docs/` (API, setup, guides, troubleshooting, etc.). Run `bun run docs:start` or `bun run docs:build` from root.
 - Root `package.json` defines the Bun workspace.

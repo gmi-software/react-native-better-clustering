@@ -10,11 +10,11 @@ The main export — a clustered `MapView` with the same API as
 [react-native-map-clustering](https://github.com/tomekvenits/react-native-map-clustering).
 
 ```tsx
-import MapView from '@gmisoftware/react-native-better-clustering'
+import MapView from 'react-native-better-clustering'
 import { Marker } from 'react-native-maps'
 ```
 
-`@gmisoftware/react-native-better-clustering/compat` is a backwards-compatible
+`react-native-better-clustering/compat` is a backwards-compatible
 alias of the same component.
 
 ## Basic usage
@@ -103,7 +103,7 @@ Pass `renderCluster` for full control over the cluster bubble:
 ```tsx
 import MapView, {
   type RenderClusterProps,
-} from '@gmisoftware/react-native-better-clustering'
+} from 'react-native-better-clustering'
 import { Marker } from 'react-native-maps'
 
 const renderCluster = (cluster: RenderClusterProps) => {
@@ -135,7 +135,7 @@ Cluster features include `properties.point_count`,
 import type {
   ClusteredMapViewProps,
   RenderClusterProps,
-} from '@gmisoftware/react-native-better-clustering'
+} from 'react-native-better-clustering'
 ```
 
 `ClusteredMapViewProps` is the full props type for the clustered `MapView`.

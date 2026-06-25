@@ -10,7 +10,7 @@ const exclusionList = require(
   })
 ).default
 
-const PACKAGE_NAME = '@gmisoftware/react-native-better-clustering'
+const PACKAGE_NAME = 'react-native-better-clustering'
 
 const projectRoot = __dirname
 const monorepoRoot = path.resolve(projectRoot, '..')

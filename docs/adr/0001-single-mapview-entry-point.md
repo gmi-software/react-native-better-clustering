@@ -22,7 +22,7 @@ which exposes a single `MapView` with `<Marker>` children.
 The **root package export is the clustered `MapView`** (formerly `./compat`):
 
 ```tsx
-import MapView from '@gmisoftware/react-native-better-clustering'
+import MapView from 'react-native-better-clustering'
 import { Marker } from 'react-native-maps'
 ```
 

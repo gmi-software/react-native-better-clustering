@@ -8,7 +8,7 @@
     "docs"
   ],
   "trustedDependencies": [
-    "@gmisoftware/react-native-better-clustering"
+    "react-native-better-clustering"
   ],
   "scripts": {
     "android": "cd example && expo run:android",

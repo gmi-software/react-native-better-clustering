@@ -7,7 +7,7 @@ slug: /intro
 
 # React Native Better Clustering
 
-`@gmisoftware/react-native-better-clustering` is a faster
+`react-native-better-clustering` is a faster
 **[react-native-map-clustering](https://github.com/tomekvenits/react-native-map-clustering)** —
 same `MapView` + `<Marker>` API, with a **C++ supercluster engine** via
 [Nitro Modules](https://nitro.margelo.com) instead of JS on the RN bridge.
@@ -16,7 +16,7 @@ same `MapView` + `<Marker>` API, with a **C++ supercluster engine** via
 
 ```diff
 - import MapView from 'react-native-map-clustering'
-+ import MapView from '@gmisoftware/react-native-better-clustering'
++ import MapView from 'react-native-better-clustering'
 ```
 
 ## Why C++/Nitro?

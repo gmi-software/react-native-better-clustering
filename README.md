@@ -4,7 +4,7 @@
 
 A faster **[react-native-map-clustering](https://github.com/tomekvenits/react-native-map-clustering)** — same API, same `react-native-maps` workflow, but clustering runs in **C++ via Nitro** instead of JavaScript on the RN bridge.
 
-[![npm version](https://img.shields.io/npm/v/@gmisoftware/react-native-better-clustering.svg)](https://www.npmjs.com/package/@gmisoftware/react-native-better-clustering)
+[![npm version](https://img.shields.io/npm/v/react-native-better-clustering.svg)](https://www.npmjs.com/package/react-native-better-clustering)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE)
 [![TypeScript](https://img.shields.io/badge/TypeScript-Ready-blue.svg)](https://www.typescriptlang.org/)
 [![Expo Compatible](https://img.shields.io/badge/Expo-Compatible-000020.svg)](https://expo.dev/)
@@ -28,7 +28,7 @@ Built with [Nitro Modules](https://nitro.margelo.com/) for high-performance nati
 
 ```diff
 - import MapView from 'react-native-map-clustering'
-+ import MapView from '@gmisoftware/react-native-better-clustering'
++ import MapView from 'react-native-better-clustering'
   import { Marker } from 'react-native-maps'
 ```
 
@@ -59,7 +59,7 @@ That is it. Your `<Marker>` children, cluster props, and `react-native-maps` opt
 ### Bare React Native
 
 ```bash
-npm install @gmisoftware/react-native-better-clustering react-native-nitro-modules react-native-maps react-native-reanimated react-native-worklets
+npm install react-native-better-clustering react-native-nitro-modules react-native-maps react-native-reanimated react-native-worklets
 cd ios && pod install && cd ..
 ```
 
@@ -72,7 +72,7 @@ plugins: ['react-native-worklets/plugin']
 ### Expo
 
 ```bash
-npx expo install @gmisoftware/react-native-better-clustering react-native-nitro-modules react-native-maps react-native-reanimated react-native-worklets
+npx expo install react-native-better-clustering react-native-nitro-modules react-native-maps react-native-reanimated react-native-worklets
 ```
 
 `babel-preset-expo` wires up the Worklets plugin automatically.
@@ -97,7 +97,7 @@ npx expo run:ios   # or: npx expo run:android
 ## Usage
 
 ```tsx
-import MapView from '@gmisoftware/react-native-better-clustering'
+import MapView from 'react-native-better-clustering'
 import { Marker } from 'react-native-maps'
 
 export function MapScreen() {
@@ -147,7 +147,7 @@ Pass `renderCluster` when you need full control over the cluster bubble:
 ```tsx
 import MapView, {
   type RenderClusterProps,
-} from '@gmisoftware/react-native-better-clustering'
+} from 'react-native-better-clustering'
 import { Marker } from 'react-native-maps'
 
 const renderCluster = (cluster: RenderClusterProps) => {
@@ -248,11 +248,11 @@ Low-level hooks and headless access live under subpath exports for custom map st
 
 | Import                                                  | Use when                                                |
 | ------------------------------------------------------- | ------------------------------------------------------- |
-| `@gmisoftware/react-native-better-clustering/hooks`     | `useClusterer` — you own the `MapView`                  |
-| `@gmisoftware/react-native-better-clustering/clusterer` | `Clusterer` — declarative `renderItem` over `useClusterer` |
-| `@gmisoftware/react-native-better-clustering/engine`    | `Supercluster`, `createClusterEngine`, geometry helpers — see [headless lifecycle](https://gmi-software.github.io/react-native-better-clustering/docs/api/engine) |
-| `@gmisoftware/react-native-better-clustering/geojson` | GeoJSON types and conversion                            |
-| `@gmisoftware/react-native-better-clustering/utils`   | `packPoints`, distance helpers                          |
+| `react-native-better-clustering/hooks`     | `useClusterer` — you own the `MapView`                  |
+| `react-native-better-clustering/clusterer` | `Clusterer` — declarative `renderItem` over `useClusterer` |
+| `react-native-better-clustering/engine`    | `Supercluster`, `createClusterEngine`, geometry helpers — see [headless lifecycle](https://gmi-software.github.io/react-native-better-clustering/docs/api/engine) |
+| `react-native-better-clustering/geojson` | GeoJSON types and conversion                            |
+| `react-native-better-clustering/utils`   | `packPoints`, distance helpers                          |
 
 
 See the [docs](https://gmi-software.github.io/react-native-better-clustering/docs/intro) for details. The `/compat` subpath is an alias of the main export.

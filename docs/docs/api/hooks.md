@@ -12,7 +12,7 @@ cluster computation — not the bundled clustered `MapView`.
 Import from `/hooks`:
 
 ```tsx
-import { useClusterer } from '@gmisoftware/react-native-better-clustering/hooks'
+import { useClusterer } from 'react-native-better-clustering/hooks'
 ```
 
 ## `useClusterer(data, mapDimensions, region, options?)`
@@ -54,7 +54,7 @@ Helper to keep cluster identity stable across region updates, reducing flicker
 when rendering markers yourself:
 
 ```tsx
-import { stabilizeClusterFeatures } from '@gmisoftware/react-native-better-clustering/hooks'
+import { stabilizeClusterFeatures } from 'react-native-better-clustering/hooks'
 ```
 
 For most apps, the main [`MapView`](./mapview.md) handles this automatically.

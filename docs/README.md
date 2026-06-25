@@ -1,6 +1,6 @@
 # Docs workspace
 
-This folder contains the Docusaurus documentation site for `@gmisoftware/react-native-better-clustering`.
+This folder contains the Docusaurus documentation site for `react-native-better-clustering`.
 
 ## Run locally
 
