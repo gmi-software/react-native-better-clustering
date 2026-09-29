@@ -28,6 +28,7 @@ A single `bun install` at the root installs every workspace (`package`, `example
 - Verify the npm package: `cd package && bun run verify:pack && bun run verify:exports` (both run in CI)
 - Run example: `cd example && bunx expo prebuild && bunx expo run:ios` or `bunx expo run:android`
 - Docs (dev): `bun run docs:start`. Docs (build): `bun run docs:build`
+- Release: CI only, tag-driven — never run release-it or `npm publish` locally. See `RELEASING.md`.
 
 ## Nitro Modules notes
 
