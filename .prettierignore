@@ -1,0 +1,14 @@
+node_modules/
+lib/
+coverage/
+.expo/
+android/
+ios/
+nitrogen/
+bun.lock
+.claude/
+.agents/
+# Own toolchain / not yet formatted with this config.
+docs/
+example/
+*.md

@@ -276,7 +276,8 @@ See [CONTRIBUTING.md](./CONTRIBUTING.md).
 
 ```bash
 bun install
-cd package && bun run typecheck && bun run lint && bun run test
+bun run lint && bun run format:check
+cd package && bun run typecheck && bun run test
 ```
 
 ## License

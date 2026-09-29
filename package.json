@@ -18,7 +18,11 @@
     "docs:start": "cd docs && bun run start",
     "docs:build": "cd docs && bun run build",
     "commitlint": "commitlint",
-    "prepare": "husky"
+    "prepare": "husky",
+    "lint": "eslint . --max-warnings 0",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "format:cpp": "bash scripts/clang-format.sh"
   },
   "overrides": {
     "react-native-reanimated": "4.5.0",
@@ -36,8 +40,15 @@
   "devDependencies": {
     "@commitlint/cli": "^21.2.3",
     "@commitlint/config-conventional": "^21.2.3",
+    "@eslint/js": "^10.0.1",
     "@types/react": "~19.2.14",
+    "eslint": "^10.11.0",
+    "eslint-plugin-react": "^7.37.5",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "globals": "^17.12.0",
     "husky": "^9.1.7",
-    "typescript": "~6.0.3"
+    "prettier": "^3.9.9",
+    "typescript": "~6.0.3",
+    "typescript-eslint": "^8.70.1"
   }
 }

@@ -12,8 +12,13 @@ import os from 'node:os'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-const packageRoot = path.join(path.dirname(fileURLToPath(import.meta.url)), '..')
-const manifest = JSON.parse(fs.readFileSync(path.join(packageRoot, 'package.json'), 'utf8'))
+const packageRoot = path.join(
+  path.dirname(fileURLToPath(import.meta.url)),
+  '..'
+)
+const manifest = JSON.parse(
+  fs.readFileSync(path.join(packageRoot, 'package.json'), 'utf8')
+)
 const NAME = manifest.name
 
 // Subpaths safe to execute under plain Node, with one export each to check.
@@ -40,9 +45,17 @@ try {
 
   const installed = path.join(workDir, 'node_modules', NAME)
   fs.mkdirSync(installed, { recursive: true })
-  execFileSync('tar', ['-xzf', path.join(workDir, tarball), '-C', installed, '--strip-components=1'])
+  execFileSync('tar', [
+    '-xzf',
+    path.join(workDir, tarball),
+    '-C',
+    installed,
+    '--strip-components=1',
+  ])
 
-  const subpaths = Object.keys(manifest.exports).filter((key) => key !== './package.json')
+  const subpaths = Object.keys(manifest.exports).filter(
+    (key) => key !== './package.json'
+  )
 
   // A probe module inside the temp project, so both resolvers see the tarball
   // exactly as an app's node_modules would.
@@ -80,43 +93,59 @@ for (const [subpath, name] of Object.entries(importable)) {
 console.log(JSON.stringify(out))
 `
   )
-  const result = JSON.parse(execFileSync('node', [probe], { cwd: workDir, encoding: 'utf8' }))
+  const result = JSON.parse(
+    execFileSync('node', [probe], { cwd: workDir, encoding: 'utf8' })
+  )
 
   const problems = []
   const realInstalled = fs.realpathSync(installed)
   for (const subpath of subpaths) {
     for (const [condition, file] of Object.entries(result.resolved[subpath])) {
       if (typeof file !== 'string') {
-        problems.push(`${subpath} (${condition}) does not resolve: ${file.error}`)
+        problems.push(
+          `${subpath} (${condition}) does not resolve: ${file.error}`
+        )
         continue
       }
       if (!fs.existsSync(file)) {
-        problems.push(`${subpath} (${condition}) resolves to a missing file: ${path.relative(realInstalled, file)}`)
+        problems.push(
+          `${subpath} (${condition}) resolves to a missing file: ${path.relative(realInstalled, file)}`
+        )
         continue
       }
       const relative = path.relative(realInstalled, fs.realpathSync(file))
       if (!relative.startsWith(`lib${path.sep}module${path.sep}`)) {
-        problems.push(`${subpath} (${condition}) resolved outside lib/module: ${relative}`)
+        problems.push(
+          `${subpath} (${condition}) resolved outside lib/module: ${relative}`
+        )
       }
     }
     const types = manifest.exports[subpath].types
     if (!types || !fs.existsSync(path.join(installed, types))) {
-      problems.push(`${subpath}: types target ${types} is missing from the tarball`)
+      problems.push(
+        `${subpath}: types target ${types} is missing from the tarball`
+      )
     }
   }
   for (const [subpath, name] of Object.entries(IMPORTABLE)) {
     if (result.imported[subpath] !== 'function') {
-      problems.push(`${subpath}: import() did not expose ${name} as a function (${result.imported[subpath]})`)
+      problems.push(
+        `${subpath}: import() did not expose ${name} as a function (${result.imported[subpath]})`
+      )
     }
   }
   for (const field of ['main', 'types']) {
     if (!fs.existsSync(path.join(installed, manifest[field]))) {
-      problems.push(`package.json ${field} (${manifest[field]}) is missing from the tarball`)
+      problems.push(
+        `package.json ${field} (${manifest[field]}) is missing from the tarball`
+      )
     }
   }
 
   if (problems.length > 0) {
-    console.error(`exports verification failed (${problems.length} problem(s)):`)
+    console.error(
+      `exports verification failed (${problems.length} problem(s)):`
+    )
     for (const problem of problems) {
       console.error(`  - ${problem}`)
     }

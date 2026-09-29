@@ -26,7 +26,6 @@ export type { Viewport } from '../specs/Viewport'
 
 import { NitroModules } from 'react-native-nitro-modules'
 import type { ClusterEngine } from '../specs/ClusterEngine.nitro'
-import type { Supercluster } from './Supercluster'
 
 /**
  * Create a standalone C++ cluster engine for headless use.

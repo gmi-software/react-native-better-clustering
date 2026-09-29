@@ -72,8 +72,7 @@ export type ClusterFeature<P = AnyProps> = PointFeature<ClusterProperties & P>
  * @see `Supercluster.getClusters`
  */
 export type PointOrClusterFeature<P = AnyProps> =
-  | PointFeature<P>
-  | ClusterFeature<P>
+  PointFeature<P> | ClusterFeature<P>
 
 /**
  * Alias for {@linkcode PointOrClusterFeature} used in compat callbacks.
