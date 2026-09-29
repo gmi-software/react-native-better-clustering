@@ -118,10 +118,10 @@ react-native-better-clustering/
 ## Pull Request Process
 
 1. Create a feature branch from `main`.
-2. Make your changes with clear, focused commits.
+2. Make your changes with clear, focused commits that follow [Conventional Commits](https://www.conventionalcommits.org/) (`feat:`, `fix:`, `docs:`, `ci:`, `chore:` …). A `commit-msg` hook installed by `bun install` checks each message with commitlint, and CI checks the commits of every pull request.
 3. Ensure lint, typecheck, and tests pass.
 4. Update documentation under `docs/` and `README.md` for any public API or setup changes.
-5. Open a pull request with a clear summary, test plan, and risk notes (see [AGENTS.md](AGENTS.md)).
+5. Open a pull request with a Conventional Commits title and a clear summary, test plan, and risk notes (see [AGENTS.md](AGENTS.md)). Pull requests are squash-merged, so the title becomes the commit on `main` and the entry in the release notes; CI lints it too.
 
 ## Releasing
 
