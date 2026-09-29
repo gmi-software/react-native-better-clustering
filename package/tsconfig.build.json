@@ -11,5 +11,5 @@
   // Tests are typechecked by tsconfig.json but must never reach lib/: they
   // import `bun:test`, which consumers do not have.
   "include": ["src"],
-  "exclude": ["src/**/*.test.ts", "src/**/*.test.tsx"]
+  "exclude": ["src/**/__tests__", "src/**/*.test.ts", "src/**/*.test.tsx"]
 }
