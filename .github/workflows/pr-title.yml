@@ -1,0 +1,48 @@
+name: PR title
+
+# Pull requests are squash-merged and the squash commit takes the PR title, so
+# the title — not the individual commits — is what reaches `main` and the
+# release notes. It is linted with the same commitlint config as the commits.
+#
+# Separate from ci.yml because it must also re-run when only the title is
+# edited, and an `edited` trigger there would re-run the whole gate.
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, edited, synchronize, reopened]
+
+concurrency:
+  group: pr-title-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  # The job id is the required status-check name.
+  pr-title:
+    # Grouped Dependabot titles can run past the 100-character header limit;
+    # their prefix is set in dependabot.yml, so there is nothing to lint.
+    if: github.actor != 'dependabot[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version-file: package.json
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Validate the pull request title
+        env:
+          # Passed through the environment, never interpolated into the script:
+          # the title is untrusted input.
+          PR_TITLE: ${{ github.event.pull_request.title }}
+        run: printf '%s\n' "$PR_TITLE" | bunx commitlint --verbose
