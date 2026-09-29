@@ -67,6 +67,12 @@ jobs:
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
+      # bun install already ran it through the package's `prepare` script; this
+      # makes a broken spec fail as its own step.
+      - name: Codegen
+        working-directory: package
+        run: bun run specs
+
       - name: Lint
         working-directory: package
         run: bun run lint-ci
