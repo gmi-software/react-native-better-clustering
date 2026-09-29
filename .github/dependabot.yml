@@ -1,0 +1,96 @@
+version: 2
+
+updates:
+  # The workflows pin every action by commit SHA, which never resolves to a newer
+  # release on its own. Without this, those pins silently rot.
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+    groups:
+      github-actions:
+        patterns:
+          - '*'
+    # Keep the subject conventional — the commitlint job runs on every pull
+    # request, Dependabot's included.
+    commit-message:
+      prefix: chore
+
+  # Bun is its own Dependabot ecosystem, not part of `npm`: it reads `bun.lock`.
+  # Version updates are supported; security updates are not, so Dependabot
+  # security alerts for these dependencies have to be acted on by hand.
+  - package-ecosystem: bun
+    # Only the root. `bun.lock` lives here, and a run from `/` already updates
+    # package/ and example/ through the workspaces. Listing those two as well
+    # opened a second copy of every bump without the lockfile, which fails
+    # `bun install --frozen-lockfile` in every job.
+    directory: /
+    schedule:
+      interval: monthly
+    # A dependency that matches several groups goes to the one whose pattern
+    # names it most exactly, so the catch-all groups keep `patterns: ['*']`.
+    # GitHub's options reference does not list `dependency-type` for bun, but
+    # Dependabot applies it with the npm rule: `dependencies` and
+    # `optionalDependencies` are production, everything else development.
+    groups:
+      # Reanimated refuses to pod install next to a Worklets minor it does not
+      # support, so the two only ever move together.
+      reanimated:
+        patterns:
+          - react-native-reanimated
+          - react-native-worklets
+      # The docs site. Its @docusaurus/* packages are pinned together through
+      # the root `overrides`, so they move as one reviewed bump.
+      docusaurus:
+        patterns:
+          - '@docusaurus/*'
+          - '@easyops-cn/docusaurus-search-local'
+      # Runtime dependencies. Only the example app has any; the library itself
+      # declares peers only.
+      example-app:
+        dependency-type: production
+        patterns:
+          - '*'
+      # Minor and patch updates should pass as they are. Majors usually need a
+      # config or code change, so they get a pull request of their own instead
+      # of failing all the others with them.
+      dev-dependencies:
+        dependency-type: development
+        update-types:
+          - minor
+          - patch
+        patterns:
+          - '*'
+      dev-dependencies-major:
+        dependency-type: development
+        update-types:
+          - major
+        patterns:
+          - '*'
+    ignore:
+      # React Native, React and Nitro are peer dependencies with native
+      # counterparts; upgrading them is a deliberate, tested change, never an
+      # automated bump.
+      - dependency-name: react
+      - dependency-name: react-native
+      - dependency-name: react-native-nitro-modules
+      - dependency-name: nitrogen
+      - dependency-name: react-native-maps
+      # A new major of an Expo package belongs to the next Expo SDK. Moving to
+      # it is an SDK upgrade (`npx expo install --fix`), not a single bump.
+      - dependency-name: expo
+        update-types: ['version-update:semver-major']
+      - dependency-name: 'expo-*'
+        update-types: ['version-update:semver-major']
+      - dependency-name: '@expo/*'
+        update-types: ['version-update:semver-major']
+      - dependency-name: babel-preset-expo
+        update-types: ['version-update:semver-major']
+      # babel-preset-expo is built from Babel 7 plugins.
+      - dependency-name: '@babel/core'
+        update-types: ['version-update:semver-major']
+      # typescript-eslint refuses to run on TypeScript 7.
+      - dependency-name: typescript
+        versions: ['>=7.0.0']
+    commit-message:
+      prefix: chore

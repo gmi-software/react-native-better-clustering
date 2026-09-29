@@ -1,0 +1,142 @@
+name: 🐛 Bug Report
+description: Clusters or markers render or behave incorrectly at runtime
+labels: [bug]
+body:
+  - type: textarea
+    attributes:
+      label: What happened?
+      description: Explain what you were trying to do and what happened instead. Be as precise as possible — an issue that cannot be understood cannot be fixed.
+      placeholder: I render 2000 markers in the clustered MapView; after zooming in and out, a cluster shows the wrong count and pressing it zooms to the wrong area.
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Reproducible code
+      description: >
+        Share a small reproducible snippet — ideally the whole component.
+        Include the clustering props you set (`radius`, `maxZoom`, `minPoints`, `spiralEnabled`, `renderCluster` …), how the `<Marker>` children are created, and any `onClusterPress` / `onMarkersChange` / `onRegionChangeComplete` handlers.
+
+        **Redact secrets first.** Replace Google Maps API keys, tokens and any private configuration with placeholders — this issue is public.
+      render: tsx
+      placeholder: |
+        <MapView initialRegion={region} radius={56} maxZoom={20} onMarkersChange={setVisible}>
+          {points.map((p) => (
+            <Marker key={p.id} coordinate={{ latitude: p.lat, longitude: p.lng }} />
+          ))}
+        </MapView>
+    validations:
+      required: true
+  - type: input
+    attributes:
+      label: Number of markers
+      description: Roughly how many points are clustered, and whether several share the same coordinate.
+      placeholder: ex. ~2,000, about 10 at the same address
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Relevant log output
+      description: >
+        Paste any relevant **JS or native log output** here. This is automatically formatted as code, so no backticks are needed.
+
+        * For iOS, run the app from Xcode and copy the console output.
+
+        * For Android, use the Android Studio Logcat window or run `adb logcat` in a terminal.
+
+        **Redact secrets first.** Strip API keys, tokens and credentials from the logs before pasting.
+      render: shell
+    validations:
+      required: false
+  - type: dropdown
+    attributes:
+      label: Map provider
+      description: Which react-native-maps provider does this happen with? Select every provider you reproduced it on.
+      multiple: true
+      options:
+        - apple (default on iOS)
+        - google
+    validations:
+      required: true
+  - type: dropdown
+    attributes:
+      label: Platforms
+      description: Select every platform you reproduced this on.
+      multiple: true
+      options:
+        - iOS
+        - Android
+    validations:
+      required: true
+  - type: input
+    attributes:
+      label: Device
+      description: >
+        Which device shows the problem? Give the full name plus the OS version, and say whether it is a simulator/emulator or a physical device.
+        If you tested several, list them comma separated.
+      placeholder: ex. iPhone 15 Pro (iOS 18.2, simulator), Pixel 7 (Android 15, physical)
+    validations:
+      required: true
+  - type: input
+    attributes:
+      label: react-native-better-clustering version
+      placeholder: ex. 1.0.1
+    validations:
+      required: true
+  - type: input
+    attributes:
+      label: react-native-maps version
+      placeholder: ex. 1.27.2
+    validations:
+      required: true
+  - type: input
+    attributes:
+      label: React Native version
+      description: The New Architecture is required.
+      placeholder: ex. 0.85.3
+    validations:
+      required: true
+  - type: input
+    attributes:
+      label: react-native-reanimated and react-native-worklets versions
+      placeholder: ex. 4.3.1 / 0.8.3
+    validations:
+      required: true
+  - type: input
+    attributes:
+      label: react-native-nitro-modules version
+      placeholder: ex. 0.35.9
+    validations:
+      required: true
+  - type: input
+    attributes:
+      label: Expo SDK version
+      description: Leave empty if this is a bare React Native app.
+      placeholder: ex. 56.0.0
+    validations:
+      required: false
+  - type: dropdown
+    attributes:
+      label: Can you reproduce this in the example app?
+      description: >
+        Run the example app (`example/`, see [CONTRIBUTING.md](https://github.com/gmi-software/react-native-better-clustering/blob/main/CONTRIBUTING.md#running-the-example-app)) and check whether the problem shows up there too.
+        **Note:** an issue that does not reproduce in the example app and ships no reproduction is much harder to act on.
+      options:
+        - I didn't try (⚠️ your issue may take much longer to get looked at)
+        - Yes, I can reproduce it in the example app
+        - 'No, the example app works fine'
+      default: 0
+    validations:
+      required: true
+  - type: checkboxes
+    attributes:
+      label: Additional information
+      description: Please check all the boxes that apply
+      options:
+        - label: I am using Expo with a development build
+        - label: I am migrating from react-native-map-clustering
+        - label: I use a custom `renderCluster`
+        - label: I use `superClusterRef` or the `/hooks` / `/engine` APIs
+        - label: I checked [Troubleshooting](https://gmi-software.github.io/react-native-better-clustering/docs/troubleshooting/) and my issue is not listed there.
+          required: true
+        - label: I searched for [similar issues in this repository](https://github.com/gmi-software/react-native-better-clustering/issues) and found none.
+          required: true

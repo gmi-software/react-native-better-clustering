@@ -1,0 +1,40 @@
+name: ✨ Enhancement
+description: Request a feature or an enhancement to react-native-better-clustering
+labels: [enhancement]
+body:
+  - type: textarea
+    attributes:
+      label: Feature request / enhancement
+      description: Describe the feature in detail, and explain the motivation that led you to open this issue — what are you building, and what is blocked without it?
+      placeholder: I need clusters to be keyed by my own marker ids so selection survives zooming; today the selected cluster loses its highlight on every zoom level.
+    validations:
+      required: true
+  - type: dropdown
+    attributes:
+      label: Which part of the library?
+      multiple: true
+      options:
+        - MapView (drop-in react-native-map-clustering API)
+        - Hooks (`useClusterer`)
+        - Engine (`Supercluster`, `createClusterEngine`)
+        - Native / C++ engine
+        - Docs
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Are there any existing workarounds?
+      description: List anything you do today to work around the missing feature, so others reading this issue are not blocked by it.
+      placeholder: I keep my own map from cluster ids to marker ids in `onMarkersChange`, but it resets after every data update.
+    validations:
+      required: false
+  - type: checkboxes
+    attributes:
+      label: Additional information
+      description: Please check all the boxes that apply
+      options:
+        - label: I checked the [README](https://github.com/gmi-software/react-native-better-clustering#readme) and the [docs](https://gmi-software.github.io/react-native-better-clustering/docs/intro/) and this feature does not exist yet.
+          required: true
+        - label: I can open a pull request to implement this. (See [Contributing](https://github.com/gmi-software/react-native-better-clustering/blob/main/CONTRIBUTING.md))
+        - label: I searched for [similar issues in this repository](https://github.com/gmi-software/react-native-better-clustering/issues) and found none.
+          required: true
