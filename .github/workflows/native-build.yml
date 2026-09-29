@@ -1,0 +1,232 @@
+name: Native build
+
+# Compiles the library's native code (C++ engine, Nitro bindings, Android JNI
+# adapter) inside the Expo example app. Reusable: native.yml runs it on pull
+# requests and pushes that touch native inputs, and release.yml runs it with
+# `configuration: release` as the hard gate before publishing.
+#
+# Only the library targets are built — the pod scheme on iOS and the library
+# Gradle module on Android — not the whole example app.
+on:
+  workflow_call:
+    inputs:
+      configuration:
+        description: debug or release
+        type: string
+        default: debug
+
+jobs:
+  ios:
+    name: iOS (${{ inputs.configuration }})
+    # Pinned rather than macos-latest: a silent image jump should not be able to
+    # turn the release pipeline red.
+    runs-on: macos-26
+    timeout-minutes: 45
+    permissions:
+      contents: read
+    env:
+      # CocoaPods aborts with an Encoding::CompatibilityError when the locale is
+      # not UTF-8.
+      LANG: en_US.UTF-8
+      LC_ALL: en_US.UTF-8
+      EXPO_NO_TELEMETRY: '1'
+      XCODE_CONFIGURATION: ${{ inputs.configuration == 'release' && 'Release' || 'Debug' }}
+    steps:
+      - name: Validate inputs
+        env:
+          CONFIGURATION: ${{ inputs.configuration }}
+        run: |
+          case "$CONFIGURATION" in
+            debug|release) ;;
+            *) echo "::error::configuration must be debug or release, got '$CONFIGURATION'"; exit 1 ;;
+          esac
+
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version-file: package.json
+
+      - name: Restore the Bun cache
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.bun/install/cache
+          key: ${{ runner.os }}-${{ runner.arch }}-bun-${{ hashFiles('bun.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-${{ runner.arch }}-bun-
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      # The podspec `load`s nitrogen/generated/ios/NitroMapCluster+autolinking.rb,
+      # so the generated bindings must exist before pod install.
+      - name: Codegen
+        working-directory: package
+        run: bun run specs
+
+      - name: Restore the CocoaPods cache
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          # Only the content-addressed download cache. example/ios/Pods is never
+          # cached: a restored Pods project can reference another branch's
+          # sources, and a false green is worse than a slow run.
+          path: |
+            ~/Library/Caches/CocoaPods
+            ~/.cocoapods/repos
+          key: ${{ runner.os }}-${{ runner.arch }}-pods-${{ hashFiles('bun.lock', 'package/*.podspec', 'package/package.json', 'example/package.json', 'example/app.json') }}
+          restore-keys: |
+            ${{ runner.os }}-${{ runner.arch }}-pods-
+
+      # `--no-install` skips the JS install and pod install; pods are installed
+      # explicitly below. `--clean` discards any committed native project.
+      - name: Prebuild the example app
+        working-directory: example
+        run: bunx expo prebuild --platform ios --clean --no-install
+
+      # Must run from example/ios: the podspec calls install_modules_dependencies,
+      # which only exists inside a React Native app's Podfile.
+      - name: Install pods
+        working-directory: example/ios
+        run: pod install
+
+      - name: Verify the library scheme exists
+        run: |
+          # Pod schemes are created when Xcode first loads the project, which
+          # `-list` does; the scheme is always named explicitly afterwards.
+          schemes="$(xcodebuild -workspace example/ios/NitroMapClusterExample.xcworkspace -list)"
+          echo "$schemes"
+          if ! echo "$schemes" | grep -qE '^[[:space:]]*react-native-better-clustering$'; then
+            echo "::error::The react-native-better-clustering scheme is missing from the workspace."
+            exit 1
+          fi
+
+      - name: Compile the library
+        run: |
+          set -o pipefail
+          # ARCHS is pinned because a generic destination has no active arch, so
+          # ONLY_ACTIVE_ARCH=YES would otherwise build arm64 and x86_64.
+          NSUnbufferedIO=YES xcodebuild build \
+            -workspace example/ios/NitroMapClusterExample.xcworkspace \
+            -scheme react-native-better-clustering \
+            -configuration "$XCODE_CONFIGURATION" \
+            -destination 'generic/platform=iOS Simulator' \
+            -derivedDataPath "$RUNNER_TEMP/DerivedData" \
+            ARCHS=arm64 \
+            ONLY_ACTIVE_ARCH=NO \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            | xcbeautify --renderer github-actions
+
+  android:
+    name: Android (${{ inputs.configuration }})
+    # Pinned: the Android SDK and NDK contents differ between runner images.
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    env:
+      LANG: en_US.UTF-8
+      LC_ALL: en_US.UTF-8
+      EXPO_NO_TELEMETRY: '1'
+      # Debug builds only arm64 for speed; release also covers the 32-bit ABI,
+      # where size_t is 32 bits wide.
+      GRADLE_TASK: ${{ inputs.configuration == 'release' && 'assembleRelease' || 'assembleDebug' }}
+      GRADLE_ABIS: ${{ inputs.configuration == 'release' && 'arm64-v8a,armeabi-v7a' || 'arm64-v8a' }}
+    steps:
+      - name: Validate inputs
+        env:
+          CONFIGURATION: ${{ inputs.configuration }}
+        run: |
+          case "$CONFIGURATION" in
+            debug|release) ;;
+            *) echo "::error::configuration must be debug or release, got '$CONFIGURATION'"; exit 1 ;;
+          esac
+
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version-file: package.json
+
+      - name: Restore the Bun cache
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.bun/install/cache
+          key: ${{ runner.os }}-${{ runner.arch }}-bun-${{ hashFiles('bun.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-${{ runner.arch }}-bun-
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      # build.gradle applies ../nitrogen/generated/android/NitroMapCluster+autolinking.gradle
+      # and CMakeLists.txt includes the generated .cmake, so codegen comes first.
+      - name: Codegen
+        working-directory: package
+        run: bun run specs
+
+      # Also where the Gradle wrapper and settings.gradle come from.
+      - name: Prebuild the example app
+        working-directory: example
+        run: bunx expo prebuild --platform android --clean --no-install
+
+      # After the prebuild, so the wrapper properties the cache key hashes exist.
+      - name: Setup Java
+        uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: gradle
+          # The default glob would walk bun's symlinked node_modules.
+          cache-dependency-path: |
+            bun.lock
+            package/android/build.gradle
+            package/android/gradle.properties
+            example/android/gradle/wrapper/gradle-wrapper.properties
+          # Only pushes to main write a cache others can restore; pull request
+          # scopes are leaves and would only add eviction pressure.
+          cache-read-only: ${{ github.ref != 'refs/heads/main' }}
+
+      - name: Install the pinned NDK
+        run: |
+          # The runner ships a different NDK patch release. As a named step the
+          # download reads as a download rather than a hang inside Gradle; both
+          # failure paths are non-fatal because Gradle can install it itself.
+          ndk_version="$(sed -n 's/^NitroMapCluster_ndkVersion=//p' package/android/gradle.properties)"
+          if [ -z "$ndk_version" ]; then
+            echo "::warning::NitroMapCluster_ndkVersion is missing; leaving the NDK download to Gradle."
+            exit 0
+          fi
+          sdkmanager=''
+          for candidate in "$ANDROID_HOME"/cmdline-tools/latest/bin/sdkmanager \
+                           "$ANDROID_HOME"/cmdline-tools/*/bin/sdkmanager; do
+            if [ -x "$candidate" ]; then
+              sdkmanager="$candidate"
+              break
+            fi
+          done
+          if [ -z "$sdkmanager" ]; then
+            echo "::warning::sdkmanager not found; leaving the NDK download to Gradle."
+            exit 0
+          fi
+          echo "Installing NDK $ndk_version with $sdkmanager"
+          "$sdkmanager" --install "ndk;$ndk_version"
+
+      # The library module, not the app: this runs CMake too, so the C++ engine,
+      # cpp-adapter.cpp and the generated JNI bindings are compiled.
+      - name: Compile the library
+        working-directory: example/android
+        run: |
+          ./gradlew \
+            ":react-native-better-clustering:$GRADLE_TASK" \
+            "-PreactNativeArchitectures=$GRADLE_ABIS" \
+            --no-daemon --console=plain

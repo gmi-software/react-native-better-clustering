@@ -1,0 +1,66 @@
+name: Native
+
+# Thin trigger for the native compile jobs. They live in the reusable
+# native-build.yml so release.yml can gate publishing on exactly the same
+# definition; `paths:` filters have to sit on the triggering workflow.
+#
+# These checks are intentionally not required status checks: a required check
+# that a `paths:` filter skips stays pending forever and blocks the pull
+# request. release.yml is the hard gate.
+#
+# The two path lists are identical — GitHub Actions has no YAML anchors.
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/native.yml'
+      - '.github/workflows/native-build.yml'
+      - 'package/cpp/**'
+      - 'package/android/**'
+      - 'package/nitrogen/**'
+      - 'package/src/specs/**'
+      - 'package/*.podspec'
+      - 'package/nitro.json'
+      - 'package/package.json'
+      - 'package/react-native.config.js'
+      - 'example/app.json'
+      - 'example/package.json'
+      - 'bun.lock'
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/native.yml'
+      - '.github/workflows/native-build.yml'
+      - 'package/cpp/**'
+      - 'package/android/**'
+      - 'package/nitrogen/**'
+      - 'package/src/specs/**'
+      - 'package/*.podspec'
+      - 'package/nitro.json'
+      - 'package/package.json'
+      - 'package/react-native.config.js'
+      - 'example/app.json'
+      - 'example/package.json'
+      - 'bun.lock'
+  # On-demand run, e.g. to exercise the Release configuration without a release.
+  workflow_dispatch:
+    inputs:
+      configuration:
+        description: Build configuration
+        type: choice
+        options: [debug, release]
+        default: debug
+
+concurrency:
+  group: native-${{ github.event.pull_request.number || github.ref }}-${{ inputs.configuration || 'debug' }}
+  # Only on pull requests: cancelling on main would leave a merge without a
+  # native verdict.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  native:
+    permissions:
+      contents: read
+    uses: ./.github/workflows/native-build.yml
+    with:
+      configuration: ${{ inputs.configuration || 'debug' }}
