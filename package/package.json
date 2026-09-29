@@ -56,7 +56,6 @@
   },
   "files": [
     "src",
-    "react-native.config.js",
     "lib",
     "nitrogen",
     "android/build.gradle",
@@ -64,21 +63,19 @@
     "android/fix-prefab.gradle",
     "android/CMakeLists.txt",
     "android/src",
-    "cpp",
-    "ios/**/*.h",
-    "ios/**/*.m",
-    "ios/**/*.mm",
-    "ios/**/*.cpp",
-    "ios/**/*.cpp",
+    "cpp/*.hpp",
+    "cpp/*.cpp",
     "nitro.json",
     "*.podspec",
+    "react-native.config.js",
     "README.md",
     "!**/*.test.ts",
     "!**/*.test.tsx",
     "!**/*.test.js",
     "!**/*.test.d.ts",
     "!cpp/*.test.cpp",
-    "!cpp/cluster_test"
+    "!cpp/cluster_test",
+    "!cpp/cluster_bench"
   ],
   "scripts": {
     "build": "tsc",
@@ -93,8 +90,7 @@
     "test": "jest",
     "test:watch": "jest --watch",
     "test:ci": "jest --runInBand --ci",
-    "verify:build": "node scripts/verify-build.mjs",
-    "verify:pack": "npm pack --dry-run",
+    "verify:pack": "node scripts/verify-pack.mjs",
     "release": "release-it"
   },
   "keywords": [
