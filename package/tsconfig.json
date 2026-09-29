@@ -1,14 +1,9 @@
 {
   "include": [
-    "src"
-  ],
-  "exclude": [
-    "src/**/*.test.ts",
-    "src/**/*.test.tsx"
+    "src",
+    "test"
   ],
   "compilerOptions": {
-    "outDir": "lib/typescript",
-    "rootDir": "src",
     "allowUnreachableCode": false,
     "allowUnusedLabels": false,
     "esModuleInterop": true,
@@ -29,6 +24,9 @@
     "skipLibCheck": true,
     "strict": true,
     "target": "esnext",
-    "verbatimModuleSyntax": true
+    "verbatimModuleSyntax": true,
+    "types": [
+      "bun"
+    ]
   }
 }

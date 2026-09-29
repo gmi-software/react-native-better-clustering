@@ -1,3 +1,5 @@
+import { describe, expect, it } from 'bun:test'
+
 import type { MapRegion } from '../types'
 
 import {
@@ -84,7 +86,7 @@ describe('regionToBBox', () => {
       const bbox = regionToBBox(region)
 
       assertFiniteBBox(bbox)
-      expect(bbox).toEqual(WORLD_BBOX)
+      expect(bbox).toEqual([...WORLD_BBOX])
     }
   })
 })

@@ -101,7 +101,10 @@ react-native-better-clustering/
 
 ## Testing
 
-- Unit tests run with [Jest](https://jestjs.io): `cd package && bun run test`.
+- Unit tests run with [`bun test`](https://bun.sh/docs/cli/test): `cd package && bun run test` (each file in isolation), or a single file with `cd package && bun test src/utils/distance.test.ts`.
+- Tests import from `bun:test`. A DOM is provided by happy-dom (`package/test/setup.ts`, preloaded via `package/bunfig.toml`) for hooks and components rendered with `@testing-library/react`.
+- Mock external modules with `mock.module()` **before** importing the module under test, then import it with `await import()`: static imports are evaluated first. Module mocks are process-wide, so mock native/external boundaries (e.g. `react-native-nitro-modules`), not the library's own modules.
+- Test files are typechecked with the rest of the package (`bun run typecheck`).
 - The C++ clustering core has a standalone test:
   ```bash
   cd package/cpp

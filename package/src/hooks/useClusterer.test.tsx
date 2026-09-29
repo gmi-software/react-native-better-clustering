@@ -1,28 +1,37 @@
+import { describe, expect, it, jest, mock } from 'bun:test'
 import { renderHook } from '@testing-library/react'
 
 import type { PointFeature } from '../geojson'
 import type { MapRegion } from '../types'
 
-const mockDestroy = jest.fn()
-const mockGetClustersFromRegion = jest.fn(() => [])
+// Only the native boundary is mocked; the real Supercluster runs on top of it.
+// (Module mocks are process-wide in bun, so internal modules are not mocked.)
+mock.module('react-native-nitro-modules', () => ({
+  NitroModules: {
+    createHybridObject: () => {
+      const engine = {
+        isBuilt: false,
+        setOptions: () => {},
+        setPoints: () => {},
+        build: () => {
+          engine.isBuilt = true
+        },
+        buildAsync: () => {
+          engine.isBuilt = true
+          return Promise.resolve()
+        },
+        getClusters: () => [],
+        getChildren: () => [],
+        getLeaves: () => [],
+        getClusterExpansionZoom: () => 0,
+      }
+      return engine
+    },
+  },
+}))
 
-jest.mock('../engine/Supercluster', () => {
-  class MockSupercluster {
-    destroy = mockDestroy
-    getClustersFromRegion = mockGetClustersFromRegion
-    isLoaded = true
-    load() {
-      return this
-    }
-    loadAsync() {
-      return Promise.resolve(this)
-    }
-  }
-
-  return { Supercluster: MockSupercluster }
-})
-
-import { useClusterer } from './useClusterer'
+const { Supercluster } = await import('../engine/Supercluster')
+const { useClusterer } = await import('./useClusterer')
 
 const REGION: MapRegion = {
   latitude: 37.78,
@@ -47,22 +56,23 @@ const POINT_B: PointFeature = {
 
 describe('useClusterer cleanup', () => {
   it('destroys the previous engine on data change and on unmount', () => {
-    mockDestroy.mockClear()
-    mockGetClustersFromRegion.mockClear()
+    const destroy = jest.spyOn(Supercluster.prototype, 'destroy')
 
     const { rerender, unmount } = renderHook(
       ({ data }) => useClusterer(data, MAP_DIMENSIONS, REGION),
       { initialProps: { data: [POINT_A] } }
     )
 
-    expect(mockDestroy).not.toHaveBeenCalled()
+    expect(destroy).not.toHaveBeenCalled()
 
     rerender({ data: [POINT_B] })
 
-    expect(mockDestroy).toHaveBeenCalledTimes(1)
+    expect(destroy).toHaveBeenCalledTimes(1)
 
     unmount()
 
-    expect(mockDestroy).toHaveBeenCalledTimes(2)
+    expect(destroy).toHaveBeenCalledTimes(2)
+
+    destroy.mockRestore()
   })
 })

@@ -1,4 +1,14 @@
 import {
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  jest,
+  type Mock,
+} from 'bun:test'
+
+import {
   createThrottleRegionSyncState,
   flushThrottledRegionSync,
   scheduleThrottledRegionSync,
@@ -16,7 +26,7 @@ const region = (latitude: number): Region => ({
 describe('scheduleThrottledRegionSync', () => {
   let state: ThrottleRegionSyncState
   let now: number
-  let sync: jest.Mock<void, [Region]>
+  let sync: Mock<(region: Region) => void>
   let scheduled: Array<{ callback: () => void; delay: number }>
 
   beforeEach(() => {
@@ -26,14 +36,13 @@ describe('scheduleThrottledRegionSync', () => {
     sync = jest.fn()
     scheduled = []
 
-    jest.spyOn(global, 'setTimeout').mockImplementation((callback, delay) => {
-      const entry = {
-        callback: callback as () => void,
-        delay: delay as number,
-      }
-      scheduled.push(entry)
+    jest.spyOn(global, 'setTimeout').mockImplementation(((
+      callback: () => void,
+      delay?: number
+    ) => {
+      scheduled.push({ callback, delay: delay as number })
       return scheduled.length as unknown as ReturnType<typeof setTimeout>
-    })
+    }) as unknown as typeof setTimeout)
   })
 
   afterEach(() => {
@@ -70,10 +79,10 @@ describe('scheduleThrottledRegionSync', () => {
 
     expect(sync).not.toHaveBeenCalled()
     expect(scheduled).toHaveLength(1)
-    expect(scheduled[0].delay).toBe(90)
+    expect(scheduled[0]!.delay).toBe(90)
 
     now = 100
-    scheduled[0].callback()
+    scheduled[0]!.callback()
 
     expect(sync).toHaveBeenCalledTimes(1)
     expect(sync).toHaveBeenCalledWith(region(4))
@@ -109,8 +118,8 @@ describe('scheduleThrottledRegionSync', () => {
 describe('flushThrottledRegionSync', () => {
   let state: ThrottleRegionSyncState
   let now: number
-  let sync: jest.Mock<void, [Region]>
-  let clearSchedule: jest.Mock<void, [ReturnType<typeof setTimeout>]>
+  let sync: Mock<(region: Region) => void>
+  let clearSchedule: Mock<(timerId: ReturnType<typeof setTimeout>) => void>
 
   beforeEach(() => {
     state = createThrottleRegionSyncState()

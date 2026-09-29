@@ -62,7 +62,11 @@ export function scheduleThrottledRegionSync(
     return
   }
 
-  const schedule = deps.schedule ?? setTimeout
+  // Wrapped so the fallback has the same signature as `deps.schedule`;
+  // `setTimeout` itself is overloaded differently per runtime's typings.
+  const schedule =
+    deps.schedule ??
+    ((callback: () => void, delayMs: number) => setTimeout(callback, delayMs))
   const delay = deps.intervalMs - elapsed
 
   state.timerId = schedule(() => {

@@ -1,3 +1,5 @@
+import { describe, expect, it } from 'bun:test'
+
 import { computeClusterLayoutSignature } from './helpers'
 import type { ClusterFeature, PointFeature } from '../geojson/types'
 

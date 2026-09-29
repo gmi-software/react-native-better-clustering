@@ -1,4 +1,7 @@
+import { beforeEach, describe, expect, it, jest, mock } from 'bun:test'
+
 import type { PointFeature } from '../geojson'
+import type { EngineClusterNode } from '../specs/EngineClusterNode'
 
 const mockEngine = {
   setOptions: jest.fn(),
@@ -11,19 +14,20 @@ const mockEngine = {
     return Promise.resolve()
   }),
   isBuilt: false,
-  getClusters: jest.fn(() => []),
+  getClusters: jest.fn((): EngineClusterNode[] => []),
   getChildren: jest.fn(() => []),
   getLeaves: jest.fn(() => []),
   getClusterExpansionZoom: jest.fn(() => 10),
 }
 
-jest.mock('react-native-nitro-modules', () => ({
+// Registered before ./Supercluster is imported (below).
+mock.module('react-native-nitro-modules', () => ({
   NitroModules: {
     createHybridObject: jest.fn(() => mockEngine),
   },
 }))
 
-import { Supercluster } from './Supercluster'
+const { Supercluster } = await import('./Supercluster')
 
 const SAMPLE_POINT: PointFeature = {
   type: 'Feature',
