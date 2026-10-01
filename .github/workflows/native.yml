@@ -52,9 +52,10 @@ on:
         default: debug
 
 concurrency:
-  group: native-${{ github.event.pull_request.number || github.ref }}-${{ inputs.configuration || 'debug' }}
+  group: native-${{ github.event.pull_request.number || github.sha }}-${{ inputs.configuration || 'debug' }}
   # Only on pull requests: cancelling on main would leave a merge without a
-  # native verdict.
+  # native verdict. Outside pull requests the group is per commit, as a shared
+  # group would still let a newer pending run replace an older one.
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
