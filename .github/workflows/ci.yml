@@ -8,8 +8,10 @@ on:
 
 concurrency:
   # A superseded push to a pull request has nothing to add. Runs on main are
-  # never cancelled, so every merge keeps its own verdict.
-  group: ci-${{ github.event.pull_request.number || github.ref }}
+  # never cancelled and each commit gets its own group — a shared group would
+  # still let a newer pending run replace an older one — so every merge keeps
+  # its own verdict.
+  group: ci-${{ github.event.pull_request.number || github.sha }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 permissions:

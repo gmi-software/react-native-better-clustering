@@ -23,7 +23,9 @@ jobs:
   pr-title:
     # Grouped Dependabot titles can run past the 100-character header limit;
     # their prefix is set in dependabot.yml, so there is nothing to lint.
-    if: github.actor != 'dependabot[bot]'
+    # Keyed on the PR author, not github.actor: a maintainer editing a
+    # Dependabot PR becomes the actor, and the exemption must still hold.
+    if: github.event.pull_request.user.login != 'dependabot[bot]'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
