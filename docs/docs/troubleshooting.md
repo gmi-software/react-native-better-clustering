@@ -48,3 +48,36 @@ const geoJson = useMemo(
 
 Use `stabilizeClusterFeatures` from `/hooks`, memoize marker components, and
 ensure each point has a stable `id`.
+
+## Some markers never appear on the map
+
+Points whose `latitude` or `longitude` is not a finite number — `undefined`,
+`null`, or `NaN` — cannot be projected, so they are skipped when the index is
+built. This is common with data straight from an API, where a missing field
+turns into `undefined`.
+
+In development the library warns once per load with the count and the first few
+offending indices:
+
+```
+react-native-better-clustering: skipped 2 of 480 points with non-finite
+coordinates (index 17, 291). Check those points for undefined, null, or NaN
+latitude/longitude — they will not appear on the map.
+```
+
+Filter or repair those points before loading them:
+
+```tsx
+const usablePoints = useMemo(
+  () =>
+    points.filter(
+      (point) =>
+        Number.isFinite(point.latitude) && Number.isFinite(point.longitude)
+    ),
+  [points]
+)
+```
+
+Out-of-range values behave differently: a latitude beyond ±85.05 or a longitude
+beyond ±180 is **clamped** to the Web Mercator limits rather than skipped, so
+such a marker still renders — just at the edge of the projection.
