@@ -127,22 +127,4 @@ react-native-better-clustering/
 
 ## Releasing
 
-From `package/` after manual testing on iOS and Android:
-
-```bash
-bun run build
-bun run test:ci
-bun run release
-```
-
-This runs `release-it` (see `.release-it.json`): builds, tests, creates a git tag,
-GitHub release, and publishes to npm. Review `CHANGELOG.md` before releasing.
-
-### Manual test checklist (before first publish)
-
-- [ ] `cd example && bunx expo prebuild --clean`
-- [ ] `bunx expo run:ios` — RNBC tab renders 30k clustered markers; tap cluster zooms; pan/zoom is smooth
-- [ ] `bunx expo run:android` — same, with Google Maps key configured
-- [ ] Verify `cluster={false}` marker stays unclustered; `renderCluster` custom bubble shows
-- [ ] Confirm no `react-native-better-clustering:` errors in Metro logs
-- [ ] `cd package && bun run verify:pack` before `bun run release`
+Releases are cut by maintainers and published from CI with npm provenance — never from a developer machine. See [RELEASING.md](RELEASING.md).
