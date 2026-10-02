@@ -5,6 +5,7 @@
 #include <cassert>
 #include <cstdio>
 #include <cstring>
+#include <limits>
 #include <vector>
 
 using namespace margelo::nitro::nitromapcluster;
@@ -170,6 +171,107 @@ static void testPointIndexPreservesOriginalInputIndex() {
   assert(clusters.front().pointIndex == 1);
 }
 
+static void testClusterIdsSkipSurvivingPointIds() {
+  ClusterEngineCore engine;
+  ClusterEngineConfig config;
+  config.minPoints = 2;
+  config.minZoom = 0;
+  config.maxZoom = 16;
+  engine.setOptions(config);
+
+  // Point 0 is dropped for a non-finite latitude, so the surviving count (2) is
+  // smaller than the largest live point id (2). A cluster counter seeded from
+  // the count would hand out id 2 and overwrite point 2 in the node index.
+  std::vector<int32_t> ids = {0, 1, 2};
+  std::vector<double> lats = {std::numeric_limits<double>::quiet_NaN(), 52.0, 52.0001};
+  std::vector<double> lngs = {21.0, 21.0, 21.0001};
+  engine.setPoints(ids.data(), lats.data(), lngs.data(), ids.size());
+  engine.build();
+
+  const auto clusters = engine.getClusters({53.0, 51.0, 22.0, 20.0, 0.0});
+  assert(clusters.size() == 1);
+  const auto& cluster = clusters.front();
+  assert(cluster.isCluster);
+  assert(cluster.count == 2);
+  assert(cluster.id > 2);
+
+  // A cluster reporting point_count == n must yield n leaves.
+  const auto leaves = engine.getLeaves(cluster.id, 0, 0);
+  assert(leaves.size() == 2);
+  assert(engine.getChildren(cluster.id).size() == 2);
+
+  bool sawPoint1 = false;
+  bool sawPoint2 = false;
+  for (const auto& leaf : leaves) {
+    assert(!leaf.isCluster);
+    if (leaf.pointIndex == 1) sawPoint1 = true;
+    if (leaf.pointIndex == 2) sawPoint2 = true;
+  }
+  assert(sawPoint1 && sawPoint2);
+}
+
+static void testClusterIdsSkipSurvivingPointIdsFromBuffer() {
+  ClusterEngineCore engine;
+  ClusterEngineConfig config;
+  config.minPoints = 2;
+  config.minZoom = 0;
+  config.maxZoom = 16;
+  engine.setOptions(config);
+
+  // Same collision through the packPoints() v1 buffer, which is how a marker
+  // with an undefined latitude actually reaches C++.
+  const int32_t count = 3;
+  std::vector<uint8_t> buf;
+  auto pushU32 = [&](uint32_t v) {
+    for (int b = 0; b < 4; b++) buf.push_back(static_cast<uint8_t>((v >> (b * 8)) & 0xFF));
+  };
+  auto pushF64 = [&](double v) {
+    uint8_t tmp[8];
+    std::memcpy(tmp, &v, 8);
+    for (int b = 0; b < 8; b++) buf.push_back(tmp[b]);
+  };
+  pushU32(static_cast<uint32_t>(count));
+  const double lats[] = {std::numeric_limits<double>::quiet_NaN(), 52.0, 52.0001};
+  const double lngs[] = {21.0, 21.0, 21.0001};
+  for (int32_t i = 0; i < count; i++) {
+    pushU32(static_cast<uint32_t>(i));
+    pushF64(lats[i]);
+    pushF64(lngs[i]);
+  }
+
+  assert(engine.setPointsFromBuffer(buf.data(), buf.size()));
+  assert(engine.pointCount() == 2);
+  engine.build();
+
+  const auto clusters = engine.getClusters({53.0, 51.0, 22.0, 20.0, 0.0});
+  assert(clusters.size() == 1);
+  assert(clusters.front().count == 2);
+  assert(engine.getLeaves(clusters.front().id, 0, 0).size() == 2);
+}
+
+static void testClusterIdsSkipSparsePointIds() {
+  ClusterEngineCore engine;
+  ClusterEngineConfig config;
+  config.minPoints = 2;
+  config.minZoom = 0;
+  config.maxZoom = 16;
+  engine.setOptions(config);
+
+  // Caller-supplied ids need not be dense: {2, 3} would collide with a counter
+  // seeded from the point count even though nothing was dropped.
+  std::vector<int32_t> ids = {2, 3};
+  std::vector<double> lats = {52.0, 52.0001};
+  std::vector<double> lngs = {21.0, 21.0001};
+  engine.setPoints(ids.data(), lats.data(), lngs.data(), ids.size());
+  engine.build();
+
+  const auto clusters = engine.getClusters({53.0, 51.0, 22.0, 20.0, 0.0});
+  assert(clusters.size() == 1);
+  assert(clusters.front().count == 2);
+  assert(clusters.front().id > 3);
+  assert(engine.getLeaves(clusters.front().id, 0, 0).size() == 2);
+}
+
 static void testGetLeavesUnlimited() {
   ClusterEngineCore engine;
   ClusterEngineConfig config;
@@ -239,6 +341,9 @@ int main() {
   testPropertyAggregationSumMinMax();
   testBufferV2Aggregation();
   testPointIndexPreservesOriginalInputIndex();
+  testClusterIdsSkipSurvivingPointIds();
+  testClusterIdsSkipSurvivingPointIdsFromBuffer();
+  testClusterIdsSkipSparsePointIds();
   testGetLeavesUnlimited();
   testInvalidBufferRejected();
   testMemorySizeReflectsNativeAllocations();
