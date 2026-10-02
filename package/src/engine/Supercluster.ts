@@ -119,6 +119,28 @@ export class Supercluster<P extends AnyProps = AnyProps> {
   }
 
   /**
+   * Swaps the point features that queries return for an array with the same
+   * coordinates in the same order, without rebuilding the native index.
+   *
+   * @internal `useClusterer` calls this when only properties the engine never
+   * sees changed, so leaves carry the latest properties. The caller guarantees
+   * the coordinates match; only the length is checked here.
+   * @throws When the instance was destroyed or has not been loaded.
+   * @throws When `points` has a different length than the loaded features.
+   */
+  replaceLoadedFeatures(points: PointFeature<P>[]): void {
+    this.throwIfNotInitialized()
+
+    if (points.length !== this.loadedFeatures.length) {
+      throw new Error(
+        'react-native-better-clustering: replaceLoadedFeatures() needs as many points as were loaded.'
+      )
+    }
+
+    this.loadedFeatures = points
+  }
+
+  /**
    * Releases native resources held by this instance.
    *
    * Idempotent — safe to call multiple times. Further queries throw.

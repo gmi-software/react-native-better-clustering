@@ -33,7 +33,7 @@ Maps visible clustered features to React elements via `renderItem`.
 
 | Prop | Type | Description |
 |------|------|-------------|
-| `data` | `PointFeature[]` | Points to cluster (memoize with `useMemo`) |
+| `data` | `PointFeature[]` | Points to cluster (memoize with `useMemo`; the index rebuilds only when coordinates change) |
 | `region` | `MapRegion` | Current map region |
 | `mapDimensions` | `{ width, height }` | Map size in pixels |
 | `options` | `SuperclusterOptions` | Optional clustering options |

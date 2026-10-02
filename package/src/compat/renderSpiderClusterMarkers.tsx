@@ -1,13 +1,16 @@
 import React, { type ReactNode } from 'react'
-import type { ClusterFeature } from '../geojson/types'
+import type { ClusterFeature, PointFeature } from '../geojson/types'
 import type { Supercluster } from '../engine/Supercluster'
 import SpiderMarker from './SpiderMarker'
 import { isMarker } from './helpers'
 import { generateSpiral } from './spiral'
 
+/**
+ * @param markerFor - Resolves a leaf to the `Marker` child it renders as.
+ */
 export function renderSpiderClusterMarkers(
   cluster: ClusterFeature,
-  propsChildren: ReactNode[],
+  markerFor: (leaf: PointFeature) => ReactNode,
   supercluster: Supercluster,
   spiderLineColor: string
 ): React.ReactElement[] {
@@ -15,10 +18,13 @@ export function renderSpiderClusterMarkers(
   const leaves = supercluster.getAllLeaves(clusterId)
   const [longitude, latitude] = cluster.geometry.coordinates
   const positions = generateSpiral({ latitude, longitude }, leaves, 0)
+  const leafByIndex = new Map(
+    leaves.map((leaf) => [leaf.properties.index, leaf])
+  )
 
   return positions.flatMap((position) => {
-    const child =
-      typeof position.index === 'number' ? propsChildren[position.index] : null
+    const leaf = leafByIndex.get(position.index)
+    const child = leaf == null ? null : markerFor(leaf)
 
     if (!isMarker(child)) {
       return []

@@ -65,11 +65,15 @@ export const harnessControls: HarnessControls = {
 }
 
 export interface MountEvent {
-  type: 'mount' | 'unmount'
+  /**
+   * `retarget`: a mounted user marker re-rendered as a different point (React
+   * reused its instance under a shifted key); `id` reads `from->to`.
+   */
+  type: 'mount' | 'unmount' | 'retarget'
   id: string
 }
 
-/** Every Marker mount and unmount, in order. */
+/** Every Marker mount, unmount and retarget, in order. */
 export const mountLog: MountEvent[] = []
 
 export interface MapMockProps {
@@ -197,6 +201,12 @@ export function Marker(props: MarkerMockProps) {
       mountLog.push({ type: 'unmount', id })
     }
   }, [id])
+  const { testID } = props
+  useEffect(() => {
+    if (testID != null && testID !== id) {
+      mountLog.push({ type: 'retarget', id: `${id}->${testID}` })
+    }
+  }, [id, testID])
 
   const { onPress } = props
   return createElement(
@@ -374,5 +384,12 @@ export function unmountsSince(start: number): string[] {
   return mountLog
     .slice(start)
     .filter((event) => event.type === 'unmount')
+    .map((event) => event.id)
+}
+
+export function retargetsSince(start: number): string[] {
+  return mountLog
+    .slice(start)
+    .filter((event) => event.type === 'retarget')
     .map((event) => event.id)
 }

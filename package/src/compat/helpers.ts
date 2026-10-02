@@ -33,6 +33,12 @@ export type MarkerFeatureProperties = Record<string, unknown> & {
   index: number
 }
 
+/** The `Marker` element each marker-derived feature was created from. */
+const markerElements = new WeakMap<
+  PointFeature,
+  React.ReactElement<MarkerLikeProps>
+>()
+
 /**
  * Converts a `Marker` child into a GeoJSON point for the cluster engine.
  *
@@ -52,7 +58,7 @@ export function markerToGeoJSONFeature(
     index,
   }
 
-  return {
+  const feature: PointFeature<MarkerFeatureProperties> = {
     type: 'Feature',
     geometry: {
       type: 'Point',
@@ -60,6 +66,21 @@ export function markerToGeoJSONFeature(
     },
     properties,
   }
+  markerElements.set(feature, marker)
+  return feature
+}
+
+/**
+ * The `Marker` element a feature was created from by
+ * {@linkcode markerToGeoJSONFeature}, or `undefined` for any other feature.
+ *
+ * Lets features from a previous children array render their own element
+ * while the index for the current children is still building.
+ */
+export function markerElementOf(
+  feature: PointFeature
+): React.ReactElement<MarkerLikeProps> | undefined {
+  return markerElements.get(feature)
 }
 
 /**
