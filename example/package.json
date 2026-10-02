@@ -24,8 +24,8 @@
   "devDependencies": {
     "@babel/core": "^7.25.0",
     "@types/react": "^19.2.15",
-    "babel-preset-expo": "~56.0.15",
-    "metro-resolver": "0.84.4",
+    "babel-preset-expo": "~56.0.20",
+    "metro-resolver": "0.87.1",
     "typescript": "^6.0.3"
   }
 }
