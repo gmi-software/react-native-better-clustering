@@ -251,6 +251,31 @@ describe('Supercluster coordinate validation', () => {
 
     expect(features).toEqual([firstValid, secondValid])
   })
+
+  it('skips the same points when swapping in newer features', () => {
+    mockEngine.getClusters.mockReturnValueOnce([
+      {
+        id: 0,
+        latitude: 37.78,
+        longitude: -122.42,
+        count: 1,
+        isCluster: false,
+        parentId: -1,
+        pointIndex: 0,
+        values: [],
+      },
+    ])
+    const clusterer = new Supercluster().load([nonFinitePoint, firstValid])
+    const newerFirst: PointFeature = {
+      ...firstValid,
+      properties: { id: 'first', selected: true },
+    }
+
+    clusterer.replaceLoadedFeatures([{ ...nonFinitePoint }, newerFirst])
+    const [feature] = clusterer.getClusters([...WORLD_BBOX], 10)
+
+    expect(feature).toBe(newerFirst)
+  })
 })
 
 describe('Supercluster.getAllLeaves', () => {
