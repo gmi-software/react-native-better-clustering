@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="generator" content="Docusaurus v3.9.2">
 <title data-rh="true">Hooks | React Native Better Clustering</title><meta data-rh="true" name="viewport" content="width=device-width,initial-scale=1"><meta data-rh="true" name="twitter:card" content="summary_large_image"><meta data-rh="true" property="og:url" content="https://gmi-software.github.io/react-native-better-clustering/docs/api/hooks"><meta data-rh="true" property="og:locale" content="en"><meta data-rh="true" name="docusaurus_locale" content="en"><meta data-rh="true" name="docsearch:language" content="en"><meta data-rh="true" name="docusaurus_version" content="current"><meta data-rh="true" name="docusaurus_tag" content="docs-default-current"><meta data-rh="true" name="docsearch:version" content="current"><meta data-rh="true" name="docsearch:docusaurus_tag" content="docs-default-current"><meta data-rh="true" property="og:title" content="Hooks | React Native Better Clustering"><meta data-rh="true" name="description" content="Use these when you render your own react-native-maps MapView and only need"><meta data-rh="true" property="og:description" content="Use these when you render your own react-native-maps MapView and only need"><link data-rh="true" rel="icon" href="/react-native-better-clustering/img/favicon.svg"><link data-rh="true" rel="canonical" href="https://gmi-software.github.io/react-native-better-clustering/docs/api/hooks"><link data-rh="true" rel="alternate" href="https://gmi-software.github.io/react-native-better-clustering/docs/api/hooks" hreflang="en"><link data-rh="true" rel="alternate" href="https://gmi-software.github.io/react-native-better-clustering/docs/api/hooks" hreflang="x-default"><script data-rh="true" type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"API Reference","item":"https://gmi-software.github.io/react-native-better-clustering/docs/api/mapview"},{"@type":"ListItem","position":2,"name":"Hooks","item":"https://gmi-software.github.io/react-native-better-clustering/docs/api/hooks"}]}</script><link rel="stylesheet" href="/react-native-better-clustering/assets/css/styles.e4ef878d.css">
-<script src="/react-native-better-clustering/assets/js/runtime~main.b862e86b.js" defer="defer"></script>
+<script src="/react-native-better-clustering/assets/js/runtime~main.5470cc9b.js" defer="defer"></script>
 <script src="/react-native-better-clustering/assets/js/main.c41d2e0f.js" defer="defer"></script>
 </head>
 <body class="navigation-with-keyboard">
@@ -25,11 +25,25 @@ point or cluster features to render as markers.</p>
 <p>Cluster features include <code>properties.getExpansionRegion()</code> for zoom-on-tap.</p>
 <p>The hook destroys the underlying <code>Supercluster</code> engine on unmount. Index
 building runs asynchronously via <code>loadAsync()</code> so large datasets (10k+ points)
-do not block the JS thread. Clusters stay empty until loading finishes; check
-<code>supercluster.isLoaded</code> before calling query methods directly.</p>
+do not block the JS thread. Clusters stay empty until the first build has
+loaded; check <code>supercluster.isLoaded</code> before calling query methods directly.</p>
+<p>The index is rebuilt only when the points&#x27; coordinates, their order, or a
+<code>clusterProperties</code> source value changes:</p>
+<ul>
+<li class="">A new <code>data</code> array with the same content keeps the index and the returned
+<code>features</code> array. Leaf queries (<code>getLeaves</code>, <code>getChildren</code>) return the newest
+feature objects, so changed properties show up there without a rebuild.
+Point features already in <code>features</code> keep their identity until the region
+changes.</li>
+<li class="">When the content does change, the hook keeps returning the previous clusters
+while the new index builds, then swaps to the new engine and destroys the old
+one. A <code>supercluster</code> reference you hold goes stale after that swap; use the
+one the hook returns.</li>
+</ul>
 <blockquote>
 <p><strong>Memoize <code>data</code>:</strong> build GeoJSON features with <code>coordsToGeoJSONFeature</code> inside
-<code>useMemo</code>. Inline arrays rebuild the full C++ index on every render.</p>
+<code>useMemo</code>. Inline arrays no longer rebuild the C++ index, but each render
+still compares every point against the previous array.</p>
 </blockquote>
 <h2 class="anchor anchorTargetStickyNavbar_lz6K" id="stabilizeclusterfeatures"><code>stabilizeClusterFeatures</code><a href="#stabilizeclusterfeatures" class="hash-link" aria-label="Direct link to stabilizeclusterfeatures" title="Direct link to stabilizeclusterfeatures" translate="no">​</a></h2>
 <p>Helper to keep cluster identity stable across region updates, reducing flicker
