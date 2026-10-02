@@ -81,6 +81,10 @@ jobs:
         working-directory: package
         run: bun run typecheck
 
+      - name: Build
+        working-directory: package
+        run: bun run build
+
       - name: Test
         working-directory: package
         run: bun run test:ci
@@ -90,6 +94,12 @@ jobs:
       - name: Verify package contents
         working-directory: package
         run: bun run verify:pack
+
+      # Every exports subpath must resolve from the packed tarball under both
+      # the require and import conditions.
+      - name: Verify package exports
+        working-directory: package
+        run: bun run verify:exports
 
   cpp:
     runs-on: ubuntu-latest

@@ -12,47 +12,54 @@
   "bugs": {
     "url": "https://github.com/gmi-software/react-native-better-clustering/issues"
   },
-  "main": "lib/index",
-  "module": "lib/index",
-  "types": "lib/index.d.ts",
-  "react-native": "src/index",
-  "source": "src/index",
+  "main": "./lib/module/index.js",
+  "types": "./lib/typescript/index.d.ts",
+  "react-native": "./src/index.ts",
+  "source": "./src/index.ts",
   "exports": {
     ".": {
+      "types": "./lib/typescript/index.d.ts",
       "react-native": "./src/index.ts",
-      "types": "./lib/index.d.ts",
-      "default": "./lib/index.js"
+      "import": "./lib/module/index.js",
+      "default": "./lib/module/index.js"
     },
     "./utils": {
+      "types": "./lib/typescript/utils/index.d.ts",
       "react-native": "./src/utils/index.ts",
-      "types": "./lib/utils/index.d.ts",
-      "default": "./lib/utils/index.js"
+      "import": "./lib/module/utils/index.js",
+      "default": "./lib/module/utils/index.js"
     },
     "./engine": {
+      "types": "./lib/typescript/engine/index.d.ts",
       "react-native": "./src/engine/index.ts",
-      "types": "./lib/engine/index.d.ts",
-      "default": "./lib/engine/index.js"
+      "import": "./lib/module/engine/index.js",
+      "default": "./lib/module/engine/index.js"
     },
     "./geojson": {
+      "types": "./lib/typescript/geojson/index.d.ts",
       "react-native": "./src/geojson/index.ts",
-      "types": "./lib/geojson/index.d.ts",
-      "default": "./lib/geojson/index.js"
+      "import": "./lib/module/geojson/index.js",
+      "default": "./lib/module/geojson/index.js"
     },
     "./hooks": {
+      "types": "./lib/typescript/hooks/index.d.ts",
       "react-native": "./src/hooks/index.ts",
-      "types": "./lib/hooks/index.d.ts",
-      "default": "./lib/hooks/index.js"
+      "import": "./lib/module/hooks/index.js",
+      "default": "./lib/module/hooks/index.js"
     },
     "./compat": {
+      "types": "./lib/typescript/compat/index.d.ts",
       "react-native": "./src/compat/index.ts",
-      "types": "./lib/compat/index.d.ts",
-      "default": "./lib/compat/index.js"
+      "import": "./lib/module/compat/index.js",
+      "default": "./lib/module/compat/index.js"
     },
     "./clusterer": {
+      "types": "./lib/typescript/clusterer/index.d.ts",
       "react-native": "./src/clusterer/index.ts",
-      "types": "./lib/clusterer/index.d.ts",
-      "default": "./lib/clusterer/index.js"
-    }
+      "import": "./lib/module/clusterer/index.js",
+      "default": "./lib/module/clusterer/index.js"
+    },
+    "./package.json": "./package.json"
   },
   "files": [
     "src",
@@ -78,9 +85,9 @@
     "!cpp/cluster_bench"
   ],
   "scripts": {
-    "build": "tsc",
-    "prepare": "bun run specs && tsc",
-    "prepack": "bun run specs && cp ../README.md ./README.md && tsc",
+    "build": "bob build",
+    "prepare": "bun run specs && bob build",
+    "prepack": "bun run specs && cp ../README.md ./README.md && bob build",
     "postpack": "rm ./README.md",
     "typecheck": "tsc --noEmit",
     "clean": "rm -rf android/build node_modules/**/android/build lib",
@@ -91,7 +98,8 @@
     "test:watch": "jest --watch",
     "test:ci": "jest --runInBand --ci",
     "verify:pack": "node scripts/verify-pack.mjs",
-    "release": "release-it"
+    "release": "release-it",
+    "verify:exports": "node scripts/verify-exports.mjs"
   },
   "keywords": [
     "react-native",
@@ -125,6 +133,7 @@
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "react-native": "0.85.3",
+    "react-native-builder-bob": "^0.43.1",
     "react-native-maps": "^1.26.0",
     "react-native-nitro-modules": "0.35.9",
     "react-native-reanimated": "^4.5.0",
@@ -152,5 +161,24 @@
     "trailingComma": "es5",
     "useTabs": false,
     "semi": false
+  },
+  "react-native-builder-bob": {
+    "source": "src",
+    "output": "lib",
+    "exclude": "**/{__tests__/**,__fixtures__/**,__mocks__/**,*.test.ts,*.test.tsx}",
+    "targets": [
+      [
+        "module",
+        {
+          "esm": true
+        }
+      ],
+      [
+        "typescript",
+        {
+          "project": "tsconfig.build.json"
+        }
+      ]
+    ]
   }
 }
