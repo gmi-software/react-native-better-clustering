@@ -211,7 +211,7 @@ public:
     _clustersByZoom.clear();
     _nodeById.clear();
     _childrenByParent.clear();
-    _nextClusterId = static_cast<int32_t>(_points.size());
+    _nextClusterId = firstFreeClusterId();
 
     if (_points.empty()) {
       _built = true;
@@ -647,6 +647,17 @@ private:
     }
     resetDerivedState();
     return true;
+  }
+
+  // `_nodeById` keys points and clusters alike, so the cluster counter must
+  // start above every surviving point id. `_points.size()` is smaller than that
+  // as soon as ingestion drops a point for a non-finite coordinate.
+  int32_t firstFreeClusterId() const {
+    int32_t maxPointId = -1;
+    for (const auto& point : _points) {
+      maxPointId = std::max(maxPointId, point.id);
+    }
+    return maxPointId + 1;
   }
 
   void linkChild(int32_t parentId, int32_t childId) {
