@@ -2,6 +2,7 @@
   "name": "monorepo",
   "private": true,
   "version": "1.0.0",
+  "packageManager": "bun@1.3.14",
   "workspaces": [
     "package",
     "example",
@@ -15,7 +16,9 @@
     "ios": "cd example && expo run:ios",
     "start": "cd example && expo start --dev-client",
     "docs:start": "cd docs && bun run start",
-    "docs:build": "cd docs && bun run build"
+    "docs:build": "cd docs && bun run build",
+    "commitlint": "commitlint",
+    "prepare": "husky"
   },
   "dependencies": {
     "expo": "~56.0.12",
@@ -36,7 +39,10 @@
     "@docusaurus/utils-validation": "3.9.2"
   },
   "devDependencies": {
+    "@commitlint/cli": "^21.2.3",
+    "@commitlint/config-conventional": "^21.2.3",
     "@types/react": "~19.2.14",
+    "husky": "^9.1.7",
     "typescript": "~6.0.3"
   }
 }

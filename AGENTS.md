@@ -37,6 +37,7 @@ A single `bun install` at the root installs every workspace (`package`, `example
 ## Change guidelines
 
 - Keep PRs small and scoped to one objective.
+- Use [Conventional Commits](https://www.conventionalcommits.org/) for every commit **and** the PR title (PRs are squash-merged, so the title lands on `main`). commitlint enforces this through the husky `commit-msg` hook and the `commitlint` / `pr-title` CI checks.
 - If you change public APIs, update `README.md` and any types.
 - **Docs (`docs/`)**: When you add, change, or remove public API, setup steps, or user-facing behavior, create, update, or delete the relevant pages under `docs/docs/` so the Docusaurus docs stay in sync. All docs content is in English.
 - If you touch native code, validate both iOS and Android paths.
