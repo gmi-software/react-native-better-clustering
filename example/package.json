@@ -10,14 +10,14 @@
     "prebuild": "expo prebuild --clean"
   },
   "dependencies": {
-    "react-native-better-clustering": "*",
+    "react-native-better-clustering": "workspace:*",
     "expo": "~56.0.12",
     "expo-dev-client": "~56.0.20",
     "expo-status-bar": "~56.0.4",
     "react": "19.2.3",
     "react-native": "0.85.3",
     "react-native-maps": "^1.26.0",
-    "react-native-nitro-modules": "*",
+    "react-native-nitro-modules": "0.35.9",
     "react-native-reanimated": "^4.5.0",
     "react-native-worklets": "^0.10.0"
   },
