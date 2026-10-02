@@ -84,6 +84,7 @@ are supported, plus:
 | `onClusterPress` | `(cluster, markers) => void` | Fired when a cluster is tapped |
 | `onMarkersChange` | `(markers) => void` | Fired when visible markers/clusters change: once the first index has loaded, then only when the visible set changes. A re-render with the same marker coordinates does not fire it, so `onMarkersChange={setState}` is safe |
 | `onRegionChangeComplete` | `(region, details, markers) => void` | Extends the maps callback with current markers |
+| `onError` | `(error) => void` | Fired when the native cluster index fails to build, for example because the app was not rebuilt after installing the library. Markers from an earlier successful build keep showing. Without it, the error is thrown during render so an error boundary (and LogBox in development) shows it — see [Troubleshooting](../troubleshooting.md#the-native-clusterengine-module-is-not-available) |
 
 ## Per-marker opt-out
 

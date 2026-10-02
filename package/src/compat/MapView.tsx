@@ -31,10 +31,11 @@ import type {
   PointFeature,
 } from '../geojson/types'
 import { isClusterFeature } from '../geojson'
-import { Supercluster, type SuperclusterOptions } from '../engine/Supercluster'
+import { Supercluster } from '../engine/Supercluster'
 import { DEFAULT_MAX_ZOOM, DEFAULT_MIN_ZOOM } from '../engine/defaults'
 import { clusterZoomFromRegion } from '../engine/geometry'
 import { useClusterIndex } from '../hooks/useClusterIndex'
+import type { UseClustererOptions } from '../hooks/types'
 import ClusterMarker from './ClusterMarker'
 import {
   computeClusterLayoutSignature,
@@ -154,6 +155,15 @@ export interface ClusteredMapViewProps extends Omit<
   ) => void
   /** Called whenever visible markers/clusters change. */
   onMarkersChange?: (markers: Array<PointFeature | ClusterFeature>) => void
+  /**
+   * Called when the native cluster index fails to build, for example because
+   * the app was not rebuilt after installing the library. Markers from an
+   * earlier successful build keep showing.
+   *
+   * Without it, the error is thrown during render, so the nearest error
+   * boundary (and LogBox in development) shows it.
+   */
+  onError?: (error: Error) => void
   /** When `true`, cluster press does not auto-zoom (caller handles expansion). */
   preserveClusterPressBehavior?: boolean
   /** Toggle clustering without unmounting the map. @default `true` */
@@ -256,6 +266,7 @@ const CompatMapView = forwardRef(function CompatMapView(
     onClusterPress = noop,
     onRegionChangeComplete = noop,
     onMarkersChange = noop,
+    onError,
     preserveClusterPressBehavior = false,
     clusteringEnabled = true,
     clusterColor = '#0F52FF',
@@ -366,7 +377,7 @@ const CompatMapView = forwardRef(function CompatMapView(
     onMapReady?.()
   }, [onMapReady])
 
-  const clustererOptions = useMemo<SuperclusterOptions>(
+  const clustererOptions = useMemo<UseClustererOptions>(
     () => ({
       radius,
       maxZoom,
@@ -374,8 +385,9 @@ const CompatMapView = forwardRef(function CompatMapView(
       minPoints,
       extent,
       nodeSize,
+      onError,
     }),
-    [radius, maxZoom, minZoom, minPoints, extent, nodeSize]
+    [radius, maxZoom, minZoom, minPoints, extent, nodeSize, onError]
   )
 
   const { clusters, supercluster, isCurrent } = useClusterIndex(
