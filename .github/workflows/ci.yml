@@ -85,6 +85,12 @@ jobs:
         working-directory: package
         run: bun run test:ci
 
+      # Fails on binaries, benchmarks, tests or files defining main() in the
+      # tarball, and on missing build output, generated bindings or README.
+      - name: Verify package contents
+        working-directory: package
+        run: bun run verify:pack
+
   cpp:
     runs-on: ubuntu-latest
     timeout-minutes: 10

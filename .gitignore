@@ -90,6 +90,7 @@ project.xcworkspace/
 # C++ local binaries
 package/cpp/cluster_test
 package/cpp/cluster_bench
+package/bench/cluster_bench
 
 # npm pack artifacts
 *.tgz

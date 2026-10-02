@@ -1,3 +1,6 @@
+// Micro-benchmark for the C++ clustering core. Not part of the npm package or
+// any app build. From package/bench:
+//   c++ -std=c++20 -O2 -DNDEBUG -I../cpp bench.cpp -o cluster_bench && ./cluster_bench
 #include "ClusterEngineCore.hpp"
 #include <chrono>
 #include <cstdio>

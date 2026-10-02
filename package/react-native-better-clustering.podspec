@@ -14,14 +14,19 @@ Pod::Spec.new do |s|
   s.license      = package["license"]
   s.authors      = package["author"]
 
-  s.platforms    = { :ios => min_ios_version_supported, :visionos => 1.0 }
-  s.source       = { :git => "https://github.com/gmi-software/react-native-better-clustering.git", :tag => "#{s.version}" }
+  s.platforms    = { :ios => min_ios_version_supported }
+  # Release tags are `v`-prefixed (release-it tagName `v${version}`).
+  s.source       = { :git => "https://github.com/gmi-software/react-native-better-clustering.git", :tag => "v#{s.version}" }
 
+  # Listed explicitly rather than globbed, so tests, benchmarks or any other
+  # file dropped into cpp/ can never be compiled into consumer apps (a glob
+  # once shipped a bench with its own `int main()`). Keep in sync with
+  # android/CMakeLists.txt.
   s.source_files = [
-    # Autolinking/Registration (Objective-C++)
-    "ios/**/*.{m,mm}",
-    # Implementation (C++ objects)
-    "cpp/**/*.{hpp,cpp}",
+    "cpp/ClusterEngineCore.hpp",
+    "cpp/GeoUtils.hpp",
+    "cpp/HybridClusterEngine.hpp",
+    "cpp/HybridClusterEngine.cpp",
   ]
 
   load 'nitrogen/generated/ios/NitroMapCluster+autolinking.rb'

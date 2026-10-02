@@ -142,4 +142,4 @@ GitHub release, and publishes to npm. Review `CHANGELOG.md` before releasing.
 - [ ] `bunx expo run:android` — same, with Google Maps key configured
 - [ ] Verify `cluster={false}` marker stays unclustered; `renderCluster` custom bubble shows
 - [ ] Confirm no `react-native-better-clustering:` errors in Metro logs
-- [ ] `cd package && bun run build && bun run verify:build` before `bun run release`
+- [ ] `cd package && bun run verify:pack` before `bun run release`
