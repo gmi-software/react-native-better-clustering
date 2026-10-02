@@ -82,7 +82,7 @@ are supported, plus:
 | Prop | Signature | Description |
 |------|-----------|-------------|
 | `onClusterPress` | `(cluster, markers) => void` | Fired when a cluster is tapped |
-| `onMarkersChange` | `(markers) => void` | Fired when visible markers/clusters change |
+| `onMarkersChange` | `(markers) => void` | Fired when visible markers/clusters change: once the first index has loaded, then only when the visible set changes. A re-render with the same marker coordinates does not fire it, so `onMarkersChange={setState}` is safe |
 | `onRegionChangeComplete` | `(region, details, markers) => void` | Extends the maps callback with current markers |
 
 ## Per-marker opt-out

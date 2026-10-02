@@ -25,11 +25,16 @@ Run `npx expo prebuild --clean` and build the app.
 ## `Supercluster instance was destroyed`
 
 You called a method on a `Supercluster` after `destroy()`. Create a new
-instance. `useClusterer` handles lifecycle automatically.
+instance. `useClusterer` handles lifecycle automatically, but it destroys the
+previous engine once a rebuild for changed data has loaded: use the
+`supercluster` from the latest render rather than one kept from earlier.
 
 ## Clusters rebuild every render
 
-Memoize your GeoJSON input:
+The index rebuilds only when coordinates, their order, or a `clusterProperties`
+source value change. If it still rebuilds on every render, the data itself
+changes: for example, coordinates recomputed with floating-point noise, or a
+list re-sorted on each render. Memoize your GeoJSON input:
 
 ```tsx
 const geoJson = useMemo(

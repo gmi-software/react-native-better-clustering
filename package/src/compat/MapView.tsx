@@ -34,11 +34,12 @@ import { isClusterFeature } from '../geojson'
 import { Supercluster, type SuperclusterOptions } from '../engine/Supercluster'
 import { DEFAULT_MAX_ZOOM, DEFAULT_MIN_ZOOM } from '../engine/defaults'
 import { clusterZoomFromRegion } from '../engine/geometry'
-import { useClusterer } from '../hooks/useClusterer'
+import { useClusterIndex } from '../hooks/useClusterIndex'
 import ClusterMarker from './ClusterMarker'
 import {
   computeClusterLayoutSignature,
   isMarker,
+  markerElementOf,
   markerToGeoJSONFeature,
 } from './helpers'
 import { renderSpiderClusterMarkers } from './renderSpiderClusterMarkers'
@@ -59,6 +60,15 @@ const { width: WINDOW_WIDTH, height: WINDOW_HEIGHT } = Dimensions.get('window')
  * on them (e.g. `handleClusterPress`) stay stable and `ClusterMarker` memo holds.
  */
 const noop = () => {}
+
+/**
+ * Marker features share an index only while each keeps its child index, so a
+ * feature's `properties.index` keeps pointing at its own element in the latest
+ * children without a rebuild (a child inserted before the markers shifts them).
+ */
+function isSameMarkerFeature(previous: PointFeature, next: PointFeature) {
+  return previous.properties.index === next.properties.index
+}
 
 const DEFAULT_EDGE_PADDING: EdgePadding = {
   top: 50,
@@ -368,11 +378,12 @@ const CompatMapView = forwardRef(function CompatMapView(
     [radius, maxZoom, minZoom, minPoints, extent, nodeSize]
   )
 
-  const [clusters, supercluster] = useClusterer(
+  const { clusters, supercluster, isCurrent } = useClusterIndex(
     markerFeatures,
     mapDimensions,
     currentRegion,
-    clustererOptions
+    clustererOptions,
+    isSameMarkerFeature
   )
 
   const clusterLayoutSignature = useMemo(
@@ -381,14 +392,26 @@ const CompatMapView = forwardRef(function CompatMapView(
   )
   clusterLayoutSignatureRef.current = clusterLayoutSignature
 
+  // Callbacks are read through refs, so a new callback identity alone never
+  // fires them: `onMarkersChange={setState}` with inline children would loop.
+  const onMarkersChangeRef = useRef(onMarkersChange)
+  const onRegionChangeCompleteRef = useRef(onRegionChangeComplete)
+  useEffect(() => {
+    onMarkersChangeRef.current = onMarkersChange
+    onRegionChangeCompleteRef.current = onRegionChangeComplete
+  })
+
   // `clusters` is the single source of truth for what is visible in the current
   // region. Reuse it for `onMarkersChange` instead of querying the engine again
   // (the previous `visibleFeatures` recomputed the exact same set, doubling the
   // synchronous JSI round-trips on every region change). It is stabilized, so
-  // this fires only when the visible set actually changes.
+  // this fires only when the visible set actually changes, and not before the
+  // first index has loaded.
   useEffect(() => {
-    onMarkersChange(clusters)
-  }, [clusters, onMarkersChange])
+    if (supercluster.isLoaded) {
+      onMarkersChangeRef.current(clusters)
+    }
+  }, [clusters, supercluster])
 
   const currentZoom = useMemo(
     () => clusterZoomFromRegion(currentRegion, mapDimensions, minZoom, maxZoom),
@@ -548,8 +571,8 @@ const CompatMapView = forwardRef(function CompatMapView(
       return
     }
     pendingRegionChangeRef.current = null
-    onRegionChangeComplete(pending.region, pending.details, clusters)
-  }, [currentRegion, clusters, onRegionChangeComplete])
+    onRegionChangeCompleteRef.current(pending.region, pending.details, clusters)
+  }, [currentRegion, clusters])
 
   const shouldSpiderCluster = useCallback(
     (clusterId: number) => {
@@ -576,12 +599,25 @@ const CompatMapView = forwardRef(function CompatMapView(
       }
     }
 
+    // While a rebuild is pending, `clusters` still describe the previous
+    // children: render those features' own elements until the index lands.
+    const markerFor = (feature: PointFeature): ReactNode => {
+      if (!isCurrent) {
+        return markerElementOf(feature) ?? null
+      }
+      const index = feature.properties.index
+      return typeof index === 'number' ? propsChildren[index] : null
+    }
+
     for (const feature of clusters) {
       if (!isClusterFeature(feature)) {
-        const index = feature.properties.index
-        const child = typeof index === 'number' ? propsChildren[index] : null
+        const child = markerFor(feature)
         if (isMarker(child)) {
-          immediate.push(React.cloneElement(child, { key: `marker-${index}` }))
+          immediate.push(
+            React.cloneElement(child, {
+              key: `marker-${feature.properties.index}`,
+            })
+          )
         }
         continue
       }
@@ -593,7 +629,7 @@ const CompatMapView = forwardRef(function CompatMapView(
         immediate.push(
           ...renderSpiderClusterMarkers(
             cluster,
-            propsChildren,
+            markerFor,
             supercluster,
             spiderLineColor
           )
@@ -641,6 +677,7 @@ const CompatMapView = forwardRef(function CompatMapView(
   }, [
     clusteringEnabled,
     clusters,
+    isCurrent,
     propsChildren,
     handleClusterPress,
     clusterColor,

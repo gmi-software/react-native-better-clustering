@@ -15,7 +15,7 @@ import {
   spyOn,
 } from 'bun:test'
 import { act, render } from '@testing-library/react'
-import React, { useState } from 'react'
+import React, { StrictMode, useState } from 'react'
 
 import {
   CENTER,
@@ -34,10 +34,12 @@ import {
   mapState,
   mountLog,
   polylineCount,
+  press,
   regionAt,
   renderedMarkerIds,
   renderedMarkers,
   resetHarness,
+  retargetsSince,
   settleRegion,
   unmountsSince,
 } from './harness'
@@ -137,6 +139,228 @@ describe('MapView mount stability', () => {
   })
 })
 
+describe('MapView index rebuilds (#12, #13)', () => {
+  it('#12: an unrelated parent re-render keeps the index and every marker mounted, and onMarkersChange quiet', async () => {
+    const onMarkersChange = jest.fn()
+    function Parent({ tick }: { tick: number }) {
+      return (
+        <Map
+          accessibilityLabel={`tick ${tick}`}
+          onMarkersChange={(markers) => onMarkersChange(markers)}
+        />
+      )
+    }
+    const { rerender } = render(<Parent tick={0} />)
+    await flush()
+    const start = mountLog.length
+    const calls = onMarkersChange.mock.calls.length
+
+    rerender(<Parent tick={1} />)
+    await flush()
+
+    expect(fakeClusterEngineStats.created).toBe(1)
+    expect(unmountsSince(start)).toEqual([])
+    expect(onMarkersChange.mock.calls.length).toBe(calls)
+  })
+
+  it('#12: onMarkersChange={setState} with inline children settles', async () => {
+    let renders = 0
+    function Parent() {
+      const [, setVisible] = useState<unknown[]>([])
+      renders++
+      // Stop feeding the loop after 30 renders so the test terminates.
+      return <Map onMarkersChange={renders < 30 ? setVisible : undefined} />
+    }
+    render(<Parent />)
+    for (let i = 0; i < 10; i++) await flush()
+
+    // The first render, plus at most two once the index has loaded.
+    expect(renders).toBeLessThanOrEqual(3)
+    expect(fakeClusterEngineStats.created).toBe(1)
+  })
+
+  it('#12: onMarkersChange is not called with the empty set before the first load', async () => {
+    const onMarkersChange = jest.fn()
+    render(<Map onMarkersChange={onMarkersChange} />)
+    await flush()
+
+    expect(onMarkersChange).toHaveBeenCalledTimes(1)
+    expect(onMarkersChange.mock.calls[0]![0]).toHaveLength(4)
+  })
+
+  it('#12: a data update keeps the previous markers until the rebuild lands', async () => {
+    const { container, rerender } = render(<Map />)
+    await flush()
+
+    rerender(<Map points={[...GROUP, ...SINGLES, EXTRA]} />)
+    expect(renderedMarkerIds(container)).toEqual(['s0', 's1', 's2'])
+    expect(clusterLabels(container)).toEqual(['5'])
+
+    await flush()
+    expect(renderedMarkerIds(container)).toEqual(['s0', 's1', 's2', 'x0'])
+  })
+
+  it('#12: a marker inserted at the start does not shift the markers shown while rebuilding', async () => {
+    const { container, rerender } = render(<Map points={SINGLES} />)
+    await flush()
+
+    rerender(<Map points={[EXTRA, ...SINGLES]} />)
+    expect(renderedMarkerIds(container)).toEqual(['s0', 's1', 's2'])
+
+    await flush()
+    expect(renderedMarkerIds(container)).toEqual(['s0', 's1', 's2', 'x0'])
+  })
+
+  it('#12: a non-clustered child inserted before the markers keeps every marker on its own element', async () => {
+    function Pinned({ pinned }: { pinned: boolean }) {
+      return (
+        <MapView
+          initialRegion={regionAt(CENTER, CITY_ZOOM)}
+          clusterFadeInDuration={0}
+        >
+          {pinned ? (
+            <Marker
+              key="pinned"
+              testID="pinned"
+              cluster={false}
+              coordinate={EXTRA}
+            />
+          ) : null}
+          {[...GROUP, ...SINGLES].map((point) => (
+            <Marker
+              key={point.id}
+              testID={point.id}
+              coordinate={{
+                latitude: point.latitude,
+                longitude: point.longitude,
+              }}
+            />
+          ))}
+        </MapView>
+      )
+    }
+    const { container, rerender } = render(<Pinned pinned={false} />)
+    await flush()
+
+    rerender(<Pinned pinned />)
+    expect(renderedMarkerIds(container)).toEqual(['pinned', 's0', 's1', 's2'])
+
+    await flush()
+    expect(renderedMarkerIds(container)).toEqual(['pinned', 's0', 's1', 's2'])
+    expect(clusterLabels(container)).toEqual(['5'])
+  })
+
+  it('#12: a prop-only change does not rebuild, and cluster leaves carry the new prop', async () => {
+    const onClusterPress = jest.fn()
+    function Titled({ suffix }: { suffix: string }) {
+      return (
+        <MapView
+          initialRegion={regionAt(CENTER, CITY_ZOOM)}
+          clusterFadeInDuration={0}
+          preserveClusterPressBehavior
+          onClusterPress={onClusterPress}
+        >
+          {GROUP.map((point) => (
+            <Marker
+              key={point.id}
+              testID={point.id}
+              title={`${point.id} ${suffix}`}
+              coordinate={{
+                latitude: point.latitude,
+                longitude: point.longitude,
+              }}
+            />
+          ))}
+        </MapView>
+      )
+    }
+    const { container, rerender } = render(<Titled suffix="old" />)
+    await flush()
+
+    rerender(<Titled suffix="new" />)
+    await flush()
+    expect(fakeClusterEngineStats.created).toBe(1)
+
+    press(renderedMarkers(container).find((marker) => marker.isCluster)!)
+    const leaves = onClusterPress.mock.calls[0]![1] as Array<{
+      properties: { title: string }
+    }>
+    expect(leaves.map((leaf) => leaf.properties.title).sort()).toEqual(
+      GROUP.map((point) => `${point.id} new`)
+    )
+  })
+
+  it('#12: mounts once under StrictMode without querying a destroyed engine', async () => {
+    const consoleError = spyOn(console, 'error').mockImplementation(() => {})
+    try {
+      const { container } = render(
+        <StrictMode>
+          <Map />
+        </StrictMode>
+      )
+      await flush()
+
+      expect(renderedMarkerIds(container)).toEqual(['s0', 's1', 's2'])
+      expect(clusterLabels(container)).toEqual(['5'])
+      expect(fakeClusterEngineStats.created).toBeLessThanOrEqual(2)
+      expect(consoleError).not.toHaveBeenCalled()
+    } finally {
+      consoleError.mockRestore()
+    }
+  })
+
+  it('#13: getExpansionRegion still works after an unrelated parent re-render', async () => {
+    const seen: Array<{ properties: { getExpansionRegion: () => unknown } }> =
+      []
+    function Parent({ tick }: { tick: number }) {
+      return (
+        <Map
+          accessibilityLabel={`tick ${tick}`}
+          renderCluster={(cluster) => {
+            seen.push(cluster)
+            const [longitude, latitude] = cluster.geometry.coordinates
+            return (
+              <Marker testID="custom" coordinate={{ latitude, longitude }} />
+            )
+          }}
+        />
+      )
+    }
+    const { rerender } = render(<Parent tick={0} />)
+    await flush()
+    rerender(<Parent tick={1} />)
+    await flush()
+
+    expect(() => seen.at(-1)!.properties.getExpansionRegion()).not.toThrow()
+  })
+
+  it('#13: getExpansionRegion still works after the index is rebuilt', async () => {
+    const seen: Array<{ properties: { getExpansionRegion: () => unknown } }> =
+      []
+    function Parent({ points }: { points: TestPoint[] }) {
+      return (
+        <Map
+          points={points}
+          renderCluster={(cluster) => {
+            seen.push(cluster)
+            const [longitude, latitude] = cluster.geometry.coordinates
+            return (
+              <Marker testID="custom" coordinate={{ latitude, longitude }} />
+            )
+          }}
+        />
+      )
+    }
+    const { rerender } = render(<Parent points={[...GROUP, ...SINGLES]} />)
+    await flush()
+    rerender(<Parent points={[...GROUP, ...SINGLES, EXTRA]} />)
+    await flush()
+
+    expect(fakeClusterEngineStats.created).toBe(2)
+    expect(() => seen.at(-1)!.properties.getExpansionRegion()).not.toThrow()
+  })
+})
+
 describe('MapView known issues', () => {
   let consoleError: ReturnType<typeof spyOn>
 
@@ -147,81 +371,6 @@ describe('MapView known issues', () => {
   afterEach(() => {
     consoleError.mockRestore()
   })
-
-  it.failing(
-    '#12: an unrelated parent re-render keeps the index and every marker mounted',
-    async () => {
-      function Parent({ tick }: { tick: number }) {
-        return <Map key="map" accessibilityLabel={`tick ${tick}`} />
-      }
-      const { rerender } = render(<Parent tick={0} />)
-      await flush()
-      const start = mountLog.length
-
-      rerender(<Parent tick={1} />)
-      await flush()
-
-      expect(fakeClusterEngineStats.created).toBe(1)
-      expect(unmountsSince(start)).toEqual([])
-    }
-  )
-
-  it.failing(
-    '#12: onMarkersChange={setState} with inline children settles',
-    async () => {
-      let renders = 0
-      function Parent() {
-        const [, setVisible] = useState<unknown[]>([])
-        renders++
-        // Stop feeding the loop after 30 renders so the test terminates.
-        return <Map onMarkersChange={renders < 30 ? setVisible : undefined} />
-      }
-      render(<Parent />)
-      for (let i = 0; i < 10; i++) await flush()
-
-      expect(renders).toBeLessThanOrEqual(4)
-    }
-  )
-
-  it.failing(
-    '#12: a data update keeps the previous markers until the rebuild lands',
-    async () => {
-      const { container, rerender } = render(<Map />)
-      await flush()
-
-      rerender(<Map points={[...GROUP, ...SINGLES, EXTRA]} />)
-
-      expect(renderedMarkers(container).length).toBeGreaterThan(0)
-    }
-  )
-
-  it.failing(
-    '#13: getExpansionRegion still works after the index is rebuilt',
-    async () => {
-      const seen: Array<{ properties: { getExpansionRegion: () => unknown } }> =
-        []
-      function Parent({ tick }: { tick: number }) {
-        return (
-          <Map
-            accessibilityLabel={`tick ${tick}`}
-            renderCluster={(cluster) => {
-              seen.push(cluster)
-              const [longitude, latitude] = cluster.geometry.coordinates
-              return (
-                <Marker testID="custom" coordinate={{ latitude, longitude }} />
-              )
-            }}
-          />
-        )
-      }
-      const { rerender } = render(<Parent tick={0} />)
-      await flush()
-      rerender(<Parent tick={1} />)
-      await flush()
-
-      expect(() => seen.at(-1)!.properties.getExpansionRegion()).not.toThrow()
-    }
-  )
 
   it.failing(
     '#14: markers with cluster={true} are clustered and rendered as themselves',
@@ -295,6 +444,8 @@ describe('MapView known issues', () => {
       await flush()
 
       expect(unmountsSince(start)).toEqual([])
+      // Index keys hand the shifted markers' instances to other points.
+      expect(retargetsSince(start)).toEqual([])
     }
   )
 })

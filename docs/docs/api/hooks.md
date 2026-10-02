@@ -42,11 +42,25 @@ Cluster features include `properties.getExpansionRegion()` for zoom-on-tap.
 
 The hook destroys the underlying `Supercluster` engine on unmount. Index
 building runs asynchronously via `loadAsync()` so large datasets (10k+ points)
-do not block the JS thread. Clusters stay empty until loading finishes; check
-`supercluster.isLoaded` before calling query methods directly.
+do not block the JS thread. Clusters stay empty until the first build has
+loaded; check `supercluster.isLoaded` before calling query methods directly.
+
+The index is rebuilt only when the points' coordinates, their order, or a
+`clusterProperties` source value changes:
+
+- A new `data` array with the same content keeps the index and the returned
+  `features` array. Leaf queries (`getLeaves`, `getChildren`) return the newest
+  feature objects, so changed properties show up there without a rebuild.
+  Point features already in `features` keep their identity until the region
+  changes.
+- When the content does change, the hook keeps returning the previous clusters
+  while the new index builds, then swaps to the new engine and destroys the old
+  one. A `supercluster` reference you hold goes stale after that swap; use the
+  one the hook returns.
 
 > **Memoize `data`:** build GeoJSON features with `coordsToGeoJSONFeature` inside
-> `useMemo`. Inline arrays rebuild the full C++ index on every render.
+> `useMemo`. Inline arrays no longer rebuild the C++ index, but each render
+> still compares every point against the previous array.
 
 ## `stabilizeClusterFeatures`
 
