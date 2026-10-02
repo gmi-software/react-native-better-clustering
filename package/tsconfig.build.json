@@ -1,11 +1,15 @@
 {
   "extends": "./tsconfig.json",
   "compilerOptions": {
+    "rootDir": "src",
+    "outDir": "lib/typescript",
     "noEmit": false,
     "declaration": true,
     "declarationMap": true,
     "emitDeclarationOnly": true
   },
-  // Tests must never reach lib/.
+  // Tests are typechecked by tsconfig.json but must never reach lib/: they
+  // import `bun:test`, which consumers do not have.
+  "include": ["src"],
   "exclude": ["src/**/*.test.ts", "src/**/*.test.tsx"]
 }

@@ -1,3 +1,5 @@
+import { describe, expect, it } from 'bun:test'
+
 import { PACK_POINTS_MAGIC_V2, packPoints } from './packPoints'
 
 const SAMPLE_COORDINATES = [

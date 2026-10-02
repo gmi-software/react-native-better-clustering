@@ -1,11 +1,18 @@
-jest.mock('react-native', () => ({
+import { describe, expect, it, jest, mock } from 'bun:test'
+
+import type { ClusterFeature } from '../geojson/types'
+import type { ClusterMarkerProps } from './ClusterMarker'
+
+// Registered before the module under test is imported (below), so its
+// react-native / reanimated / maps imports resolve to these stubs.
+mock.module('react-native', () => ({
   Platform: { select: (options: Record<string, unknown>) => options.default },
   StyleSheet: { create: (styles: unknown) => styles },
   Text: 'Text',
   View: 'View',
 }))
 
-jest.mock('react-native-reanimated', () => ({
+mock.module('react-native-reanimated', () => ({
   __esModule: true,
   default: { createAnimatedComponent: (component: unknown) => component },
   useSharedValue: (value: unknown) => ({ value }),
@@ -13,15 +20,11 @@ jest.mock('react-native-reanimated', () => ({
   withTiming: (value: unknown) => value,
 }))
 
-jest.mock('react-native-maps', () => ({
+mock.module('react-native-maps', () => ({
   Marker: 'Marker',
 }))
 
-import type { ClusterFeature } from '../geojson/types'
-import {
-  areClusterMarkerPropsEqual,
-  type ClusterMarkerProps,
-} from './ClusterMarker'
+const { areClusterMarkerPropsEqual } = await import('./ClusterMarker')
 
 const CLUSTER: ClusterFeature = {
   type: 'Feature',

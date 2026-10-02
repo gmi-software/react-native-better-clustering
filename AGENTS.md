@@ -23,7 +23,7 @@ A single `bun install` at the root installs every workspace (`package`, `example
 - Typecheck: `cd package && bun run typecheck`
 - Lint: `cd package && bun run lint`
 - Test (all): `cd package && bun run test`
-- Test (single file): `cd package && bun run test -- src/utils/distance.test.ts`
+- Test (single file): `cd package && bun test src/utils/distance.test.ts` (`bun test`; mock modules with `mock.module()` before a dynamic `import()` — see CONTRIBUTING.md)
 - Build: `cd package && bun run build` (react-native-builder-bob → `lib/module` ESM + `lib/typescript` declarations)
 - Verify the npm package: `cd package && bun run verify:pack && bun run verify:exports` (both run in CI)
 - Run example: `cd example && bunx expo prebuild && bunx expo run:ios` or `bunx expo run:android`

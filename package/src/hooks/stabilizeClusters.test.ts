@@ -1,3 +1,5 @@
+import { describe, expect, it } from 'bun:test'
+
 import type { ClusterFeature } from '../geojson/types'
 import { stabilizeClusterFeatures } from './stabilizeClusters'
 

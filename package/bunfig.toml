@@ -1,0 +1,5 @@
+[test]
+# Registers a DOM (happy-dom) before any test file loads, so
+# @testing-library/react can render hooks and components.
+preload = ["./test/setup.ts"]
+root = "./src"
