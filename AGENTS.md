@@ -48,7 +48,7 @@ A single `bun install` at the root installs every workspace (`package`, `example
 
 ## Agentic PR checklist
 
-Include these sections in your PR description:
+Fill in `.github/PULL_REQUEST_TEMPLATE.md` (GitHub pre-fills it). It contains these sections:
 
 - **Summary**: 2-5 bullets describing the intent and impact.
 - **Test plan**: checklist of commands run and outcomes. If untested, say why.
