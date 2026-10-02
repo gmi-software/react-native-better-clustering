@@ -50,6 +50,7 @@ try {
   fs.writeFileSync(
     probe,
     `import { createRequire } from 'node:module'
+import { fileURLToPath } from 'node:url'
 const require = createRequire(import.meta.url)
 const subpaths = ${JSON.stringify(subpaths)}
 const importable = ${JSON.stringify(IMPORTABLE)}
@@ -65,7 +66,7 @@ for (const subpath of subpaths) {
   const specifier = ${JSON.stringify(NAME)} + subpath.slice(1)
   out.resolved[subpath] = {
     require: attempt(() => require.resolve(specifier)),
-    import: attempt(() => new URL(import.meta.resolve(specifier)).pathname),
+    import: attempt(() => fileURLToPath(import.meta.resolve(specifier))),
   }
 }
 for (const [subpath, name] of Object.entries(importable)) {
