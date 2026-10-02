@@ -88,7 +88,8 @@ are supported, plus:
 
 ## Per-marker opt-out
 
-Exclude individual markers from clustering:
+Markers cluster by default (`cluster` omitted or `cluster={true}`). Exclude
+individual markers from clustering:
 
 ```tsx
 <Marker

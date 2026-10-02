@@ -42,8 +42,11 @@ const markerElements = new WeakMap<
 /**
  * Converts a `Marker` child into a GeoJSON point for the cluster engine.
  *
- * Preserves marker props (except `coordinate` and `children`) on `properties`
- * and stores the child index for later React reconciliation.
+ * Preserves marker props on `properties` and stores the child index for later
+ * React reconciliation. Leaves out `coordinate`, `children`, and the props that
+ * name cluster properties (`cluster`, `cluster_id`, `point_count_abbreviated`,
+ * `getExpansionRegion`), so a marker such as `<Marker cluster>` is never
+ * mistaken for a cluster by {@linkcode isClusterFeature}.
  *
  * @see {@linkcode isMarker}
  */
@@ -51,7 +54,15 @@ export function markerToGeoJSONFeature(
   marker: React.ReactElement<MarkerLikeProps>,
   index: number
 ): PointFeature<MarkerFeatureProperties> {
-  const { coordinate, children: _children, ...rest } = marker.props
+  const {
+    coordinate,
+    children: _children,
+    cluster: _cluster,
+    cluster_id: _clusterId,
+    point_count_abbreviated: _pointCountAbbreviated,
+    getExpansionRegion: _getExpansionRegion,
+    ...rest
+  } = marker.props
   const properties: MarkerFeatureProperties = {
     ...rest,
     point_count: 0,
