@@ -272,7 +272,7 @@ More in [troubleshooting](https://gmi-software.github.io/react-native-better-clu
 
 ## Contributing
 
-See [CONTRIBUTING.md](./CONTRIBUTING.md).
+See [CONTRIBUTING.md](./CONTRIBUTING.md). Releases are published from CI — see [RELEASING.md](./RELEASING.md). Report vulnerabilities privately — see [SECURITY.md](./SECURITY.md).
 
 ```bash
 bun install

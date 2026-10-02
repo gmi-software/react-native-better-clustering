@@ -9,10 +9,13 @@ Thank you for your interest in contributing to `react-native-better-clustering`!
 - [Development Setup](#development-setup)
 - [Project Structure](#project-structure)
 - [Development Workflow](#development-workflow)
+- [Building the Native Code](#building-the-native-code)
 - [Code Style](#code-style)
 - [Testing](#testing)
 - [Nitro Modules](#nitro-modules)
 - [Pull Request Process](#pull-request-process)
+- [Releasing](#releasing)
+- [Security](#security)
 
 ## Code of Conduct
 
@@ -35,12 +38,12 @@ This project adheres to a [Code of Conduct](CODE_OF_CONDUCT.md). By participatin
 
 ### Prerequisites
 
-- Node.js (v20 or higher)
-- [Bun](https://bun.sh)
+- [Bun](https://bun.sh) — the version pinned in the root `package.json` (`packageManager`); CI reads it from there
+- Node.js 22 or newer (some tools, e.g. `npm pack` in the package checks, run on Node)
 - React Native development environment
 - For iOS: Xcode and CocoaPods
-- For Android: Android Studio and Android SDK
-- Expo CLI (for running the example app)
+- For Android: Android Studio, the Android SDK and the NDK pinned in `package/android/gradle.properties`
+- The example app runs through the Expo CLI (`bunx expo …`); Expo Go is not supported
 
 ### Installation
 
@@ -82,17 +85,63 @@ react-native-better-clustering/
 │   │   └── utils/        # Shared utilities
 │   ├── cpp/              # Shared C++ clustering core (ClusterEngine)
 │   ├── android/          # Android native module (C++ via CMake)
+│   ├── bench/            # Local C++ micro-benchmark (not published)
+│   ├── scripts/          # npm package checks (verify-pack, verify-exports)
+│   ├── test/             # bun test preload (happy-dom)
 │   └── nitrogen/         # Nitrogen-generated bindings (generated, not committed)
 ├── example/              # Expo example app (CNG: ios/ and android/ are generated)
-└── docs/                 # Docusaurus documentation site
+├── docs/                 # Docusaurus documentation site
+├── config/               # Shared tool config (clang-format)
+├── scripts/              # Repo scripts (clang-format)
+└── .github/              # CI workflows, issue/PR templates, CODEOWNERS, Dependabot
 ```
 
 ## Development Workflow
 
-- Generate Nitro bindings: `cd package && bun run specs`
-- Typecheck: `cd package && bun run typecheck`
-- Lint: `bun run lint` (from the repository root)
-- Test: `cd package && bun run test`
+From the repository root:
+
+| Command | What it does |
+| --- | --- |
+| `bun run lint` | ESLint over the whole repo (`--max-warnings 0`) |
+| `bun run format` / `bun run format:check` | Prettier write / check |
+| `bun run format:cpp` | clang-format the C++ sources (local only) |
+| `bun run docs:start` / `bun run docs:build` | Docusaurus dev server / production build |
+
+From `package/`:
+
+| Command | What it does |
+| --- | --- |
+| `bun run specs` | Regenerate the Nitro bindings into `nitrogen/` |
+| `bun run typecheck` | TypeScript over `src` and the tests |
+| `bun run test` | `bun test --isolate` |
+| `bun run build` | react-native-builder-bob → `lib/module` (ESM) + `lib/typescript` |
+| `bun run verify:pack` | Check what `npm pack` would publish |
+| `bun run verify:exports` | Check every `exports` subpath resolves from the packed tarball |
+
+## Building the Native Code
+
+CI compiles only the library targets (see `.github/workflows/native-build.yml`). To reproduce that locally from a clean state:
+
+```bash
+# iOS — builds the react-native-better-clustering pod scheme
+cd example
+bunx expo prebuild --platform ios --clean --no-install
+cd ios && pod install && cd ../..
+xcodebuild build \
+  -workspace example/ios/NitroMapClusterExample.xcworkspace \
+  -scheme react-native-better-clustering \
+  -configuration Debug \
+  -destination 'generic/platform=iOS Simulator' \
+  ARCHS=arm64 ONLY_ACTIVE_ARCH=NO CODE_SIGNING_ALLOWED=NO
+
+# Android — builds the library Gradle module
+cd example
+bunx expo prebuild --platform android --clean --no-install
+cd android
+./gradlew :react-native-better-clustering:assembleDebug -PreactNativeArchitectures=arm64-v8a
+```
+
+The pod scheme only exists after Xcode has loaded the workspace once (`xcodebuild -list` does that). Re-run `pod install` after switching branches.
 
 ## Code Style
 
@@ -128,3 +177,7 @@ react-native-better-clustering/
 ## Releasing
 
 Releases are cut by maintainers and published from CI with npm provenance — never from a developer machine. See [RELEASING.md](RELEASING.md).
+
+## Security
+
+Please report vulnerabilities privately — see [SECURITY.md](SECURITY.md).

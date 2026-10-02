@@ -7,7 +7,9 @@ This guide helps automated agents submit high-quality PRs for this repo.
 - `package/` is the published library (`react-native-better-clustering`, TypeScript + native code via Nitro).
 - `example/` is an Expo app used for manual verification.
 - `docs/` is the technical documentation (Docusaurus, English). User-facing docs live under `docs/docs/` (API, setup, guides, troubleshooting, etc.). Run `bun run docs:start` or `bun run docs:build` from root.
-- Root `package.json` defines the Bun workspace.
+- Root `package.json` defines the Bun workspace, pins Bun (`packageManager`), and holds the repo-wide lint/format/commitlint tooling (`eslint.config.mjs`, `.prettierrc`, `commitlint.config.js`, `.husky/`).
+- `package/cpp/` is the shared C++ engine (compiled by the podspec and `android/CMakeLists.txt` from explicit source lists); `package/bench/` is a local C++ micro-benchmark; `package/scripts/` holds the npm package checks; `package/test/setup.ts` is the `bun test` preload.
+- `.github/` holds CI (`ci.yml`, `pr-title.yml`, path-filtered `native.yml` → reusable `native-build.yml`, `release.yml`, `docs.yml`, `react-doctor.yml`), issue/PR templates, CODEOWNERS and Dependabot. `config/` holds shared tool config (clang-format); `scripts/` holds repo scripts.
 
 ## Local setup
 
@@ -66,6 +68,7 @@ Example template:
 - [ ] `cd package && bun run typecheck` (not run)
 - [ ] `bun run lint && bun run format:check` (not run)
 - [ ] `cd package && bun run test:ci` (not run)
+- [ ] `cd package && bun run build && bun run verify:pack && bun run verify:exports` (not run)
 - [ ] `cd example && bunx expo run:ios` (not run)
 - [ ] `cd example && bunx expo run:android` (not run)
 - [ ] `bun run docs:build` (if you changed `docs/` or public API/setup; not run)
