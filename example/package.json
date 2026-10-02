@@ -11,8 +11,8 @@
   },
   "dependencies": {
     "react-native-better-clustering": "workspace:*",
-    "expo": "~56.0.12",
-    "expo-dev-client": "~56.0.20",
+    "expo": "~56.0.23",
+    "expo-dev-client": "~56.0.27",
     "expo-status-bar": "~56.0.4",
     "react": "19.2.3",
     "react-native": "0.85.3",
