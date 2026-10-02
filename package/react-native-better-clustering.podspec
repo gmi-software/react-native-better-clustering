@@ -3,7 +3,11 @@ require "json"
 package = JSON.parse(File.read(File.join(__dir__, "package.json")))
 
 Pod::Spec.new do |s|
-  s.name         = "NitroMapCluster"
+  s.name         = "react-native-better-clustering"
+  # The Swift/Clang module keeps the Nitro module name (nitro.json iosModuleName):
+  # the generated NitroMapCluster-Swift-Cxx-Umbrella.hpp and autolinking bridge
+  # import it under that name.
+  s.module_name  = "NitroMapCluster"
   s.version      = package["version"]
   s.summary      = package["description"]
   s.homepage     = package["homepage"]
