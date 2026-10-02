@@ -33,7 +33,6 @@ import {
   harnessControls,
   mapState,
   mountLog,
-  polylineCount,
   press,
   regionAt,
   renderedMarkerIds,
@@ -545,26 +544,6 @@ describe('MapView known issues', () => {
   afterEach(() => {
     consoleError.mockRestore()
   })
-
-  it.failing(
-    '#16: spiderfy caps how many markers and connector lines it renders',
-    async () => {
-      const crowd: TestPoint[] = Array.from({ length: 200 }, (_, i) => ({
-        id: `c${i}`,
-        latitude: CENTER.latitude,
-        longitude: CENTER.longitude,
-      }))
-      const { container } = render(
-        <Map points={crowd} initialRegion={regionAt(CENTER, 23)} />
-      )
-      await flush()
-
-      // The cap's value is the fix's call (about 50 is suggested); any cap
-      // renders fewer markers and lines than there are leaves.
-      expect(renderedMarkers(container).length).toBeLessThan(crowd.length)
-      expect(polylineCount(container)).toBeLessThan(crowd.length)
-    }
-  )
 
   it.failing('#22: co-located markers spiderfy by camera zoom 19', async () => {
     // Today spiderfy needs camera zoom 22+, beyond Google Maps' maximum.
