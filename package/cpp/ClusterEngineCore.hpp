@@ -273,7 +273,10 @@ public:
 
       // supercluster-faithful pass: walk nodes in order, mark each by lowering
       // its `zoom` to the current level once processed, and only fold in
-      // neighbours that haven't been processed yet at this level.
+      // neighbours that haven't been processed yet at this level. The marker
+      // lives on these working copies only: `_nodeById` keeps each node as it
+      // was created, so its `zoom` stays the level it was created at, which
+      // getClusterExpansionZoom() starts from.
       for (size_t i = 0; i < current.size(); i++) {
         if (current[i].zoom <= z) continue;
         current[i].zoom = z;
@@ -328,7 +331,6 @@ public:
           next.push_back(std::move(cluster));
         } else {
           // The origin survives unclustered at this level.
-          _nodeById[current[i].id] = current[i];
           next.push_back(current[i]);
 
           // Mark (but don't cluster) any mergeable neighbours so they aren't
@@ -337,7 +339,6 @@ public:
             for (int32_t nb : neighbors) {
               if (current[nb].zoom <= z) continue;
               current[nb].zoom = z;
-              _nodeById[current[nb].id] = current[nb];
               next.push_back(current[nb]);
             }
           }
@@ -495,8 +496,10 @@ public:
     auto it = _nodeById.find(clusterId);
     if (it == _nodeById.end()) return _options.maxZoom;
 
-    // Mirrors supercluster: start at the cluster's origin zoom and walk down
-    // single-child chains until the cluster splits into multiple children.
+    // Mirrors supercluster: start at the zoom the cluster was created at and
+    // walk down single-child chains until it splits into multiple children.
+    // A cluster created at maxZoom never splits and returns maxZoom + 1; so
+    // does a point id, whose node is created at maxZoom + 1.
     int32_t expansionZoom = it->second.zoom;
     int32_t currentId = clusterId;
 

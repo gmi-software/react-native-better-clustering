@@ -517,6 +517,149 @@ static void testSuperclusterParity() {
   }
 }
 
+static ViewportBounds worldAt(int32_t zoom) {
+  return {85.0, -85.0, 180.0, -180.0, static_cast<double>(zoom)};
+}
+
+static ClusterEngineConfig expansionConfig() {
+  ClusterEngineConfig config;
+  config.radius = 40.0;
+  config.minPoints = 2;
+  config.minZoom = 0;
+  config.maxZoom = 16;
+  config.extent = 512;
+  config.nodeSize = 64;
+  return config;
+}
+
+static void testExpansionZoomOfClusterSurvivingToLowerZooms() {
+  ClusterEngineCore engine;
+  const ClusterEngineConfig config = expansionConfig();
+  engine.setOptions(config);
+
+  // ~700 m apart: one cluster from minZoom up to the zoom where they split.
+  std::vector<int32_t> ids = {0, 1};
+  std::vector<double> lats = {52.2, 52.2};
+  std::vector<double> lngs = {21.0, 21.01};
+  engine.setPoints(ids.data(), lats.data(), lngs.data(), ids.size());
+  engine.build();
+
+  int32_t splitZoom = config.minZoom;
+  while (engine.getClusters(worldAt(splitZoom)).size() == 1) splitZoom++;
+  assert(splitZoom > config.minZoom + 1);
+  assert(splitZoom <= config.maxZoom);
+
+  // Queried from any zoom it is visible at, the cluster expands where it
+  // splits, not one level below wherever it was last seen.
+  for (int32_t z = config.minZoom; z < splitZoom; z++) {
+    const auto clusters = engine.getClusters(worldAt(z));
+    assert(clusters.size() == 1);
+    assert(clusters.front().isCluster);
+    assert(engine.getClusterExpansionZoom(clusters.front().id) == splitZoom);
+  }
+}
+
+static void testExpansionZoomOfIdenticalPoints() {
+  ClusterEngineCore engine;
+  const ClusterEngineConfig config = expansionConfig();
+  engine.setOptions(config);
+
+  const int32_t count = 1000;
+  std::vector<int32_t> ids(count);
+  std::vector<double> lats(count, 52.2);
+  std::vector<double> lngs(count, 21.0);
+  for (int32_t i = 0; i < count; i++) ids[i] = i;
+  engine.setPoints(ids.data(), lats.data(), lngs.data(), static_cast<size_t>(count));
+  engine.build();
+
+  // Points that never split expand past maxZoom, as in supercluster.
+  for (int32_t z = config.minZoom; z <= config.maxZoom; z++) {
+    const auto clusters = engine.getClusters(worldAt(z));
+    assert(clusters.size() == 1);
+    assert(clusters.front().count == count);
+    assert(engine.getClusterExpansionZoom(clusters.front().id) == config.maxZoom + 1);
+  }
+}
+
+static void testExpansionZoomOfPointId() {
+  ClusterEngineCore engine;
+  const ClusterEngineConfig config = expansionConfig();
+  engine.setOptions(config);
+
+  // A lone point far from a pair: it survives unclustered down to minZoom.
+  std::vector<int32_t> ids = {0, 1, 2};
+  std::vector<double> lats = {52.2, 52.2001, -33.9};
+  std::vector<double> lngs = {21.0, 21.0001, 151.2};
+  engine.setPoints(ids.data(), lats.data(), lngs.data(), ids.size());
+  engine.build();
+
+  assert(engine.getClusterExpansionZoom(2) == config.maxZoom + 1);
+}
+
+// Every cluster at every zoom expands at the first zoom where it has split:
+// it is still there one level up from that zoom, and at that zoom it is gone
+// and at least two of its children show instead.
+static void testExpansionZoomsMatchWhereClustersSplit() {
+  ClusterEngineCore engine;
+  const ClusterEngineConfig config = expansionConfig();
+  engine.setOptions(config);
+
+  // Seeded city-like data: dense blobs over a sparse background.
+  const int32_t count = 2000;
+  std::vector<int32_t> ids(count);
+  std::vector<double> lats(count);
+  std::vector<double> lngs(count);
+  uint32_t seed = 12345u;
+  auto random = [&seed]() {
+    seed = seed * 1664525u + 1013904223u;
+    return static_cast<double>(seed >> 8) / static_cast<double>(1u << 24);
+  };
+  for (int32_t i = 0; i < count; i++) {
+    ids[i] = i;
+    if (i % 4 == 0) {
+      lats[i] = 52.0 + random() * 0.5;
+      lngs[i] = 20.8 + random() * 0.5;
+    } else {
+      const double blob = static_cast<double>(i % 7);
+      lats[i] = 52.1 + blob * 0.05 + (random() - 0.5) * 0.01;
+      lngs[i] = 20.9 + blob * 0.04 + (random() - 0.5) * 0.01;
+    }
+  }
+  engine.setPoints(ids.data(), lats.data(), lngs.data(), static_cast<size_t>(count));
+  engine.build();
+
+  std::vector<std::vector<int32_t>> idsAtZoom(config.maxZoom + 1);
+  for (int32_t z = config.minZoom; z <= config.maxZoom; z++) {
+    for (const auto& node : engine.getClusters(worldAt(z))) {
+      idsAtZoom[z].push_back(node.id);
+    }
+    std::sort(idsAtZoom[z].begin(), idsAtZoom[z].end());
+  }
+  auto shownAt = [&idsAtZoom](int32_t zoom, int32_t id) {
+    return std::binary_search(idsAtZoom[zoom].begin(), idsAtZoom[zoom].end(), id);
+  };
+
+  int32_t checked = 0;
+  for (int32_t z = config.minZoom; z <= config.maxZoom; z++) {
+    for (const auto& node : engine.getClusters(worldAt(z))) {
+      if (!node.isCluster) continue;
+      const int32_t expansion = engine.getClusterExpansionZoom(node.id);
+      assert(expansion > z);
+      assert(shownAt(expansion - 1, node.id));
+      checked++;
+      if (expansion > config.maxZoom) continue;
+
+      assert(!shownAt(expansion, node.id));
+      int32_t childrenShown = 0;
+      for (const auto& child : engine.getChildren(node.id)) {
+        if (shownAt(expansion, child.id)) childrenShown++;
+      }
+      assert(childrenShown >= 2);
+    }
+  }
+  assert(checked > 100);
+}
+
 int main() {
   testGetLeavesReturnsAllPointsInCluster();
   testGetLeavesPagination();
@@ -531,6 +674,10 @@ int main() {
   testMemorySizeReflectsNativeAllocations();
   testMinLeafIdIsTheSmallestLeafAtEveryZoom();
   testSuperclusterParity();
+  testExpansionZoomOfClusterSurvivingToLowerZooms();
+  testExpansionZoomOfIdenticalPoints();
+  testExpansionZoomOfPointId();
+  testExpansionZoomsMatchWhereClustersSplit();
   std::printf("ClusterEngineCore tests passed.\n");
   return 0;
 }
