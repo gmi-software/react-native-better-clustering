@@ -26,6 +26,10 @@ For GeoJSON input and supercluster-compatible helpers, prefer
 [`useClusterer`](./hooks.md)). Reach for `createClusterEngine()` only when you
 need direct buffer control.
 
+`createClusterEngine()`, `Supercluster.load()` and `Supercluster.loadAsync()`
+throw if the native module is missing from the app binary; the error says how to
+rebuild (see [Troubleshooting](../troubleshooting.md#the-native-clusterengine-module-is-not-available)).
+
 ## Lifecycle
 
 Call methods in this order:

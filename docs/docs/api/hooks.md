@@ -36,7 +36,7 @@ const [clusters, supercluster] = useClusterer(
 | `data` | `PointFeature[]` | GeoJSON points (memoize with `useMemo`) |
 | `mapDimensions` | `{ width, height }` | Map view size in pixels |
 | `region` | `MapRegion` | Current map region |
-| `options` | `SuperclusterOptions` | `radius`, `minZoom`, `maxZoom`, `minPoints`, `extent`, `nodeSize`, `clusterProperties` |
+| `options` | `UseClustererOptions` | `radius`, `minZoom`, `maxZoom`, `minPoints`, `extent`, `nodeSize`, `clusterProperties`, `onError` |
 
 Cluster features include `properties.getExpansionRegion()` for zoom-on-tap.
 
@@ -57,6 +57,20 @@ The index is rebuilt only when the points' coordinates, their order, or a
   while the new index builds, then swaps to the new engine and destroys the old
   one. A `supercluster` reference you hold goes stale after that swap; use the
   one the hook returns.
+
+If a build fails — most often because the native module is missing from the
+app binary — the hook throws the error during render, so the nearest error
+boundary (and LogBox in development) shows it. Pass `onError` to handle it
+yourself instead: the hook then keeps returning the clusters from the last
+successful build (`[]` before the first). Builds superseded by newer data or
+interrupted by unmount are never reported.
+
+```tsx
+const [clusters] = useClusterer(geoJsonPoints, dimensions, region, {
+  radius: 40,
+  onError: (error) => reportToCrashlytics(error),
+})
+```
 
 > **Memoize `data`:** build GeoJSON features with `coordsToGeoJSONFeature` inside
 > `useMemo`. Inline arrays no longer rebuild the C++ index, but each render

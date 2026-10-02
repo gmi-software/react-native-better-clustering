@@ -1,4 +1,3 @@
-import { NitroModules } from 'react-native-nitro-modules'
 import type { AnyProps, BBox, ClusterFeature, PointFeature } from '../geojson'
 import type { ClusterEngine } from '../specs/ClusterEngine.nitro'
 import type { EngineClusterNode } from '../specs/EngineClusterNode'
@@ -17,6 +16,7 @@ import {
   type MapDimensions,
 } from './geometry'
 
+import { createNativeClusterEngine } from './createNativeClusterEngine'
 import { DEFAULT_SUPERCLUSTER_OPTIONS } from './defaults'
 import type { SuperclusterOptions, ClusterPropertyConfig } from './types'
 import { partitionValidPoints, warnSkippedPoints } from './validatePoints'
@@ -66,6 +66,7 @@ export class Supercluster<P extends AnyProps = AnyProps> {
    *
    * @throws When called more than once on the same instance.
    * @throws When the instance was {@linkcode Supercluster.destroy destroyed}.
+   * @throws When the native module is missing from the app binary.
    */
   load(points: PointFeature<P>[]): this {
     this.throwIfDestroyed()
@@ -89,6 +90,7 @@ export class Supercluster<P extends AnyProps = AnyProps> {
    *
    * @throws When called more than once on the same instance.
    * @throws When the instance was destroyed during the async build.
+   * @throws When the native module is missing from the app binary.
    */
   async loadAsync(points: PointFeature<P>[]): Promise<this> {
     this.throwIfDestroyed()
@@ -281,8 +283,7 @@ export class Supercluster<P extends AnyProps = AnyProps> {
       clusterProperties.length > 0
         ? extractGeoJSONAggregationValues(valid, clusterProperties)
         : undefined
-    const engine =
-      NitroModules.createHybridObject<ClusterEngine>('ClusterEngine')
+    const engine = createNativeClusterEngine()
 
     engine.setOptions({
       radius: this.options.radius,

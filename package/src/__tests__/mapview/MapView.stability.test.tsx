@@ -361,6 +361,89 @@ describe('MapView index rebuilds (#12, #13)', () => {
   })
 })
 
+describe('MapView engine failures (#15)', () => {
+  const missingEngine = new Error(
+    'HybridObject ClusterEngine is not registered'
+  )
+  let consoleError: ReturnType<typeof spyOn>
+
+  beforeEach(() => {
+    harnessControls.createHybridObjectError = missingEngine
+    consoleError = spyOn(console, 'error').mockImplementation(() => {})
+  })
+
+  afterEach(() => {
+    consoleError.mockRestore()
+  })
+
+  async function renderAndCatch(element: React.ReactElement) {
+    let thrown: unknown = null
+    try {
+      render(element)
+      await flush()
+    } catch (error) {
+      thrown = error
+    }
+    return thrown
+  }
+
+  it('throws an actionable error into render when the native engine is missing', async () => {
+    const thrown = await renderAndCatch(<Map />)
+
+    expect(thrown).toBeInstanceOf(Error)
+    const { message, cause } = thrown as Error
+    expect(message).toContain('Rebuild the app after installing the library')
+    expect(message).toContain('Expo Go is not supported')
+    expect(message).toContain(missingEngine.message)
+    expect(cause).toBe(missingEngine)
+  })
+
+  it('passes the error to onError instead of throwing', async () => {
+    const onError = jest.fn()
+
+    const thrown = await renderAndCatch(<Map onError={onError} />)
+
+    expect(thrown).toBeNull()
+    expect(onError).toHaveBeenCalledTimes(1)
+    const [error] = onError.mock.calls[0] as [Error]
+    expect(error.message).toContain('Expo Go is not supported')
+  })
+
+  it('keeps showing the previous markers when a rebuild fails', async () => {
+    harnessControls.createHybridObjectError = null
+    const onError = jest.fn()
+    const { container, rerender } = render(<Map onError={onError} />)
+    await flush()
+    const before = renderedMarkerIds(container)
+
+    harnessControls.createHybridObjectError = missingEngine
+    rerender(<Map onError={onError} points={[...GROUP, ...SINGLES, EXTRA]} />)
+    await flush()
+
+    expect(onError).toHaveBeenCalledTimes(1)
+    expect(renderedMarkerIds(container)).toEqual(before)
+  })
+
+  it('stays silent when the map unmounts before the build settles', async () => {
+    const onError = jest.fn()
+
+    const thrown = await (async () => {
+      try {
+        const { unmount } = render(<Map onError={onError} />)
+        unmount()
+        await flush()
+        return null
+      } catch (error) {
+        return error
+      }
+    })()
+
+    expect(thrown).toBeNull()
+    expect(onError).not.toHaveBeenCalled()
+    expect(consoleError).not.toHaveBeenCalled()
+  })
+})
+
 describe('MapView known issues', () => {
   let consoleError: ReturnType<typeof spyOn>
 
@@ -381,24 +464,6 @@ describe('MapView known issues', () => {
       await flush()
 
       expect(renderedMarkerIds(container)).toEqual(['s0', 's1', 's2'])
-    }
-  )
-
-  it.failing(
-    '#15: a native engine that cannot be created is reported, not swallowed',
-    async () => {
-      harnessControls.createHybridObjectError = new Error(
-        'HybridObject ClusterEngine is not registered'
-      )
-      let thrown: unknown = null
-      try {
-        render(<Map />)
-        await flush()
-      } catch (error) {
-        thrown = error
-      }
-
-      expect(thrown != null || consoleError.mock.calls.length > 0).toBe(true)
     }
   )
 

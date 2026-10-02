@@ -1,13 +1,13 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 
 import type { AnyProps, ClusterFeature, PointFeature } from '../geojson/types'
 import type { MapRegion } from '../types'
 import { DEFAULT_SUPERCLUSTER_OPTIONS } from '../engine/defaults'
 import { Supercluster } from '../engine/Supercluster'
 import type { MapDimensions } from '../engine/geometry'
-import type { SuperclusterOptions } from '../engine/types'
 import { hasSameIndexContent, type SameFeature } from './indexContent'
 import { stabilizeClusterFeatures } from './stabilizeClusters'
+import type { UseClustererOptions } from './types'
 
 type Features<P extends AnyProps> = Array<PointFeature<P> | ClusterFeature<P>>
 
@@ -51,6 +51,10 @@ export interface ClusterIndex<P extends AnyProps> {
 
 const NO_FEATURES: never[] = []
 
+function toError(error: unknown): Error {
+  return error instanceof Error ? error : new Error(String(error))
+}
+
 /**
  * Internal engine behind `useClusterer` and the compat `MapView`.
  *
@@ -62,6 +66,8 @@ const NO_FEATURES: never[] = []
  * - Reuses feature identities across equivalent queries of the same engine,
  *   never across engines, so a rendered cluster's `getExpansionRegion` always
  *   resolves on a live engine.
+ * - Reports a failed build to `options.onError`, or throws it during render
+ *   when there is none. Builds that were superseded or unmounted stay silent.
  *
  * @param isSameFeature - Extra equality a caller needs to share an index, on
  *   top of coordinates and `clusterProperties` inputs.
@@ -70,7 +76,7 @@ export function useClusterIndex<P extends AnyProps = AnyProps>(
   data: PointFeature<P>[],
   mapDimensions: MapDimensions,
   region: MapRegion,
-  options?: SuperclusterOptions,
+  options?: UseClustererOptions,
   isSameFeature?: SameFeature<P>
 ): ClusterIndex<P> {
   const {
@@ -81,7 +87,15 @@ export function useClusterIndex<P extends AnyProps = AnyProps>(
     extent = DEFAULT_SUPERCLUSTER_OPTIONS.extent,
     nodeSize = DEFAULT_SUPERCLUSTER_OPTIONS.nodeSize,
     clusterProperties = DEFAULT_SUPERCLUSTER_OPTIONS.clusterProperties,
+    onError,
   } = options ?? {}
+
+  // Read through a ref, so a new callback identity never restarts a build.
+  const onErrorRef = useRef(onError)
+  useEffect(() => {
+    onErrorRef.current = onError
+  })
+  const [buildError, setBuildError] = useState<Error | null>(null)
 
   const clusterPropertiesKey = clusterProperties
     .map((config) => `${config.source}:${config.key ?? ''}:${config.reduce}`)
@@ -138,9 +152,19 @@ export function useClusterIndex<P extends AnyProps = AnyProps>(
           setActive({ supercluster: next, version })
         }
       },
-      () => {
-        // Cancelled (superseded or unmounted) or failed: whatever index is
-        // active keeps serving queries.
+      (error: unknown) => {
+        // Superseded or unmounted: a newer build reports its own failure.
+        if (cancelled) {
+          return
+        }
+        // Whatever index is active keeps serving queries.
+        const failure = toError(error)
+        const report = onErrorRef.current
+        if (report != null) {
+          report(failure)
+        } else {
+          setBuildError(failure)
+        }
       }
     )
 
@@ -226,6 +250,10 @@ export function useClusterIndex<P extends AnyProps = AnyProps>(
   }
 
   const [placeholder] = useState(() => new Supercluster<P>())
+
+  if (buildError != null) {
+    throw buildError
+  }
 
   return {
     clusters,
