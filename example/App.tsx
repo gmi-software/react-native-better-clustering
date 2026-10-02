@@ -42,22 +42,6 @@ function generatePoints(count: number): MapPoint[] {
   return points;
 }
 
-function getRandomLatitude(min = 48, max = 56) {
-  return Math.random() * (max - min) + min;
-}
-
-function getRandomLongitude(min = 14, max = 24) {
-  return Math.random() * (max - min) + min;
-}
-
-function generateRandomPoints(count: number): MapPoint[] {
-  return Array.from({ length: count }, () => ({
-    id: String(Math.random()),
-    latitude: getRandomLatitude(),
-    longitude: getRandomLongitude(),
-  }));
-}
-
 export default function App() {
   const points = useMemo(() => generatePoints(2000), []);
 

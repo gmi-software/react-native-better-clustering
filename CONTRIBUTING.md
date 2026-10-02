@@ -91,12 +91,12 @@ react-native-better-clustering/
 
 - Generate Nitro bindings: `cd package && bun run specs`
 - Typecheck: `cd package && bun run typecheck`
-- Lint: `cd package && bun run lint`
+- Lint: `bun run lint` (from the repository root)
 - Test: `cd package && bun run test`
 
 ## Code Style
 
-- The project uses ESLint and Prettier. Run `cd package && bun run lint` before committing.
+- The project uses ESLint (`eslint.config.mjs`) and Prettier (`.prettierrc`), both configured at the repository root. Run `bun run lint` and `bun run format` before committing; CI runs `bun run lint` and `bun run format:check`. C++ has a clang-format config (`config/.clang-format`, run with `bun run format:cpp`).
 - Keep changes scoped and avoid drive-by refactors.
 
 ## Testing

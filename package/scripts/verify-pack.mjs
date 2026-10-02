@@ -10,7 +10,10 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-const packageRoot = path.join(path.dirname(fileURLToPath(import.meta.url)), '..')
+const packageRoot = path.join(
+  path.dirname(fileURLToPath(import.meta.url)),
+  '..'
+)
 
 const output = execFileSync('npm', ['pack', '--dry-run', '--json'], {
   cwd: packageRoot,
@@ -29,7 +32,10 @@ const files = pack.files.map((file) => file.path)
 
 const DENIED = [
   { pattern: /(^|\/)bench(\/|\.|$)/, reason: 'benchmark sources or binaries' },
-  { pattern: /(^|\/)cluster_(test|bench)$/, reason: 'locally built test binary' },
+  {
+    pattern: /(^|\/)cluster_(test|bench)$/,
+    reason: 'locally built test binary',
+  },
   { pattern: /\.test\.[cm]?[jt]sx?$|\.test\.cpp$/, reason: 'test file' },
   { pattern: /(^|\/)__(tests|audit)__\//, reason: 'test directory' },
   { pattern: /\.(tgz|o|a|so|dylib|dSYM)$/, reason: 'build artifact' },
@@ -85,8 +91,13 @@ for (const file of files) {
     problems.push(`${file}: native binary must not be published`)
   }
 
-  if (NATIVE_SOURCE.test(file) && DEFINES_MAIN.test(fs.readFileSync(absolute, 'utf8'))) {
-    problems.push(`${file}: defines main() and would be linked into consumer apps`)
+  if (
+    NATIVE_SOURCE.test(file) &&
+    DEFINES_MAIN.test(fs.readFileSync(absolute, 'utf8'))
+  ) {
+    problems.push(
+      `${file}: defines main() and would be linked into consumer apps`
+    )
   }
 }
 

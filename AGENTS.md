@@ -21,7 +21,7 @@ A single `bun install` at the root installs every workspace (`package`, `example
 
 - Generate Nitro bindings: `cd package && bun run specs`
 - Typecheck: `cd package && bun run typecheck`
-- Lint: `cd package && bun run lint`
+- Lint (whole repo, from the root): `bun run lint`. Format: `bun run format` / `bun run format:check` (Prettier; C++ via `bun run format:cpp`, local only)
 - Test (all): `cd package && bun run test`
 - Test (single file): `cd package && bun test src/utils/distance.test.ts` (`bun test`; mock modules with `mock.module()` before a dynamic `import()` — see CONTRIBUTING.md)
 - Build: `cd package && bun run build` (react-native-builder-bob → `lib/module` ESM + `lib/typescript` declarations)
@@ -63,7 +63,7 @@ Example template:
 
 ## Test plan
 - [ ] `cd package && bun run typecheck` (not run)
-- [ ] `cd package && bun run lint` (not run)
+- [ ] `bun run lint && bun run format:check` (not run)
 - [ ] `cd package && bun run test:ci` (not run)
 - [ ] `cd example && bunx expo run:ios` (not run)
 - [ ] `cd example && bunx expo run:android` (not run)
