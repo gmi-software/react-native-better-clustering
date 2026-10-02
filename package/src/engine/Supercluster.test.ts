@@ -153,6 +153,93 @@ describe('Supercluster pointIndex identity', () => {
   })
 })
 
+describe('Supercluster coordinate validation', () => {
+  let warn: jest.SpyInstance
+
+  beforeEach(() => {
+    jest.clearAllMocks()
+    mockEngine.isBuilt = false
+    warn = jest.spyOn(console, 'warn').mockImplementation(() => {})
+  })
+
+  afterEach(() => {
+    warn.mockRestore()
+  })
+
+  const nonFinitePoint: PointFeature = {
+    type: 'Feature',
+    geometry: {
+      type: 'Point',
+      coordinates: [21, undefined as unknown as number],
+    },
+    properties: { id: 'broken' },
+  }
+  const firstValid: PointFeature = {
+    type: 'Feature',
+    geometry: { type: 'Point', coordinates: [-122.42, 37.78] },
+    properties: { id: 'first' },
+  }
+  const secondValid: PointFeature = {
+    type: 'Feature',
+    geometry: { type: 'Point', coordinates: [-122.41, 37.79] },
+    properties: { id: 'second' },
+  }
+
+  it('never packs a non-finite coordinate for the native engine', () => {
+    new Supercluster().load([nonFinitePoint, firstValid, secondValid])
+
+    const buffer = mockEngine.setPoints.mock.calls[0]![0] as ArrayBuffer
+    expect(new DataView(buffer).getUint32(0, true)).toBe(2)
+  })
+
+  it('warns instead of letting the point vanish silently', () => {
+    new Supercluster().load([nonFinitePoint, firstValid])
+
+    expect(warn).toHaveBeenCalledTimes(1)
+    expect(warn.mock.calls[0]![0]).toContain('skipped 1 of 2 points')
+  })
+
+  it('does not warn when every coordinate is finite', () => {
+    new Supercluster().load([firstValid, secondValid])
+
+    expect(warn).not.toHaveBeenCalled()
+  })
+
+  it('keeps pointIndex aligned after a leading point is dropped', () => {
+    mockEngine.getClusters.mockReturnValueOnce([
+      {
+        id: 0,
+        latitude: 37.78,
+        longitude: -122.42,
+        count: 1,
+        isCluster: false,
+        parentId: -1,
+        pointIndex: 0,
+        values: [],
+      },
+      {
+        id: 1,
+        latitude: 37.79,
+        longitude: -122.41,
+        count: 1,
+        isCluster: false,
+        parentId: -1,
+        pointIndex: 1,
+        values: [],
+      },
+    ])
+
+    const clusterer = new Supercluster().load([
+      nonFinitePoint,
+      firstValid,
+      secondValid,
+    ])
+    const features = clusterer.getClusters([...WORLD_BBOX], 10)
+
+    expect(features).toEqual([firstValid, secondValid])
+  })
+})
+
 describe('Supercluster.getAllLeaves', () => {
   beforeEach(() => {
     jest.clearAllMocks()

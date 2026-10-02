@@ -19,6 +19,7 @@ import {
 
 import { DEFAULT_SUPERCLUSTER_OPTIONS } from './defaults'
 import type { SuperclusterOptions, ClusterPropertyConfig } from './types'
+import { partitionValidPoints, warnSkippedPoints } from './validatePoints'
 
 export type { SuperclusterOptions, ClusterPropertyConfig }
 
@@ -244,11 +245,16 @@ export class Supercluster<P extends AnyProps = AnyProps> {
   }
 
   private prepareEngine(points: PointFeature<P>[]): ClusterEngine {
-    this.loadedFeatures = points
+    // Filtered first so `loadedFeatures` stays index-aligned with the packed
+    // buffer that `pointIndex` is reported against.
+    const { valid, invalidIndices } = partitionValidPoints(points)
+    warnSkippedPoints(invalidIndices, points.length)
+
+    this.loadedFeatures = valid
     const clusterProperties = this.options.clusterProperties
     const aggregationValues =
       clusterProperties.length > 0
-        ? extractGeoJSONAggregationValues(points, clusterProperties)
+        ? extractGeoJSONAggregationValues(valid, clusterProperties)
         : undefined
     const engine =
       NitroModules.createHybridObject<ClusterEngine>('ClusterEngine')
@@ -264,7 +270,7 @@ export class Supercluster<P extends AnyProps = AnyProps> {
     })
     engine.setPoints(
       packPoints(
-        points.map((feature) => {
+        valid.map((feature) => {
           const [longitude, latitude] = feature.geometry.coordinates
           return { latitude, longitude }
         }),
