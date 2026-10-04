@@ -38,6 +38,7 @@ Maps visible clustered features to React elements via `renderItem`.
 | `mapDimensions` | `{ width, height }` | Map size in pixels |
 | `options` | `SuperclusterOptions` | Optional clustering options |
 | `renderItem` | `(feature) => ReactElement` | Render each visible point or cluster |
+| `onError` | `(error) => void` | Called when the native index fails to build; without it the error is thrown during render (see [`useClusterer`](./hooks.md)) |
 
 Thin adapter over `useClusterer` — same lifecycle, defaults, and performance
 notes apply. For full control, use the hook directly.

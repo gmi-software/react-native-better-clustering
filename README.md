@@ -182,6 +182,7 @@ Everything from `react-native-maps` `MapView`, plus:
 | `clusterTextColor`             | `#FFFFFF`             | Default cluster label color       |
 | `animationEnabled`             | `true`                | Animate cluster changes (iOS)     |
 | `onClusterPress`               | —                     | `(cluster, markers) => void`      |
+| `onError`                      | throws during render  | `(error) => void` — native index build failed |
 | `renderCluster`                | —                     | Custom cluster renderer           |
 | `preserveClusterPressBehavior` | `false`               | Skip auto `fitToCoordinates`      |
 | `superClusterRef`              | —                     | Access the underlying engine      |
@@ -265,6 +266,7 @@ See the [docs](https://gmi-software.github.io/react-native-better-clustering/doc
 | Map is blank on Android  | Add a Google Maps API key. See [platform setup](https://gmi-software.github.io/react-native-better-clustering/docs/setup/installation). |
 | New Architecture errors  | Confirm New Architecture is enabled and rebuild.                                                                                        |
 | Does not work in Expo Go | Use a [development build](https://docs.expo.dev/develop/development-builds/introduction/).                                              |
+| `native ClusterEngine module is not available` | Rebuild the native app after installing (`pod install` / `npx expo prebuild --clean`). See [troubleshooting](https://gmi-software.github.io/react-native-better-clustering/docs/troubleshooting#the-native-clusterengine-module-is-not-available). |
 | Markers flicker on zoom  | Memoize marker components; give each point a stable `id`.                                                                               |
 
 

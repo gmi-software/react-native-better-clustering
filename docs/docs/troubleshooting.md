@@ -16,6 +16,26 @@ Configure a **Google Maps API key** for `react-native-maps` (Expo plugin or
 This library is a Nitro module and requires React Native's New Architecture.
 Confirm it is enabled and rebuild the native app.
 
+## The native ClusterEngine module is not available
+
+```
+react-native-better-clustering: the native ClusterEngine module is not
+available. Rebuild the app after installing the library (`pod install` on iOS,
+a Gradle build on Android, or `npx expo prebuild` and a development build with
+Expo); Expo Go is not supported. Cause: …
+```
+
+The JavaScript side is installed but the app binary does not contain the native
+engine. Rebuild the native app after installing or upgrading the library:
+
+- **Bare React Native:** `cd ios && pod install`, then rebuild both platforms.
+- **Expo:** `npx expo prebuild --clean`, then build a development build. Expo Go
+  cannot load it.
+
+`MapView`, `Clusterer` and `useClusterer` throw this error during render, so an
+error boundary (and LogBox in development) shows it. To handle it yourself
+instead, pass `onError`; the map then renders without the clustered markers.
+
 ## It doesn't work in Expo Go
 
 Correct — native modules require a

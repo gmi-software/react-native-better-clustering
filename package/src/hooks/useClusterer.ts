@@ -2,10 +2,10 @@ import type { AnyProps, ClusterFeature, PointFeature } from '../geojson/types'
 import type { MapRegion } from '../types'
 import type { Supercluster } from '../engine/Supercluster'
 import type { MapDimensions } from '../engine/geometry'
-import type { SuperclusterOptions } from '../engine/types'
 import { useClusterIndex } from './useClusterIndex'
+import type { UseClustererOptions } from './types'
 
-export type { MapDimensions }
+export type { MapDimensions, UseClustererOptions }
 
 /**
  * React hook that clusters GeoJSON points for the current map region.
@@ -20,10 +20,14 @@ export type { MapDimensions }
  * objects. During a rebuild it keeps returning the previous clusters, then
  * swaps and destroys the previous engine. The engine is destroyed on unmount.
  *
+ * A failed build (for example, the native module is missing from the app
+ * binary) is passed to `options.onError`, or thrown during render when it is
+ * not set, so an error boundary catches it.
+ *
  * @param data - Point features to cluster.
  * @param mapDimensions - Map size in pixels ({@linkcode MapDimensions}).
  * @param region - Current map region ({@linkcode MapRegion}).
- * @param options - Optional {@linkcode SuperclusterOptions}; defaults match `DEFAULT_SUPERCLUSTER_OPTIONS`.
+ * @param options - Optional {@linkcode UseClustererOptions}; defaults match `DEFAULT_SUPERCLUSTER_OPTIONS`.
  *
  * @see `Clusterer`
  */
@@ -31,7 +35,7 @@ export function useClusterer<P extends AnyProps = AnyProps>(
   data: PointFeature<P>[],
   mapDimensions: MapDimensions,
   region: MapRegion,
-  options?: SuperclusterOptions
+  options?: UseClustererOptions
 ): [Array<PointFeature<P> | ClusterFeature<P>>, Supercluster<P>] {
   const { clusters, supercluster } = useClusterIndex(
     data,
