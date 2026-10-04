@@ -75,6 +75,7 @@ interface PointProps {
 
 interface ClusterProps {
   values: number[]
+  minLeafId: number
 }
 
 type Feature = Supercluster.PointFeature<PointProps>
@@ -134,6 +135,7 @@ function toNode(feature: Result): EngineClusterNode {
       isCluster: true,
       parentId: -1,
       pointIndex: -1,
+      minLeafId: properties.minLeafId,
       values: properties.values ?? [],
     }
   }
@@ -146,6 +148,7 @@ function toNode(feature: Result): EngineClusterNode {
     isCluster: false,
     parentId: -1,
     pointIndex: point.index,
+    minLeafId: point.index,
     values: point.values,
   }
 }
@@ -193,11 +196,12 @@ export function createFakeClusterEngine(): FakeClusterEngine {
         maxZoom: options.maxZoom,
         minPoints: options.minPoints,
         nodeSize: options.nodeSize,
-        map: (props) => ({ values: [...props.values] }),
+        map: (props) => ({ values: [...props.values], minLeafId: props.index }),
         reduce: (acc, props) => {
           acc.values = acc.values.map((value, k) =>
             reduceValue(reducers[k]!, value, props.values[k] ?? 0)
           )
+          acc.minLeafId = Math.min(acc.minLeafId, props.minLeafId)
         },
       }).load(points)
       built = true

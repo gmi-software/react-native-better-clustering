@@ -458,6 +458,37 @@ describe('MapView marker keys (#28)', () => {
     expect(retargetsSince(start)).toEqual([])
   })
 
+  const clusterUnmountsSince = (start: number) =>
+    unmountsSince(start).filter((id) => id.startsWith('cluster@'))
+
+  it('keeps a cluster bubble mounted while it splits on zoom', async () => {
+    // GROUP is one cluster of 5 at camera zoom 17 and loses g4 at 18.
+    const { container } = render(
+      <Map points={GROUP} initialRegion={regionAt(GROUP[2]!, 17)} />
+    )
+    await flush()
+    expect(clusterLabels(container)).toEqual(['5'])
+    const start = mountLog.length
+
+    await settleRegion(regionAt(GROUP[2]!, 18))
+
+    expect(clusterLabels(container)).toEqual(['4'])
+    expect(clusterUnmountsSince(start)).toEqual([])
+  })
+
+  it('keeps cluster bubbles mounted when a rebuild inserts a marker', async () => {
+    const { container, rerender } = render(<Map />)
+    await flush()
+    const start = mountLog.length
+
+    rerender(<Map points={[EXTRA, ...GROUP, ...SINGLES]} />)
+    await flush()
+
+    expect(fakeClusterEngineStats.created).toBe(2)
+    expect(clusterLabels(container)).toEqual(['5'])
+    expect(clusterUnmountsSince(start)).toEqual([])
+  })
+
   it('unmounts only the marker removed from the start', async () => {
     const { rerender } = render(<Map points={[EXTRA, ...SINGLES]} />)
     await flush()

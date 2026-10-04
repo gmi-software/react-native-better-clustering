@@ -71,8 +71,14 @@ const geoJson = useMemo(
 
 ## Markers flicker on zoom
 
-Use `stabilizeClusterFeatures` from `/hooks`, memoize marker components, and
-ensure each point has a stable `id`.
+Give every `Marker` a stable `key` (its id, not its array index). `MapView`
+keeps that key, so adding or removing a marker doesn't remount the others, and
+it keys each cluster bubble by its first marker's key, so a cluster that splits
+or merges on zoom, or survives a data update, keeps its native marker instead
+of being removed and re-added. Memoize custom marker components too.
+
+With `/hooks`, use `stabilizeClusterFeatures` and key your markers by a stable
+point `id`.
 
 ## Some markers never appear on the map
 

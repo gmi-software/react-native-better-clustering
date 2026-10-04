@@ -335,6 +335,46 @@ static void testMemorySizeReflectsNativeAllocations() {
   assert(engine.memorySize() > afterPoints);
 }
 
+static void testMinLeafIdIsTheSmallestLeafAtEveryZoom() {
+  ClusterEngineCore engine;
+  ClusterEngineConfig config;
+  config.radius = 40.0;
+  config.minPoints = 2;
+  config.minZoom = 0;
+  config.maxZoom = 16;
+  engine.setOptions(config);
+
+  // Pairs that merge into ever larger clusters as the zoom drops.
+  const int32_t count = 64;
+  std::vector<int32_t> ids(count);
+  std::vector<double> lats(count);
+  std::vector<double> lngs(count);
+  for (int32_t i = 0; i < count; i++) {
+    ids[i] = i;
+    lats[i] = 52.0 + (i % 8) * 0.002 + (i / 8) * 0.00001;
+    lngs[i] = 21.0 + (i / 8) * 0.003;
+  }
+  engine.setPoints(ids.data(), lats.data(), lngs.data(), static_cast<size_t>(count));
+  engine.build();
+
+  int32_t clustersChecked = 0;
+  for (int32_t z = config.minZoom; z <= config.maxZoom; z++) {
+    for (const auto& node : engine.getClusters({85.0, -85.0, 180.0, -180.0, static_cast<double>(z)})) {
+      if (!node.isCluster) {
+        assert(node.minLeafId == node.id);
+        continue;
+      }
+      int32_t smallest = count;
+      for (const auto& leaf : engine.getLeaves(node.id, 0, 0)) {
+        smallest = std::min(smallest, leaf.pointIndex);
+      }
+      assert(node.minLeafId == smallest);
+      clustersChecked++;
+    }
+  }
+  assert(clustersChecked > 10);
+}
+
 int main() {
   testGetLeavesReturnsAllPointsInCluster();
   testGetLeavesPagination();
@@ -347,6 +387,7 @@ int main() {
   testGetLeavesUnlimited();
   testInvalidBufferRejected();
   testMemorySizeReflectsNativeAllocations();
+  testMinLeafIdIsTheSmallestLeafAtEveryZoom();
   std::printf("ClusterEngineCore tests passed.\n");
   return 0;
 }

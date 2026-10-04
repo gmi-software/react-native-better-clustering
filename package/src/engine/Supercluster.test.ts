@@ -9,7 +9,7 @@ import {
   spyOn,
 } from 'bun:test'
 
-import type { PointFeature } from '../geojson'
+import type { ClusterFeature, PointFeature } from '../geojson'
 import type { EngineClusterNode } from '../specs/EngineClusterNode'
 
 const mockEngine = {
@@ -154,6 +154,7 @@ describe('Supercluster pointIndex identity', () => {
         isCluster: false,
         parentId: -1,
         pointIndex: 1,
+        minLeafId: 1,
         values: [],
       },
     ])
@@ -228,6 +229,7 @@ describe('Supercluster coordinate validation', () => {
         isCluster: false,
         parentId: -1,
         pointIndex: 0,
+        minLeafId: 0,
         values: [],
       },
       {
@@ -238,6 +240,7 @@ describe('Supercluster coordinate validation', () => {
         isCluster: false,
         parentId: -1,
         pointIndex: 1,
+        minLeafId: 1,
         values: [],
       },
     ])
@@ -262,6 +265,7 @@ describe('Supercluster coordinate validation', () => {
         isCluster: false,
         parentId: -1,
         pointIndex: 0,
+        minLeafId: 0,
         values: [],
       },
     ])
@@ -275,6 +279,75 @@ describe('Supercluster coordinate validation', () => {
     const [feature] = clusterer.getClusters([...WORLD_BBOX], 10)
 
     expect(feature).toBe(newerFirst)
+  })
+})
+
+describe('Supercluster.getClusterMinLeaf', () => {
+  beforeEach(() => {
+    jest.clearAllMocks()
+    mockEngine.isBuilt = false
+  })
+
+  const point = (id: string, longitude: number): PointFeature => ({
+    type: 'Feature',
+    geometry: { type: 'Point', coordinates: [longitude, 52] },
+    properties: { id },
+  })
+  const clusterNode = (minLeafId: number): EngineClusterNode => ({
+    id: 10,
+    latitude: 52,
+    longitude: 21,
+    count: 2,
+    isCluster: true,
+    parentId: -1,
+    pointIndex: -1,
+    minLeafId,
+    values: [],
+  })
+
+  it('resolves the min leaf index the engine reports to the loaded feature', () => {
+    const warn = spyOn(console, 'warn').mockImplementation(() => {})
+    mockEngine.getClusters.mockReturnValueOnce([clusterNode(0)])
+    const unindexable = point('broken', Number.NaN)
+    const first = point('first', 21)
+    const clusterer = new Supercluster().load([
+      unindexable,
+      first,
+      point('second', 21.0001),
+    ])
+
+    const [cluster] = clusterer.getClusters([...WORLD_BBOX], 10)
+
+    // Index 0 is the first indexable point, after the skipped one.
+    expect(clusterer.getClusterMinLeaf(cluster as ClusterFeature)).toBe(first)
+    warn.mockRestore()
+  })
+
+  it('returns the newer feature after replaceLoadedFeatures', () => {
+    mockEngine.getClusters.mockReturnValueOnce([clusterNode(1)])
+    const clusterer = new Supercluster().load([
+      point('a', 21),
+      point('b', 21.0001),
+    ])
+    const [cluster] = clusterer.getClusters([...WORLD_BBOX], 10)
+    const newerB = point('b', 21.0001)
+
+    clusterer.replaceLoadedFeatures([point('a', 21), newerB])
+
+    expect(clusterer.getClusterMinLeaf(cluster as ClusterFeature)).toBe(newerB)
+  })
+
+  it('returns undefined for a cluster another instance returned', () => {
+    mockEngine.getClusters.mockReturnValueOnce([clusterNode(0)])
+    const [cluster] = new Supercluster()
+      .load([point('a', 21)])
+      .getClusters([...WORLD_BBOX], 10)
+
+    expect(
+      new Supercluster()
+        .load([point('a', 21)])
+        .getClusterMinLeaf(cluster as ClusterFeature)
+    ).toBeUndefined()
   })
 })
 

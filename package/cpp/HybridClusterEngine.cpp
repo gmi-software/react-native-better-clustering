@@ -81,6 +81,7 @@ EngineClusterNode HybridClusterEngine::toFeature(const ClusterNode& node) const 
     node.isCluster,
     static_cast<double>(node.parentId),
     static_cast<double>(node.pointIndex),
+    static_cast<double>(node.minLeafId),
     node.values
   );
 }

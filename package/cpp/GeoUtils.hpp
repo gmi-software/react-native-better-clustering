@@ -113,6 +113,10 @@ struct ClusterNode {
   int32_t pointIndex; // -1 for cluster, >= 0 for leaf point index
   bool isCluster;
   int32_t zoom;
+  // Smallest point id among the node's leaves (its own id for a point). A
+  // cluster keeps it while it only gains or loses other leaves, so it
+  // identifies the cluster across zoom levels and rebuilds.
+  int32_t minLeafId = -1;
   // Aggregated values, one per configured reducer. For a leaf this mirrors the
   // point's raw values; for a cluster it is the reduced result over its leaves.
   std::vector<double> values;

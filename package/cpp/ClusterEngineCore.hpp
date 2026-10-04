@@ -237,6 +237,7 @@ public:
       node.pointIndex = _points[i].id;
       node.isCluster = false;
       node.zoom = _options.maxZoom + 1;
+      node.minLeafId = node.id;
       if (np > 0) {
         node.values.assign(np, 0.0);
         const auto& v = _points[i].values;
@@ -296,6 +297,7 @@ public:
           cluster.pointIndex = -1;
           cluster.isCluster = true;
           cluster.zoom = z;
+          cluster.minLeafId = current[i].minLeafId;
           if (np > 0) {
             // Seed the accumulator with the origin node's values, then fold.
             cluster.values = current[i].values;
@@ -310,6 +312,7 @@ public:
             const int32_t np2 = current[nb].count;
             wx += current[nb].x * np2;
             wy += current[nb].y * np2;
+            cluster.minLeafId = std::min(cluster.minLeafId, current[nb].minLeafId);
             for (size_t k = 0; k < np; k++) {
               const double v = k < current[nb].values.size()
                 ? current[nb].values[k]
@@ -384,6 +387,7 @@ public:
         node.pointIndex = p.id;
         node.isCluster = false;
         node.zoom = 0;
+        node.minLeafId = p.id;
         node.values = p.values;
         result.push_back(std::move(node));
       }
