@@ -180,6 +180,25 @@ export function clusterZoomFromRegion(
 }
 
 /**
+ * Camera zoom a map of the given width shows `region` at, counted the way
+ * Google Maps and react-native-maps count it (256-pt tiles). Fractional, and
+ * `-Infinity` for an invalid region or a non-positive width.
+ *
+ * For UI thresholds such as `spiderfyMinZoom`. It is not the zoom the cluster
+ * index is queried at, which is {@linkcode clusterZoomFromRegion}.
+ */
+export function cameraZoomFromRegion(
+  region: MapRegion,
+  mapDimensions: MapDimensions
+): number {
+  if (!isValidRegion(region) || !(mapDimensions.width > 0)) {
+    return -Infinity
+  }
+
+  return Math.log2((360 * mapDimensions.width) / (256 * region.longitudeDelta))
+}
+
+/**
  * Builds a {@linkcode Viewport} from a {@linkcode BBox} and integer zoom.
  *
  * Consumed by `ClusterEngine.getClusters`.

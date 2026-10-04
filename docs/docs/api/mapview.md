@@ -59,8 +59,9 @@ are supported, plus:
 | `extent` | `512` | Tile extent, in supercluster's sense: `radius` is in pixels of an `extent`-wide tile, so a larger `extent` clusters more tightly at the same `radius` |
 | `nodeSize` | `64` | KD-tree leaf size |
 | `clusteringEnabled` | `true` | Toggle clustering |
-| `spiralEnabled` | `true` | Spider layout at max zoom |
-| `spiderfyMaxLeaves` | `50` | Most markers a cluster spiderfies into. A larger cluster of overlapping markers stays a bubble at max zoom; pressing it still calls `onClusterPress` with every marker, so you can list them instead. Spider markers are spaced about 40 pt apart on screen |
+| `spiralEnabled` | `true` | Spread markers that share a location (a cluster that zooming can't split) into a spiral with connector lines. See [Markers at the same location](#markers-at-the-same-location) |
+| `spiderfyMinZoom` | `19` | Camera zoom from which such clusters spread without being pressed (react-native-map-clustering parity) |
+| `spiderfyMaxLeaves` | `50` | Most markers a cluster spiderfies into. A larger cluster of overlapping markers stays a bubble; pressing it still calls `onClusterPress` with every marker, so you can list them instead. Spider markers are spaced about 40 pt apart on screen |
 | `spiderLineColor` | `#FF0000` | Color of spider connector lines |
 | `clusterColor` | `#0F52FF` | Default cluster bubble color (GMI brand blue) |
 | `clusterTextColor` | `#FFFFFF` | Default cluster label color |
@@ -86,6 +87,22 @@ are supported, plus:
 | `onMarkersChange` | `(markers) => void` | Fired when visible markers/clusters change: once the first index has loaded, then only when the visible set changes. A re-render with the same marker coordinates does not fire it, so `onMarkersChange={setState}` is safe |
 | `onRegionChangeComplete` | `(region, details, markers) => void` | Extends the maps callback with current markers |
 | `onError` | `(error) => void` | Fired when the native cluster index fails to build, for example because the app was not rebuilt after installing the library. Markers from an earlier successful build keep showing. Without it, the error is thrown during render so an error boundary (and LogBox in development) shows it — see [Troubleshooting](../troubleshooting.md#the-native-clusterengine-module-is-not-available) |
+
+## Markers at the same location
+
+Markers at the same coordinate (one building, or geocoding fallbacks) form a
+cluster that zooming can never split. With `spiralEnabled`, `MapView` spreads
+them into a spiral:
+
+- automatically from camera zoom `spiderfyMinZoom` (19 by default), and
+- at any zoom when the cluster is pressed. The map doesn't move; the spiral
+  collapses when the zoom changes. This also covers maps whose maximum zoom
+  (`maxZoomLevel`, or the provider's limit) sits below `spiderfyMinZoom`.
+
+`onClusterPress` still receives the cluster and its markers. Clusters of
+distinct nearby markers keep expanding by zooming, and clusters larger than
+`spiderfyMaxLeaves` stay bubbles. With `preserveClusterPressBehavior`, a press
+only calls `onClusterPress`.
 
 ## Per-marker opt-out
 

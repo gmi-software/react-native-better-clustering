@@ -6,6 +6,7 @@ import type { MapRegion } from '../types'
 import { DEFAULT_VIEWPORT_TILE_SIZE, GEO_VIEWPORT_TILE_SIZE } from './defaults'
 import {
   bboxToZoom,
+  cameraZoomFromRegion,
   clusterZoomFromRegion,
   isValidRegion,
   regionToBBox,
@@ -33,6 +34,29 @@ function assertFiniteBBox(bbox: ReturnType<typeof regionToBBox>): void {
 function assertFiniteZoom(zoom: number): void {
   expect(Number.isFinite(zoom)).toBe(true)
 }
+
+describe('cameraZoomFromRegion', () => {
+  it('inverts the 256-pt tile region a map shows at a camera zoom', () => {
+    for (const zoom of [3, 14, 18.5, 19, 21]) {
+      const longitudeDelta = (360 * MAP_DIMENSIONS.width) / (256 * 2 ** zoom)
+      const region = { ...VALID_REGION, longitudeDelta }
+
+      expect(cameraZoomFromRegion(region, MAP_DIMENSIONS)).toBeCloseTo(zoom, 9)
+    }
+  })
+
+  it('is -Infinity for an invalid region or a map without width', () => {
+    expect(
+      cameraZoomFromRegion(
+        { ...VALID_REGION, longitudeDelta: Number.NaN },
+        MAP_DIMENSIONS
+      )
+    ).toBe(-Infinity)
+    expect(cameraZoomFromRegion(VALID_REGION, { width: 0, height: 800 })).toBe(
+      -Infinity
+    )
+  })
+})
 
 describe('isValidRegion', () => {
   it('accepts a well-formed region', () => {
