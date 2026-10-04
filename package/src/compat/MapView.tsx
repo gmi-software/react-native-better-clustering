@@ -623,13 +623,11 @@ const CompatMapView = forwardRef(function CompatMapView(
 
     for (const feature of clusters) {
       if (!isClusterFeature(feature)) {
+        // Keeps the key `Children.toArray` gave it, so each marker stays one
+        // React instance when others are inserted or removed before it.
         const child = markerFor(feature)
         if (isMarker(child)) {
-          immediate.push(
-            React.cloneElement(child, {
-              key: `marker-${feature.properties.index}`,
-            })
-          )
+          immediate.push(child)
         }
         continue
       }

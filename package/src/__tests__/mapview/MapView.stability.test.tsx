@@ -444,6 +444,33 @@ describe('MapView engine failures (#15)', () => {
   })
 })
 
+describe('MapView marker keys (#28)', () => {
+  it('does not remount other markers when one is inserted at the start', async () => {
+    const { rerender } = render(<Map points={SINGLES} />)
+    await flush()
+    const start = mountLog.length
+
+    rerender(<Map points={[EXTRA, ...SINGLES]} />)
+    await flush()
+
+    expect(unmountsSince(start)).toEqual([])
+    // Index keys used to hand the shifted markers' instances to other points.
+    expect(retargetsSince(start)).toEqual([])
+  })
+
+  it('unmounts only the marker removed from the start', async () => {
+    const { rerender } = render(<Map points={[EXTRA, ...SINGLES]} />)
+    await flush()
+    const start = mountLog.length
+
+    rerender(<Map points={SINGLES} />)
+    await flush()
+
+    expect(unmountsSince(start)).toEqual(['x0'])
+    expect(retargetsSince(start)).toEqual([])
+  })
+})
+
 describe('MapView known issues', () => {
   let consoleError: ReturnType<typeof spyOn>
 
@@ -497,20 +524,4 @@ describe('MapView known issues', () => {
     expect(clusterLabels(container)).toEqual([])
     expect(renderedMarkerIds(container)).toHaveLength(SAME_SPOT.length)
   })
-
-  it.failing(
-    '#28: inserting a marker at the start does not remount the others',
-    async () => {
-      const { rerender } = render(<Map points={SINGLES} />)
-      await flush()
-      const start = mountLog.length
-
-      rerender(<Map points={[EXTRA, ...SINGLES]} />)
-      await flush()
-
-      expect(unmountsSince(start)).toEqual([])
-      // Index keys hand the shifted markers' instances to other points.
-      expect(retargetsSince(start)).toEqual([])
-    }
-  )
 })
