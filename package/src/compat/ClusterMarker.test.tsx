@@ -1,4 +1,6 @@
-import { describe, expect, it, jest, mock } from 'bun:test'
+import { beforeEach, describe, expect, it, jest, mock } from 'bun:test'
+import { render } from '@testing-library/react'
+import React from 'react'
 
 import type { ClusterFeature } from '../geojson/types'
 import type { ClusterMarkerProps } from './ClusterMarker'
@@ -20,11 +22,19 @@ mock.module('react-native-reanimated', () => ({
   withTiming: (value: unknown) => value,
 }))
 
+const redraw = jest.fn()
+
 mock.module('react-native-maps', () => ({
-  Marker: 'Marker',
+  Marker: class Marker extends React.Component<{ children?: React.ReactNode }> {
+    redraw = redraw
+    render() {
+      return React.createElement('rn-marker', null, this.props.children)
+    }
+  },
 }))
 
-const { areClusterMarkerPropsEqual } = await import('./ClusterMarker')
+const { default: ClusterMarker, areClusterMarkerPropsEqual } =
+  await import('./ClusterMarker')
 
 const CLUSTER: ClusterFeature = {
   type: 'Feature',
@@ -55,6 +65,79 @@ function baseProps(
     ...overrides,
   }
 }
+
+describe('ClusterMarker redraw', () => {
+  const withCount = (count: number): ClusterFeature => ({
+    ...CLUSTER,
+    properties: { ...CLUSTER.properties, point_count: count },
+  })
+
+  beforeEach(() => {
+    redraw.mockClear()
+  })
+
+  it('redraws a mounted bubble when its count or colour changes', () => {
+    const onPress = jest.fn()
+    const { rerender } = render(
+      <ClusterMarker {...baseProps({ onPress, feature: withCount(12) })} />
+    )
+    expect(redraw).not.toHaveBeenCalled()
+
+    rerender(
+      <ClusterMarker {...baseProps({ onPress, feature: withCount(7) })} />
+    )
+    expect(redraw).toHaveBeenCalledTimes(1)
+
+    rerender(
+      <ClusterMarker
+        {...baseProps({
+          onPress,
+          feature: withCount(7),
+          clusterColor: '#FF5722',
+        })}
+      />
+    )
+    expect(redraw).toHaveBeenCalledTimes(2)
+  })
+
+  it('does not redraw when only the position changes', () => {
+    const onPress = jest.fn()
+    const { rerender } = render(<ClusterMarker {...baseProps({ onPress })} />)
+
+    rerender(
+      <ClusterMarker
+        {...baseProps({
+          onPress,
+          feature: {
+            ...CLUSTER,
+            geometry: { type: 'Point', coordinates: [-122.43, 37.79] },
+          },
+        })}
+      />
+    )
+
+    expect(redraw).not.toHaveBeenCalled()
+  })
+
+  it('leaves redrawing to the map while tracksViewChanges is on', () => {
+    const onPress = jest.fn()
+    const { rerender } = render(
+      <ClusterMarker {...baseProps({ onPress, tracksViewChanges: true })} />
+    )
+
+    rerender(
+      <ClusterMarker
+        {...baseProps({
+          onPress,
+          tracksViewChanges: true,
+          feature: withCount(7),
+        })}
+      />
+    )
+
+    expect(redraw).not.toHaveBeenCalled()
+  })
+})
 
 describe('areClusterMarkerPropsEqual', () => {
   it('returns true when feature and stable onPress reference are unchanged', () => {
