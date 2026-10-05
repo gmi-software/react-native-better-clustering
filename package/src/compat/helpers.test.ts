@@ -1,7 +1,45 @@
 import { describe, expect, it } from 'bun:test'
+import React from 'react'
 
-import { computeClusterLayoutSignature } from './helpers'
+import {
+  computeClusterLayoutSignature,
+  markerToGeoJSONFeature,
+} from './helpers'
+import { isClusterFeature } from '../geojson'
 import type { ClusterFeature, PointFeature } from '../geojson/types'
+
+describe('markerToGeoJSONFeature', () => {
+  function Marker(_props: Record<string, unknown>) {
+    return null
+  }
+
+  it('keeps marker props but never the ones that mark a cluster (#14)', () => {
+    const marker = React.createElement(
+      Marker,
+      {
+        coordinate: { latitude: 52.2, longitude: 21.0 },
+        title: 'Office',
+        cluster: true,
+        cluster_id: 7,
+        point_count: 5,
+        point_count_abbreviated: '5',
+        getExpansionRegion: () => null,
+        index: 99,
+      },
+      'child'
+    ) as React.ReactElement<never>
+
+    const feature = markerToGeoJSONFeature(marker, 2)
+
+    expect(feature.geometry.coordinates).toEqual([21.0, 52.2])
+    expect(feature.properties).toEqual({
+      title: 'Office',
+      point_count: 0,
+      index: 2,
+    })
+    expect(isClusterFeature(feature)).toBe(false)
+  })
+})
 
 describe('computeClusterLayoutSignature', () => {
   const point: PointFeature = {

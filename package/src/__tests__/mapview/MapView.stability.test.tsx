@@ -502,7 +502,9 @@ describe('MapView marker keys (#28)', () => {
   })
 })
 
-describe('MapView known issues', () => {
+describe('Marker cluster prop (#14)', () => {
+  const clusterable = (points: TestPoint[]) =>
+    points.map((point) => ({ ...point, cluster: true }))
   let consoleError: ReturnType<typeof spyOn>
 
   beforeEach(() => {
@@ -513,17 +515,36 @@ describe('MapView known issues', () => {
     consoleError.mockRestore()
   })
 
-  it.failing(
-    '#14: markers with cluster={true} are clustered and rendered as themselves',
-    async () => {
-      const { container } = render(
-        <Map points={SINGLES.map((point) => ({ ...point, cluster: true }))} />
-      )
-      await flush()
+  it('renders a lone cluster={true} marker as itself', async () => {
+    const { container } = render(<Map points={clusterable(SINGLES)} />)
+    await flush()
 
-      expect(renderedMarkerIds(container)).toEqual(['s0', 's1', 's2'])
-    }
-  )
+    expect(renderedMarkerIds(container)).toEqual(['s0', 's1', 's2'])
+    expect(clusterLabels(container)).toEqual([])
+  })
+
+  it('still clusters cluster={true} markers that are close together', async () => {
+    const { container } = render(
+      <Map points={clusterable([...GROUP, ...SINGLES])} />
+    )
+    await flush()
+
+    expect(clusterLabels(container)).toEqual(['5'])
+    expect(renderedMarkerIds(container)).toEqual(['s0', 's1', 's2'])
+    expect(consoleError).not.toHaveBeenCalled()
+  })
+})
+
+describe('MapView known issues', () => {
+  let consoleError: ReturnType<typeof spyOn>
+
+  beforeEach(() => {
+    consoleError = spyOn(console, 'error').mockImplementation(() => {})
+  })
+
+  afterEach(() => {
+    consoleError.mockRestore()
+  })
 
   it.failing(
     '#16: spiderfy caps how many markers and connector lines it renders',
