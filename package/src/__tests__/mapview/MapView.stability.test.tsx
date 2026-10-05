@@ -462,15 +462,17 @@ describe('MapView marker keys (#28)', () => {
     unmountsSince(start).filter((id) => id.startsWith('cluster@'))
 
   it('keeps a cluster bubble mounted while it splits on zoom', async () => {
-    // GROUP is one cluster of 5 at camera zoom 17 and loses g4 at 18.
+    // GROUP is one cluster of 5 at camera zoom 16 and loses g4 at 17
+    // (geo-viewport tile size 256; previously these were 17/18 when zoom
+    // selection incorrectly used extent 512).
     const { container } = render(
-      <Map points={GROUP} initialRegion={regionAt(GROUP[2]!, 17)} />
+      <Map points={GROUP} initialRegion={regionAt(GROUP[2]!, 16)} />
     )
     await flush()
     expect(clusterLabels(container)).toEqual(['5'])
     const start = mountLog.length
 
-    await settleRegion(regionAt(GROUP[2]!, 18))
+    await settleRegion(regionAt(GROUP[2]!, 17))
 
     expect(clusterLabels(container)).toEqual(['4'])
     expect(clusterUnmountsSince(start)).toEqual([])

@@ -32,7 +32,11 @@ import type {
 } from '../geojson/types'
 import { isClusterFeature } from '../geojson'
 import { Supercluster } from '../engine/Supercluster'
-import { DEFAULT_MAX_ZOOM, DEFAULT_MIN_ZOOM } from '../engine/defaults'
+import {
+  DEFAULT_MAX_ZOOM,
+  DEFAULT_MIN_ZOOM,
+  GEO_VIEWPORT_TILE_SIZE,
+} from '../engine/defaults'
 import { clusterZoomFromRegion } from '../engine/geometry'
 import { useClusterIndex } from '../hooks/useClusterIndex'
 import type { UseClustererOptions } from '../hooks/types'
@@ -385,6 +389,10 @@ const CompatMapView = forwardRef(function CompatMapView(
       minPoints,
       extent,
       nodeSize,
+      // react-native-map-clustering calls `GeoViewport.viewport` without a tile
+      // size, so it gets geo-viewport's 256 default. Matching it keeps the
+      // drop-in swap rendering the same clusters at the same region.
+      viewportTileSize: GEO_VIEWPORT_TILE_SIZE,
       onError,
     }),
     [radius, maxZoom, minZoom, minPoints, extent, nodeSize, onError]
@@ -425,8 +433,18 @@ const CompatMapView = forwardRef(function CompatMapView(
     }
   }, [clusters, supercluster])
 
+  // Must use the same tile size as `clustererOptions`, otherwise `isAtMaxZoom`
+  // (and with it spiderfying) triggers a zoom level away from the clusters
+  // actually being rendered.
   const currentZoom = useMemo(
-    () => clusterZoomFromRegion(currentRegion, mapDimensions, minZoom, maxZoom),
+    () =>
+      clusterZoomFromRegion(
+        currentRegion,
+        mapDimensions,
+        minZoom,
+        maxZoom,
+        GEO_VIEWPORT_TILE_SIZE
+      ),
     [currentRegion, mapDimensions, minZoom, maxZoom]
   )
 

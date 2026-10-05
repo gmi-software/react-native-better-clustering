@@ -89,8 +89,17 @@ inline double yToLat(double y, int extent) {
   return 180.0 / M_PI * std::atan(0.5 * (std::exp(n) - std::exp(-n)));
 }
 
-inline double zoomScale(double zoom, int extent) {
-  return std::pow(2.0, zoom) * static_cast<double>(extent) / 256.0;
+/**
+ * Cluster radius threshold at `zoom`, in the projected units of lngToX/latToY.
+ *
+ * supercluster projects into `[0, 1]` and uses `radius / (extent * 2^zoom)`.
+ * We project into `[0, extent]`, so the equivalent threshold is that value
+ * scaled by `extent`: the `extent` factors cancel and `radius / 2^zoom`
+ * remains. `extent` still shapes clustering through the projection itself,
+ * exactly as it does in supercluster -- it is not a second radius control.
+ */
+inline double clusterRadiusAtZoom(double radius, double zoom) {
+  return radius / std::pow(2.0, zoom);
 }
 
 struct PointData {

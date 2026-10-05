@@ -252,7 +252,7 @@ public:
     // maxZoom+1 is the clustering input but is never queried directly
     // (getClusters clamps zoom to [minZoom, maxZoom]), so it isn't stored.
     for (int32_t z = _options.maxZoom; z >= _options.minZoom; z--) {
-      const double r = _options.radius / zoomScale(static_cast<double>(z), _options.extent);
+      const double r = clusterRadiusAtZoom(_options.radius, static_cast<double>(z));
 
       std::vector<double> xs, ys;
       xs.reserve(current.size());

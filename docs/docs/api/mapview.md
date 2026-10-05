@@ -56,7 +56,7 @@ are supported, plus:
 | `minPoints` | `2` | Minimum points to form a cluster |
 | `minZoom` | `1` | Minimum zoom level |
 | `maxZoom` | `20` | Maximum zoom level for clustering |
-| `extent` | `512` | Tile extent (supercluster) |
+| `extent` | `512` | Tile extent, in supercluster's sense: `radius` is in pixels of an `extent`-wide tile, so a larger `extent` clusters more tightly at the same `radius` |
 | `nodeSize` | `64` | KD-tree leaf size |
 | `clusteringEnabled` | `true` | Toggle clustering |
 | `spiralEnabled` | `true` | Spider layout at max zoom |

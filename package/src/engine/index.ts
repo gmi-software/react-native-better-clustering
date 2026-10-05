@@ -2,6 +2,8 @@ export {
   DEFAULT_MAX_ZOOM,
   DEFAULT_MIN_ZOOM,
   DEFAULT_SUPERCLUSTER_OPTIONS,
+  DEFAULT_VIEWPORT_TILE_SIZE,
+  GEO_VIEWPORT_TILE_SIZE,
 } from './defaults'
 export { Supercluster } from './Supercluster'
 export type {

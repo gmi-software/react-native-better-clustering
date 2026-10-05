@@ -57,3 +57,44 @@ For custom map stacks, use advanced subpaths:
 | `isClusterFeature` | `/geojson` |
 
 **Extra:** `clusterProperties` map/reduce aggregation via `/engine`.
+
+## supercluster parity
+
+The C++ engine reproduces [supercluster](https://github.com/mapbox/supercluster)
+feature-for-feature: with the same points, `radius`, `extent`, `minPoints` and
+zoom range, `getClusters` returns the same clusters. This is pinned by a
+checked-in fixture in `package/cpp/ClusterEngineCore.test.cpp`, generated from
+supercluster itself and verified in CI.
+
+Two deliberate differences remain, neither of which changes cluster membership
+in practice:
+
+- **Precision.** supercluster stores projected coordinates as `Float32`; the C++
+  engine keeps them as `double`. Cluster centroids are therefore slightly more
+  accurate here, and a point sitting exactly on the radius boundary can fall on
+  the other side of it.
+- **Tie-breaking with `minPoints` above 2.** Clustering is a greedy single pass,
+  so the order in which equidistant neighbours are visited can decide which of
+  two overlapping groups wins. The engine and supercluster walk their KD-trees in
+  different orders. With the default `minPoints: 2` this is unobservable.
+
+### Zoom selection
+
+Clustering parity also depends on which zoom a map region is queried at, and the
+two upstreams disagree by a whole zoom level. `viewportTileSize` selects which
+one you get:
+
+| Entry point | `viewportTileSize` | Matches |
+|-------------|--------------------|---------|
+| `MapView` (main export) | `256` | react-native-map-clustering |
+| `useClusterer`, `Supercluster` | `extent` (`512`) | react-native-clusterer |
+
+Pass `viewportTileSize` explicitly to override either default. See
+[`SuperclusterOptions`](./api/types.md#viewport-tile-size).
+
+> Earlier releases normalised the cluster radius incorrectly, clustering at
+> roughly half the requested `radius` on the default `extent: 512`, and queried
+> `MapView` one zoom level below react-native-map-clustering. The two errors
+> largely cancelled at the shipped defaults, so `MapView` looked about right
+> while `useClusterer` did not. Both are fixed. If you tuned `radius` against
+> the old `/engine` or `/hooks` behaviour, halve it to keep the previous look.
