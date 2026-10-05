@@ -1,11 +1,11 @@
-import React, { memo, useEffect } from 'react'
+import React, { memo, useEffect, useRef } from 'react'
 import { Platform, StyleSheet, Text, View } from 'react-native'
 import Animated, {
   useAnimatedProps,
   useSharedValue,
   withTiming,
 } from 'react-native-reanimated'
-import { Marker } from 'react-native-maps'
+import { Marker, type MapMarker } from 'react-native-maps'
 import type { ClusterFeature } from '../geojson/types'
 
 const BUBBLE_BORDER_WIDTH = 2.5
@@ -13,9 +13,10 @@ const HALO_SCALE = 1.18
 const SHADOW_PADDING = 6
 
 /**
- * `react-native-maps` markers are native annotations: on zoom the cluster set is
- * rebuilt with new `cluster_id`s, so React unmounts/remounts every bubble and the
- * native side removes/adds annotations in one commit, producing a visible blink.
+ * `react-native-maps` markers are native annotations: a bubble that unmounts and
+ * remounts is removed and re-added in one commit, a visible blink. `MapView`
+ * keys bubbles by their cluster's smallest marker, so most survive zoom steps;
+ * those that genuinely appear or disappear fade.
  *
  * Animating the bubble `<View>` opacity does not help because `tracksViewChanges`
  * is `false` (a single bitmap snapshot is taken). The only lever that affects the
@@ -127,10 +128,27 @@ function ClusterMarker({
 
   const animatedProps = useAnimatedProps(() => ({ opacity: opacity.value }))
 
+  // The bubble keeps its native marker while its cluster splits, merges or
+  // changes colour, but with `tracksViewChanges` off Google Maps keeps showing
+  // the bitmap it took first, so ask for a new one when the look changes.
+  const markerRef = useRef<MapMarker>(null)
+  const appearance = `${points}|${clusterColor}|${clusterTextColor}|${clusterFontFamily ?? ''}`
+  const drawnAppearance = useRef(appearance)
+  useEffect(() => {
+    if (drawnAppearance.current === appearance) {
+      return
+    }
+    drawnAppearance.current = appearance
+    if (!tracksViewChanges) {
+      markerRef.current?.redraw()
+    }
+  }, [appearance, tracksViewChanges])
+
   const MarkerComponent = fadeEnabled ? AnimatedMarker : Marker
 
   return (
     <MarkerComponent
+      ref={markerRef}
       coordinate={{ latitude, longitude }}
       onPress={exiting ? undefined : () => onPress(feature)}
       tracksViewChanges={tracksViewChanges}

@@ -44,6 +44,7 @@ function abbreviateCount(count: number): string {
 export class Supercluster<P extends AnyProps = AnyProps> {
   private engine: ClusterEngine | null = null
   private loadedFeatures: PointFeature<P>[] = []
+  private readonly minLeafIndices = new WeakMap<ClusterFeature<P>, number>()
   private destroyed = false
   private readonly options: Required<SuperclusterOptions>
 
@@ -255,6 +256,19 @@ export class Supercluster<P extends AnyProps = AnyProps> {
   }
 
   /**
+   * The leaf of `cluster` with the smallest point index. A cluster keeps it
+   * across zoom levels, and across rebuilds that keep that leaf first, while
+   * it only gains or loses other leaves.
+   *
+   * @internal The compat `MapView` keys cluster markers by it. Returns
+   * `undefined` for a cluster this instance did not return.
+   */
+  getClusterMinLeaf(cluster: ClusterFeature<P>): PointFeature<P> | undefined {
+    const index = this.minLeafIndices.get(cluster)
+    return index == null ? undefined : this.loadedFeatures[index]
+  }
+
+  /**
    * {@linkcode MapRegion} that fits all leaves in a cluster.
    *
    * Used by cluster {@linkcode ClusterFeature} `getExpansionRegion` callbacks.
@@ -357,7 +371,7 @@ export class Supercluster<P extends AnyProps = AnyProps> {
           )
         : {}
 
-    return {
+    const cluster: ClusterFeature<P> = {
       type: 'Feature',
       id: clusterId,
       geometry: {
@@ -373,5 +387,7 @@ export class Supercluster<P extends AnyProps = AnyProps> {
         ...aggregated,
       } as ClusterFeature<P>['properties'],
     }
+    this.minLeafIndices.set(cluster, feature.minLeafId)
+    return cluster
   }
 }

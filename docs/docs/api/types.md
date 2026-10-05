@@ -73,5 +73,9 @@ import {
 } from 'react-native-better-clustering/engine'
 ```
 
+Each `EngineClusterNode` has `minLeafId`: the smallest point id among its leaves
+(its own `id` for a point). A cluster keeps it across zoom levels while it only
+gains or loses other leaves, so it can key the cluster's marker.
+
 **Lifecycle:** `setOptions` → `setPoints` (`packPoints()` buffer) → `build()` → query.
 Query methods throw when `isBuilt` is `false`; `setPoints` throws on invalid buffers.

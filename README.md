@@ -267,7 +267,7 @@ See the [docs](https://gmi-software.github.io/react-native-better-clustering/doc
 | New Architecture errors  | Confirm New Architecture is enabled and rebuild.                                                                                        |
 | Does not work in Expo Go | Use a [development build](https://docs.expo.dev/develop/development-builds/introduction/).                                              |
 | `native ClusterEngine module is not available` | Rebuild the native app after installing (`pod install` / `npx expo prebuild --clean`). See [troubleshooting](https://gmi-software.github.io/react-native-better-clustering/docs/troubleshooting#the-native-clusterengine-module-is-not-available). |
-| Markers flicker on zoom  | Memoize marker components; give each point a stable `id`.                                                                               |
+| Markers flicker on zoom  | Give each `Marker` a stable `key` (not the array index); memoize marker components.                                                     |
 
 
 More in [troubleshooting](https://gmi-software.github.io/react-native-better-clustering/docs/troubleshooting).

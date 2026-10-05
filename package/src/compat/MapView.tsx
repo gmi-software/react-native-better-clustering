@@ -621,15 +621,27 @@ const CompatMapView = forwardRef(function CompatMapView(
       return typeof index === 'number' ? propsChildren[index] : null
     }
 
+    // A cluster is keyed by its smallest leaf, which it keeps across zoom
+    // levels and rebuilds while it only gains or loses other leaves, so its
+    // bubble updates one native marker instead of removing and re-adding it.
+    // Until a props-only change swaps in the newest features, the leaf is the
+    // previous object, whose child index is the same by construction. With no
+    // element for the leaf (mid-rebuild), it falls back to the engine id.
+    const clusterKeyOf = (cluster: ClusterFeature): string => {
+      const minLeaf = supercluster.getClusterMinLeaf(cluster)
+      const element = minLeaf == null ? null : markerFor(minLeaf)
+      return React.isValidElement(element) && element.key != null
+        ? `cluster:${element.key}`
+        : `cluster-${cluster.id}`
+    }
+
     for (const feature of clusters) {
       if (!isClusterFeature(feature)) {
+        // Keeps the key `Children.toArray` gave it, so each marker stays one
+        // React instance when others are inserted or removed before it.
         const child = markerFor(feature)
         if (isMarker(child)) {
-          immediate.push(
-            React.cloneElement(child, {
-              key: `marker-${feature.properties.index}`,
-            })
-          )
+          immediate.push(child)
         }
         continue
       }
@@ -649,7 +661,7 @@ const CompatMapView = forwardRef(function CompatMapView(
         continue
       }
 
-      const clusterKey = `cluster-${cluster.id}`
+      const clusterKey = clusterKeyOf(cluster)
       const selected =
         selectedClusterId != null &&
         String(clusterId) === String(selectedClusterId)
