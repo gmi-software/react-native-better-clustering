@@ -53,9 +53,36 @@ import type {
 | `minZoom` | `1` | Min zoom for clustering |
 | `maxZoom` | `20` | Max zoom for clustering |
 | `minPoints` | `2` | Min points to form a cluster |
-| `extent` | `512` | Tile extent |
+| `extent` | `512` | Tile extent used for projection math (see [note](#radius-and-extent)) |
 | `nodeSize` | `64` | KD-tree leaf size |
 | `clusterProperties` | `[]` | Map/reduce aggregation configs |
+| `viewportTileSize` | `extent` | Tile size used to pick a zoom from a map region (see [note](#viewport-tile-size)) |
+
+#### Radius and extent
+
+`radius` and `extent` mean exactly what they mean in
+[supercluster](https://github.com/mapbox/supercluster): `radius` is the cluster
+radius in pixels of a tile that is `extent` pixels wide, so the two are read
+together as `radius / extent`. Raising `extent` therefore tightens clustering
+and lowering it loosens clustering, at the same `radius`.
+
+Given the same options and zoom, this package produces the same clusters as
+supercluster.
+
+#### Viewport tile size
+
+`viewportTileSize` is separate from `extent`. It only affects
+`getClustersFromRegion` — how a map region plus a pixel size is turned into a
+zoom level — and shifts the result by a whole zoom level:
+
+| Value | Parity with |
+|-------|-------------|
+| `256` | react-native-map-clustering (`geo-viewport`'s default). Correct for map dimensions in logical points, which is what `onLayout` reports. |
+| `512` (`= extent`, the default) | react-native-clusterer, which passes its `extent` to `geo-viewport`. One zoom level lower. |
+
+The `MapView` compat layer sets `256` so a drop-in swap renders the same
+clusters. `useClusterer` and `Supercluster` default to `extent`, keeping
+react-native-clusterer parity; pass `viewportTileSize: 256` to opt in.
 
 ## Headless engine (`ClusterEngine`)
 

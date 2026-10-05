@@ -54,7 +54,14 @@ export class Supercluster<P extends AnyProps = AnyProps> {
    * Options are snapshotted at construction; mutating a passed object afterward has no effect.
    */
   constructor(options?: SuperclusterOptions) {
-    this.options = { ...DEFAULT_SUPERCLUSTER_OPTIONS, ...options }
+    const resolved = { ...DEFAULT_SUPERCLUSTER_OPTIONS, ...options }
+
+    // `viewportTileSize` defaults to `extent` rather than to a fixed number,
+    // so a custom `extent` keeps react-native-clusterer's zoom selection.
+    this.options = {
+      ...resolved,
+      viewportTileSize: options?.viewportTileSize ?? resolved.extent,
+    }
   }
 
   /** Whether the native cluster index has finished building. */
@@ -208,7 +215,7 @@ export class Supercluster<P extends AnyProps = AnyProps> {
       mapDimensions,
       this.options.minZoom,
       this.options.maxZoom,
-      this.options.extent
+      this.options.viewportTileSize
     )
 
     return this.getClusters(bbox, zoom)

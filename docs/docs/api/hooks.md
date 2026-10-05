@@ -36,7 +36,7 @@ const [clusters, supercluster] = useClusterer(
 | `data` | `PointFeature[]` | GeoJSON points (memoize with `useMemo`) |
 | `mapDimensions` | `{ width, height }` | Map view size in pixels |
 | `region` | `MapRegion` | Current map region |
-| `options` | `UseClustererOptions` | `radius`, `minZoom`, `maxZoom`, `minPoints`, `extent`, `nodeSize`, `clusterProperties`, `onError` |
+| `options` | `UseClustererOptions` | `radius`, `minZoom`, `maxZoom`, `minPoints`, `extent`, `nodeSize`, `clusterProperties`, `viewportTileSize`, `onError` |
 
 Cluster features include `properties.getExpansionRegion()` for zoom-on-tap.
 
