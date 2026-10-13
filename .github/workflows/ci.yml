@@ -120,3 +120,15 @@ jobs:
         run: |
           c++ -std=c++20 -I. -fsanitize=undefined,float-cast-overflow -fno-sanitize-recover=all ClusterEngineCore.test.cpp -o cluster_test
           ./cluster_test
+
+      # halt_on_error fails the job on the first data race. The sysctl is
+      # needed because Ubuntu runners randomize mmap with more bits than g++'s
+      # TSan runtime supports, which aborts it at startup.
+      - name: Compile and run the ThreadSafeClusterEngine tests under TSan
+        working-directory: package/cpp
+        env:
+          TSAN_OPTIONS: halt_on_error=1
+        run: |
+          sudo sysctl vm.mmap_rnd_bits=28
+          c++ -std=c++20 -I. -g -O1 -fsanitize=thread -pthread ThreadSafeClusterEngine.test.cpp -o thread_test
+          ./thread_test

@@ -26,6 +26,7 @@ Pod::Spec.new do |s|
     "cpp/ClusterEngineCore.hpp",
     "cpp/GeoUtils.hpp",
     "cpp/InputValidation.hpp",
+    "cpp/ThreadSafeClusterEngine.hpp",
     "cpp/HybridClusterEngine.hpp",
     "cpp/HybridClusterEngine.cpp",
   ]

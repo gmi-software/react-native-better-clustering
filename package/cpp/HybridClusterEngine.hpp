@@ -1,7 +1,7 @@
 #pragma once
 
-#include "ClusterEngineCore.hpp"
 #include "HybridClusterEngineSpec.hpp"
+#include "ThreadSafeClusterEngine.hpp"
 #include <NitroModules/ArrayBuffer.hpp>
 #include <memory>
 
@@ -27,14 +27,13 @@ public:
 
 protected:
   size_t getExternalMemorySize() noexcept override {
-    return _engine != nullptr ? _engine->memorySize() : 0;
+    return _engine != nullptr ? _engine->snapshot()->memorySize() : 0;
   }
 
 private:
-  // Shared so a pending buildAsync keeps the index alive without capturing `this`.
-  std::shared_ptr<ClusterEngineCore> _engine = std::make_shared<ClusterEngineCore>();
-  ClusterEngineCore& engine();
-  EngineClusterNode toFeature(const ClusterNode& node) const;
+  // Shared so a pending buildAsync can publish into it without capturing `this`.
+  std::shared_ptr<ThreadSafeClusterEngine> _engine = std::make_shared<ThreadSafeClusterEngine>();
+  ThreadSafeClusterEngine& engine();
 };
 
 } // namespace margelo::nitro::nitromapcluster

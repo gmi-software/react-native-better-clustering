@@ -518,6 +518,15 @@ public:
 
   size_t pointCount() const { return _points.size(); }
   bool isBuilt() const { return _built; }
+  const ClusterEngineConfig& options() const { return _options; }
+
+  /** A copy with the same options and points and no index, ready to `build()`. */
+  ClusterEngineCore withoutIndex() const {
+    ClusterEngineCore copy;
+    copy._options = _options;
+    copy._points = _points;
+    return copy;
+  }
 
   /** Approximate native heap bytes owned by point data, indexes, and cluster graphs. */
   size_t memorySize() const {
