@@ -5,7 +5,7 @@ import type * as Preset from "@docusaurus/preset-classic";
 const config: Config = {
   title: "React Native Better Clustering",
   tagline:
-    "A faster react-native-map-clustering — same MapView API, C++ supercluster engine via Nitro.",
+    "A drop-in react-native-map-clustering replacement — same MapView API, C++ supercluster engine via Nitro.",
   favicon: "img/favicon.svg",
 
   future: {

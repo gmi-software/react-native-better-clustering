@@ -2,7 +2,7 @@
 
 <div align="center">
 
-A faster **[react-native-map-clustering](https://github.com/tomekvenits/react-native-map-clustering)** — same API, same `react-native-maps` workflow, but clustering runs in **C++ via Nitro** instead of JavaScript on the RN bridge.
+A drop-in replacement for **[react-native-map-clustering](https://github.com/tomekvenits/react-native-map-clustering)** — same API, same `react-native-maps` workflow, but clustering runs in **C++ via Nitro** instead of supercluster in JavaScript.
 
 [![npm version](https://img.shields.io/npm/v/react-native-better-clustering.svg)](https://www.npmjs.com/package/react-native-better-clustering)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE)
@@ -10,7 +10,7 @@ A faster **[react-native-map-clustering](https://github.com/tomekvenits/react-na
 [![Expo Compatible](https://img.shields.io/badge/Expo-Compatible-000020.svg)](https://expo.dev/)
 [![CI](https://github.com/gmi-software/react-native-better-clustering/actions/workflows/ci.yml/badge.svg)](https://github.com/gmi-software/react-native-better-clustering/actions/workflows/ci.yml)
 
-Built with [Nitro Modules](https://nitro.margelo.com/) for high-performance native clustering.
+Built with [Nitro Modules](https://nitro.margelo.com/) for native clustering.
 
 [Migration](#migration) • [Installation](#installation) • [Usage](#usage) • [Documentation](https://gmi-software.github.io/react-native-better-clustering/docs/intro) • [Example app](./example)
 
@@ -32,17 +32,19 @@ Built with [Nitro Modules](https://nitro.margelo.com/) for high-performance nati
   import { Marker } from 'react-native-maps'
 ```
 
-That is it. Your `<Marker>` children, cluster props, and `react-native-maps` options keep working — clustering just moves off the JS thread.
+That is it. Your `<Marker>` children, cluster props, and `react-native-maps` options keep working — the cluster index is now built in C++ on a background thread instead of in JavaScript on the JS thread.
 
 ## Why switch?
 
 
-|        | react-native-map-clustering     | This package                        |
-| ------ | ------------------------------- | ----------------------------------- |
-| API    | `MapView` + `<Marker>` children | **Same**                            |
-| Map    | `react-native-maps`             | `react-native-maps`                 |
-| Engine | JS supercluster                 | **C++ supercluster via Nitro**      |
-| Scale  | Good                            | **10k+ points without bridge jank** |
+|                | react-native-map-clustering         | This package                               |
+| -------------- | ----------------------------------- | ------------------------------------------ |
+| API            | `MapView` + `<Marker>` children     | **Same**                                   |
+| Map            | `react-native-maps`                 | `react-native-maps`                        |
+| Engine         | JS supercluster                     | **C++ supercluster via Nitro**             |
+| Index build    | JavaScript, on the JS thread        | **C++, on a background thread**            |
+| Viewport query | JavaScript, on the JS thread        | C++, a synchronous call from the JS thread |
+| Markers        | One `<Marker>` per cluster or point | Same, see [Roadmap](#roadmap)              |
 
 
 ## Supported platforms
@@ -225,7 +227,7 @@ Per-marker opt-out: `<Marker cluster={false} ... />`.
 
 ## Roadmap
 
-Today this library solves **clustering compute** — the C++ engine indexes 10k+ points and returns viewport clusters off the JS thread. Visible markers are still rendered through `react-native-maps` `<Marker>` components, which becomes the UI-thread bottleneck when hundreds of annotations are on screen at once.
+Today this library moves **clustering compute** to C++: `MapView` builds the index on a background thread, and each viewport query is a synchronous native call from the JS thread. Visible markers are still rendered through `react-native-maps` `<Marker>` components, which becomes the UI-thread bottleneck when hundreds of annotations are on screen at once.
 
 The long-term goal is to remove that ceiling entirely.
 
@@ -243,7 +245,7 @@ A **native clustered map view** that draws annotations in a single native pass i
 | Image `<Marker>` + pooling (Tier 1) | ~200–400 |
 | Native clustered map view (Tier 2) | **1000+** |
 
-Tier 2 is the reason this library exists beyond a faster supercluster port: **render as many markers as you need without FPS collapse.** The compat API stays unchanged; rendering moves under the hood.
+Tier 2 is the reason this library exists beyond a native supercluster port: **render as many markers as you need without FPS collapse.** The compat API stays unchanged; rendering moves under the hood.
 
 Track progress in [GitHub Issues](https://github.com/gmi-software/react-native-better-clustering/issues).
 
