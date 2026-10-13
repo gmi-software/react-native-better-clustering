@@ -1,0 +1,53 @@
+appId: com.nitromapcluster.example
+name: Parent state
+---
+- runFlow:
+    file: subflows/open-scenario.yaml
+    env:
+      SCENARIO: parent-state
+# `onMarkersChange={setVisible}` with inline children settles (#12).
+- extendedWaitUntil:
+    visible:
+      id: visible-points
+      text: 'Visible points: 60'
+    timeout: 30000
+- assertVisible:
+    id: hud-engine-builds
+    text: 'Engine builds: 1'
+# Some markers stand alone, so a remount would count.
+- assertVisible:
+    id: hud-markers-mounted
+    text: 'Markers mounted: [1-9]\d*'
+
+# Parent re-renders with the same markers neither rebuild nor remount.
+- tapOn:
+    id: hud-reset
+- tapOn:
+    id: rerender-toggle
+- extendedWaitUntil:
+    visible:
+      id: rerenders
+      text: 'Re-renders: ([6-9]|\d{2,})'
+    timeout: 10000
+- tapOn:
+    id: rerender-toggle
+- assertVisible:
+    id: hud-marker-mounts
+    text: 'Marker mounts: 0'
+- assertVisible:
+    id: hud-engine-builds
+    text: 'Engine builds: 0'
+
+# Neither does selecting something.
+- tapOn:
+    id: visible-row-0
+- assertVisible:
+    id: selection
+    text: 'Selected: (marker|cluster of) .+'
+- runFlow: subflows/settle.yaml
+- assertVisible:
+    id: hud-marker-mounts
+    text: 'Marker mounts: 0'
+- assertVisible:
+    id: hud-engine-builds
+    text: 'Engine builds: 0'

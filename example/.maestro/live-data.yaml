@@ -1,0 +1,61 @@
+appId: com.nitromapcluster.example
+name: Live data
+---
+- runFlow:
+    file: subflows/open-scenario.yaml
+    env:
+      SCENARIO: live-data
+- extendedWaitUntil:
+    visible:
+      id: visible-points
+      text: 'Visible points: 100'
+    timeout: 30000
+- tapOn:
+    id: hud-reset
+
+# Every change reaches the map, through one rebuild each.
+- tapOn:
+    id: append-100
+- assertVisible:
+    id: marker-count
+    text: 'Markers: 200'
+- extendedWaitUntil:
+    visible:
+      id: visible-points
+      text: 'Visible points: 200'
+    timeout: 10000
+- assertVisible:
+    id: hud-engine-builds
+    text: 'Engine builds: 1'
+- tapOn:
+    id: remove-oldest
+- extendedWaitUntil:
+    visible:
+      id: visible-points
+      text: 'Visible points: 199'
+    timeout: 10000
+- tapOn:
+    id: remove-newest
+- extendedWaitUntil:
+    visible:
+      id: visible-points
+      text: 'Visible points: 198'
+    timeout: 10000
+- tapOn:
+    id: append-1
+- extendedWaitUntil:
+    visible:
+      id: visible-points
+      text: 'Visible points: 199'
+    timeout: 10000
+
+# One marker a second, as #20's device benchmark does.
+- tapOn:
+    id: append-toggle
+- extendedWaitUntil:
+    visible:
+      id: visible-points
+      text: 'Visible points: 20[2-9]'
+    timeout: 15000
+- tapOn:
+    id: append-toggle

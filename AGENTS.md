@@ -29,6 +29,7 @@ A single `bun install` at the root installs every workspace (`package`, `example
 - Build: `cd package && bun run build` (react-native-builder-bob → `lib/module` ESM + `lib/typescript` declarations)
 - Verify the npm package: `cd package && bun run verify:pack && bun run verify:exports` (both run in CI)
 - Run example: `cd example && bunx expo prebuild && bunx expo run:ios` or `bunx expo run:android`
+- Example end-to-end flows: `cd example && bun run e2e` (Maestro, against a Release build; see CONTRIBUTING.md)
 - Docs (dev): `bun run docs:start`. Docs (build): `bun run docs:build`
 - Release: CI only, tag-driven — never run release-it or `npm publish` locally. See `RELEASING.md`.
 
