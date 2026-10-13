@@ -10,10 +10,28 @@ namespace {
 constexpr const char* kNotBuiltError =
   "ClusterEngine: call build() or buildAsync() before querying. Check isBuilt when the engine state is unclear.";
 
-void requireBuilt(const ClusterEngineCore& engine) {
-  if (!engine.isBuilt()) {
+// One snapshot per query, so the index cannot change between the isBuilt check
+// and the query, nor while the results are converted.
+ThreadSafeClusterEngine::Snapshot requireBuilt(const ThreadSafeClusterEngine& engine) {
+  auto snapshot = engine.snapshot();
+  if (!snapshot->isBuilt()) {
     throw std::runtime_error(kNotBuiltError);
   }
+  return snapshot;
+}
+
+EngineClusterNode toFeature(const ClusterEngineCore& engine, const ClusterNode& node) {
+  return EngineClusterNode(
+    static_cast<double>(node.id),
+    engine.nodeLatitude(node),
+    engine.nodeLongitude(node),
+    static_cast<double>(node.count),
+    node.isCluster,
+    static_cast<double>(node.parentId),
+    static_cast<double>(node.pointIndex),
+    static_cast<double>(node.minLeafId),
+    node.values
+  );
 }
 
 AggregationReducer toAggregationReducer(ReducerKind kind) {
@@ -69,27 +87,17 @@ void HybridClusterEngine::build() {
 }
 
 std::shared_ptr<Promise<void>> HybridClusterEngine::buildAsync() {
-  return Promise<void>::async([this]() {
-    _engine.build();
+  // The worker owns a reference, so JS can drop or dispose() the engine while
+  // it builds. It builds the points and options as they are at this call.
+  auto self = shared_cast<HybridClusterEngine>();
+  auto input = _engine.snapshot();
+  return Promise<void>::async([self = std::move(self), input = std::move(input)]() {
+    self->_engine.build(input);
   });
 }
 
-EngineClusterNode HybridClusterEngine::toFeature(const ClusterNode& node) const {
-  return EngineClusterNode(
-    static_cast<double>(node.id),
-    _engine.nodeLatitude(node),
-    _engine.nodeLongitude(node),
-    static_cast<double>(node.count),
-    node.isCluster,
-    static_cast<double>(node.parentId),
-    static_cast<double>(node.pointIndex),
-    static_cast<double>(node.minLeafId),
-    node.values
-  );
-}
-
 std::vector<EngineClusterNode> HybridClusterEngine::getClusters(const Viewport& viewport) {
-  requireBuilt(_engine);
+  const auto engine = requireBuilt(_engine);
   ViewportBounds bounds;
   bounds.north = viewport.north;
   bounds.south = viewport.south;
@@ -97,48 +105,48 @@ std::vector<EngineClusterNode> HybridClusterEngine::getClusters(const Viewport& 
   bounds.west = viewport.west;
   bounds.zoom = viewport.zoom;
 
-  const auto nodes = _engine.getClusters(bounds);
+  const auto nodes = engine->getClusters(bounds);
   std::vector<EngineClusterNode> result;
   result.reserve(nodes.size());
   for (const auto& node : nodes) {
-    result.push_back(toFeature(node));
+    result.push_back(toFeature(*engine, node));
   }
   return result;
 }
 
 std::vector<EngineClusterNode> HybridClusterEngine::getChildren(double clusterId) {
-  requireBuilt(_engine);
-  const auto nodes = _engine.getChildren(toClusterId(clusterId));
+  const auto engine = requireBuilt(_engine);
+  const auto nodes = engine->getChildren(toClusterId(clusterId));
   std::vector<EngineClusterNode> result;
   result.reserve(nodes.size());
   for (const auto& node : nodes) {
-    result.push_back(toFeature(node));
+    result.push_back(toFeature(*engine, node));
   }
   return result;
 }
 
 std::vector<EngineClusterNode> HybridClusterEngine::getLeaves(double clusterId, double limit, double offset) {
-  requireBuilt(_engine);
-  const auto nodes = _engine.getLeaves(toClusterId(clusterId), toLeafLimit(limit), toLeafOffset(offset));
+  const auto engine = requireBuilt(_engine);
+  const auto nodes = engine->getLeaves(toClusterId(clusterId), toLeafLimit(limit), toLeafOffset(offset));
   std::vector<EngineClusterNode> result;
   result.reserve(nodes.size());
   for (const auto& node : nodes) {
-    result.push_back(toFeature(node));
+    result.push_back(toFeature(*engine, node));
   }
   return result;
 }
 
 double HybridClusterEngine::getClusterExpansionZoom(double clusterId) {
-  requireBuilt(_engine);
-  return static_cast<double>(_engine.getClusterExpansionZoom(toClusterId(clusterId)));
+  const auto engine = requireBuilt(_engine);
+  return static_cast<double>(engine->getClusterExpansionZoom(toClusterId(clusterId)));
 }
 
 double HybridClusterEngine::getPointCount() {
-  return static_cast<double>(_engine.pointCount());
+  return static_cast<double>(_engine.snapshot()->pointCount());
 }
 
 bool HybridClusterEngine::getIsBuilt() {
-  return _engine.isBuilt();
+  return _engine.snapshot()->isBuilt();
 }
 
 } // namespace margelo::nitro::nitromapcluster

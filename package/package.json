@@ -83,6 +83,7 @@
     "!**/*.test.d.ts",
     "!cpp/*.test.cpp",
     "!cpp/cluster_test",
+    "!cpp/thread_test",
     "!cpp/cluster_bench"
   ],
   "scripts": {

@@ -93,6 +93,32 @@ function queryClusters(engine: ClusterEngine, viewport: Viewport) {
 }
 ```
 
+## Threading
+
+`buildAsync()` builds on a background thread from the points and options the
+engine has when you call it. Every method stays safe to call while a build is
+pending:
+
+- **Queries** read one complete index each. While a build is pending they
+  answer from the current index, or throw if `isBuilt` is `false`; they never
+  see a half-built one.
+- **`setPoints` and `setOptions`** apply to the next build. They clear
+  `isBuilt` as usual, and the pending build's index is discarded when it
+  finishes: its promise still resolves, but `isBuilt` stays `false` until you
+  build again.
+- **Overlapping builds** (`buildAsync()` twice, or `build()` while
+  `buildAsync()` is pending) each settle on their own. The first to finish
+  publishes the index; a later one of the same points and options is dropped.
+- **`dispose()`**, or dropping the last reference to the engine, is safe
+  mid-build: the build keeps the native engine alive until it finishes.
+
+```tsx
+const pending = engine.buildAsync()
+engine.setPoints(nextBuffer) // the pending build is now stale
+await pending
+engine.isBuilt // false: build again for nextBuffer
+```
+
 ## Errors
 
 Direct `ClusterEngine` callers get explicit failures instead of silent empty

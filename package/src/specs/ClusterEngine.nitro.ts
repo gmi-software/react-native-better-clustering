@@ -47,7 +47,16 @@ export interface ClusterEngine extends HybridObject<{
   /** Build the cluster index synchronously on the calling thread. */
   build(): void
 
-  /** Build the cluster index off the JS thread. Prefer for large datasets. */
+  /**
+   * Build the cluster index off the JS thread, from the points and options at
+   * the time of the call. Prefer for large datasets.
+   *
+   * Every method stays safe to call while the build is pending. If
+   * {@linkcode ClusterEngine.setPoints setPoints} or
+   * {@linkcode ClusterEngine.setOptions setOptions} runs before it settles, its
+   * index is discarded: the promise resolves and
+   * {@linkcode ClusterEngine.isBuilt isBuilt} stays `false`.
+   */
   buildAsync(): Promise<void>
 
   /**
@@ -96,6 +105,6 @@ export interface ClusterEngine extends HybridObject<{
   /** Number of valid points loaded by the last successful {@linkcode ClusterEngine.setPoints setPoints}. */
   readonly pointCount: number
 
-  /** `true` after the most recent {@linkcode ClusterEngine.build build} completed; `false` after `setOptions`/`setPoints`. */
+  /** `true` once the current points and options are built; `false` after `setOptions`/`setPoints` until the next build completes. */
   readonly isBuilt: boolean
 }

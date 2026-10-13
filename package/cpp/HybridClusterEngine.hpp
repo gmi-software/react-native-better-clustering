@@ -1,7 +1,7 @@
 #pragma once
 
-#include "ClusterEngineCore.hpp"
 #include "HybridClusterEngineSpec.hpp"
+#include "ThreadSafeClusterEngine.hpp"
 #include <NitroModules/ArrayBuffer.hpp>
 #include <memory>
 
@@ -24,12 +24,11 @@ public:
 
 protected:
   size_t getExternalMemorySize() noexcept override {
-    return _engine.memorySize();
+    return _engine.snapshot()->memorySize();
   }
 
 private:
-  ClusterEngineCore _engine;
-  EngineClusterNode toFeature(const ClusterNode& node) const;
+  ThreadSafeClusterEngine _engine;
 };
 
 } // namespace margelo::nitro::nitromapcluster
