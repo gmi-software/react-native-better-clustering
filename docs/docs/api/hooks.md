@@ -40,6 +40,11 @@ const [clusters, supercluster] = useClusterer(
 
 Cluster features include `properties.getExpansionRegion()` for zoom-on-tap.
 
+Zoomed in past `maxZoom`, the hook returns every point on its own, as
+react-native-clusterer does (see [Above `maxZoom`](./engine.md#above-maxzoom)):
+markers at the same coordinate then sit on top of each other. The bundled
+`MapView` keeps them clustered and spreads them out instead.
+
 The hook destroys the underlying `Supercluster` engine on unmount, which frees
 its native index right away instead of at the next garbage collection. Index
 building runs asynchronously via `loadAsync()` so large datasets (10k+ points)

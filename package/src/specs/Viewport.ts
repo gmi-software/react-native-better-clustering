@@ -16,6 +16,9 @@ export interface Viewport {
   east: number
   /** Western longitude bound in degrees. */
   west: number
-  /** Integer zoom level used for the query. */
+  /**
+   * Zoom level used for the query, floored and clamped to `minZoom` through
+   * `maxZoom + 1` as supercluster does. At `maxZoom + 1` no point is clustered.
+   */
   zoom: number
 }

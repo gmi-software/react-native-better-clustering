@@ -111,6 +111,49 @@ describe('Supercluster viewport tile size', () => {
   })
 })
 
+describe('Supercluster region zoom ceiling (#26)', () => {
+  const dimensions = { width: 400, height: 800 }
+  // Zoomed in far past maxZoom.
+  const street = {
+    latitude: 52.25,
+    longitude: 21.05,
+    latitudeDelta: 0.00001,
+    longitudeDelta: 0.00001,
+  }
+
+  function zoomQueriedBy(
+    query: (clusterer: InstanceType<typeof Supercluster>) => void
+  ) {
+    jest.clearAllMocks()
+    mockEngine.isBuilt = false
+    query(new Supercluster({ maxZoom: 10 }).load([SAMPLE_POINT]))
+    const calls = mockEngine.getClusters.mock.calls as unknown as Array<
+      [{ zoom: number }]
+    >
+    const viewport = calls[0]?.[0]
+    if (viewport == null) {
+      throw new Error('expected getClusters to be called')
+    }
+    return viewport.zoom
+  }
+
+  it('queries one zoom past maxZoom, where no point is clustered', () => {
+    expect(
+      zoomQueriedBy((clusterer) =>
+        clusterer.getClustersFromRegion(street, dimensions)
+      )
+    ).toBe(11)
+  })
+
+  it('stops at maxZoom for the compat MapView', () => {
+    expect(
+      zoomQueriedBy((clusterer) =>
+        clusterer.getClustersFromRegionUpToMaxZoom(street, dimensions)
+      )
+    ).toBe(10)
+  })
+})
+
 describe('Supercluster.destroy', () => {
   beforeEach(() => {
     jest.clearAllMocks()

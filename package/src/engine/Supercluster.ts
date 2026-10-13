@@ -205,7 +205,9 @@ export class Supercluster<P extends AnyProps = AnyProps> {
   /**
    * Returns clusters visible in a geographic {@linkcode BBox} at the given zoom.
    *
-   * As in supercluster, a bbox across the antimeridian can be unwrapped
+   * As in supercluster, the zoom is floored and clamped to `minZoom` through
+   * `maxZoom + 1`: above `maxZoom` every point in the bbox is returned on its
+   * own, unclustered. A bbox across the antimeridian can be unwrapped
    * (`[170, s, 190, n]`) or wrapped (`[170, s, -170, n]`), and one spanning 360°
    * or more returns the whole world.
    *
@@ -226,11 +228,37 @@ export class Supercluster<P extends AnyProps = AnyProps> {
   /**
    * Returns clusters visible for a {@linkcode MapRegion} and {@linkcode MapDimensions}.
    *
+   * Zoomed in past `maxZoom`, it returns every point on its own, as
+   * react-native-clusterer does (see {@linkcode Supercluster.getClusters getClusters}).
+   *
    * Returns `[]` while loading, when the region is invalid, or when dimensions are non-positive.
    */
   getClustersFromRegion(
     region: MapRegion,
     mapDimensions: MapDimensions
+  ): Array<PointFeature<P> | ClusterFeature<P>> {
+    return this.queryRegion(region, mapDimensions, this.options.maxZoom + 1)
+  }
+
+  /**
+   * {@linkcode Supercluster.getClustersFromRegion getClustersFromRegion},
+   * queried at `maxZoom` at most, so points that zooming never splits stay
+   * clustered however far the map zooms in.
+   *
+   * @internal The compat `MapView` spiderfies those clusters instead of
+   * stacking their markers on top of each other.
+   */
+  getClustersFromRegionUpToMaxZoom(
+    region: MapRegion,
+    mapDimensions: MapDimensions
+  ): Array<PointFeature<P> | ClusterFeature<P>> {
+    return this.queryRegion(region, mapDimensions, this.options.maxZoom)
+  }
+
+  private queryRegion(
+    region: MapRegion,
+    mapDimensions: MapDimensions,
+    maxQueryZoom: number
   ): Array<PointFeature<P> | ClusterFeature<P>> {
     this.throwIfDestroyed()
 
@@ -251,7 +279,7 @@ export class Supercluster<P extends AnyProps = AnyProps> {
       region,
       mapDimensions,
       this.options.minZoom,
-      this.options.maxZoom,
+      maxQueryZoom,
       this.options.viewportTileSize
     )
 
@@ -304,8 +332,9 @@ export class Supercluster<P extends AnyProps = AnyProps> {
    * zoom where {@linkcode Supercluster.getClusters getClusters} shows its
    * children instead of the cluster, from whichever zoom it was seen at.
    *
-   * Returns `maxZoom + 1` for a cluster that never splits within the zoom
-   * range (points at the same coordinate, for example) and for a point id.
+   * Returns `maxZoom + 1` for a cluster still there at `maxZoom` (points at
+   * the same coordinate, for example), which `getClusters` returns as its
+   * points from that zoom on, and for a point id.
    *
    * @throws When {@linkcode Supercluster.load load} has not completed.
    * @throws A `RangeError` when `clusterId` is not a 32-bit integer.

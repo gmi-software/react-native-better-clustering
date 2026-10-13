@@ -38,8 +38,10 @@ import {
   GEO_VIEWPORT_TILE_SIZE,
 } from '../engine/defaults'
 import { cameraZoomFromRegion, clusterZoomFromRegion } from '../engine/geometry'
-import { useClusterIndex } from '../hooks/useClusterIndex'
-import type { UseClustererOptions } from '../hooks/types'
+import {
+  useClusterIndex,
+  type ClusterIndexOptions,
+} from '../hooks/useClusterIndex'
 import ClusterMarker from './ClusterMarker'
 import {
   computeClusterLayoutSignature,
@@ -410,7 +412,7 @@ const CompatMapView = forwardRef(function CompatMapView(
     onMapReady?.()
   }, [onMapReady])
 
-  const clustererOptions = useMemo<UseClustererOptions>(
+  const clustererOptions = useMemo<ClusterIndexOptions>(
     () => ({
       radius,
       maxZoom,
@@ -422,6 +424,9 @@ const CompatMapView = forwardRef(function CompatMapView(
       // size, so it gets geo-viewport's 256 default. Matching it keeps the
       // drop-in swap rendering the same clusters at the same region.
       viewportTileSize: GEO_VIEWPORT_TILE_SIZE,
+      // Past maxZoom, markers that share a location would turn into a stack
+      // of markers; spiderfy spreads their cluster out instead.
+      stopAtMaxZoom: true,
       onError,
     }),
     [radius, maxZoom, minZoom, minPoints, extent, nodeSize, onError]

@@ -80,8 +80,8 @@ each feature once.
 `getClusterExpansionZoom(id)` returns the first zoom at which the cluster has
 split into its children, whichever zoom you saw it at, so "zoom to the expansion
 zoom on press" always reveals the children. It returns `maxZoom + 1` for a
-cluster that never splits within the zoom range (points at the same
-coordinate) and for a point id.
+cluster still there at `maxZoom` (points at the same coordinate, for example)
+and for a point id.
 
 Always guard queries with `isBuilt` when options or points can change between
 renders:
@@ -94,6 +94,18 @@ function queryClusters(engine: ClusterEngine, viewport: Viewport) {
   return engine.getClusters(viewport)
 }
 ```
+
+## Above `maxZoom`
+
+As in supercluster, `getClusters` floors the zoom and clamps it to `minZoom`
+through `maxZoom + 1`. At `maxZoom + 1` and above it returns every point inside
+the viewport on its own, so points too close to split at `maxZoom` still come
+apart at street level, without raising `maxZoom` (which costs build time and
+memory). Points at the same coordinate come back as separate points on top of
+each other. `Supercluster.getClustersFromRegion` and
+[`useClusterer`](./hooks.md) pick a zoom up to `maxZoom + 1` too, as
+react-native-clusterer does; the bundled [`MapView`](./mapview.md#markers-at-the-same-location)
+stops at `maxZoom` and spreads such clusters out instead.
 
 ## Threading
 

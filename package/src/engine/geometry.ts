@@ -149,6 +149,10 @@ export function bboxToZoom(
  * [react-native-clusterer v5](https://github.com/JiriHoffmann/react-native-clusterer)
  * (`GeoViewport.viewport` + `longitudeDelta >= 40` shortcut).
  *
+ * The result is clamped to `minZoom` through `maxZoom`. Like
+ * react-native-clusterer, `getClustersFromRegion` passes the index's
+ * `maxZoom + 1`, the zoom at which no point is clustered.
+ *
  * Pass `tileSize` `256` for react-native-map-clustering parity, which is what
  * the `MapView` compat layer does. See {@linkcode bboxToZoom}.
  *

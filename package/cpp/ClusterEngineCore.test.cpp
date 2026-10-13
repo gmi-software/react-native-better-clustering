@@ -398,7 +398,7 @@ struct SuperclusterParityCase {
   int32_t minZoom;
   int32_t maxZoom;
   int32_t minPoints;
-  std::vector<int> expectedNodes;           // features returned per zoom, minZoom first
+  std::vector<int> expectedNodes;           // features returned per zoom, minZoom to maxZoom + 1
   std::vector<int> expectedClusters;        // of which are clusters
   std::vector<uint32_t> expectedMembership; // parityMembershipHash per zoom
   std::vector<uint32_t> expectedExpansion;  // parityExpansionHash per zoom
@@ -469,34 +469,40 @@ static void testSuperclusterParity() {
   const std::vector<SuperclusterParityCase> cases = {
   // n=5000 seed=12345 radius=40 extent=512 zoom 0..16 minPoints=2
   {5000, 12345u, 40.0, 512, 0, 16, 2,
-   {37, 154, 561, 1673, 3369, 4470, 4847, 4967, 4992, 4997, 4998, 4999, 5000, 5000, 5000, 5000, 5000},
-   {37, 149, 517, 1210, 1184, 491, 152, 33, 8, 3, 2, 1, 0, 0, 0, 0, 0},
-   {1805767755u, 606907344u, 251924099u, 3592547414u, 220092997u, 4170046084u, 2925551006u, 3474631211u, 1333171577u, 2017577864u, 2480066375u, 1314005163u, 2356979101u, 2356979101u, 2356979101u, 2356979101u, 2356979101u},
-   {908295453u, 1735606782u, 3222375310u, 3309277285u, 2388417153u, 203899112u, 3887135902u, 649398139u, 2678596316u, 2291465887u, 3885708800u, 4185239937u, 2166136261u, 2166136261u, 2166136261u, 2166136261u, 2166136261u}},
+   {37, 154, 561, 1673, 3369, 4470, 4847, 4967, 4992, 4997, 4998, 4999, 5000, 5000, 5000, 5000, 5000, 5000},
+   {37, 149, 517, 1210, 1184, 491, 152, 33, 8, 3, 2, 1, 0, 0, 0, 0, 0, 0},
+   {1805767755u, 606907344u, 251924099u, 3592547414u, 220092997u, 4170046084u, 2925551006u, 3474631211u, 1333171577u, 2017577864u, 2480066375u, 1314005163u, 2356979101u, 2356979101u, 2356979101u, 2356979101u, 2356979101u, 2356979101u},
+   {908295453u, 1735606782u, 3222375310u, 3309277285u, 2388417153u, 203899112u, 3887135902u, 649398139u, 2678596316u, 2291465887u, 3885708800u, 4185239937u, 2166136261u, 2166136261u, 2166136261u, 2166136261u, 2166136261u, 2166136261u}},
   // n=5000 seed=12345 radius=40 extent=256 zoom 0..16 minPoints=2
   {5000, 12345u, 40.0, 256, 0, 16, 2,
-   {11, 37, 154, 561, 1673, 3369, 4470, 4847, 4967, 4992, 4997, 4998, 4999, 5000, 5000, 5000, 5000},
-   {11, 37, 149, 517, 1210, 1184, 491, 152, 33, 8, 3, 2, 1, 0, 0, 0, 0},
-   {2501411492u, 1805767755u, 606907344u, 251924099u, 3592547414u, 220092997u, 4170046084u, 2925551006u, 3474631211u, 1333171577u, 2017577864u, 2480066375u, 1314005163u, 2356979101u, 2356979101u, 2356979101u, 2356979101u},
-   {2901069191u, 446459210u, 1109370185u, 2470694807u, 1559555949u, 2215230431u, 2090804177u, 2143146402u, 698438652u, 3793120724u, 3800605278u, 3074938394u, 4168462318u, 2166136261u, 2166136261u, 2166136261u, 2166136261u}},
+   {11, 37, 154, 561, 1673, 3369, 4470, 4847, 4967, 4992, 4997, 4998, 4999, 5000, 5000, 5000, 5000, 5000},
+   {11, 37, 149, 517, 1210, 1184, 491, 152, 33, 8, 3, 2, 1, 0, 0, 0, 0, 0},
+   {2501411492u, 1805767755u, 606907344u, 251924099u, 3592547414u, 220092997u, 4170046084u, 2925551006u, 3474631211u, 1333171577u, 2017577864u, 2480066375u, 1314005163u, 2356979101u, 2356979101u, 2356979101u, 2356979101u, 2356979101u},
+   {2901069191u, 446459210u, 1109370185u, 2470694807u, 1559555949u, 2215230431u, 2090804177u, 2143146402u, 698438652u, 3793120724u, 3800605278u, 3074938394u, 4168462318u, 2166136261u, 2166136261u, 2166136261u, 2166136261u, 2166136261u}},
   // n=5000 seed=12345 radius=40 extent=1024 zoom 0..16 minPoints=2
   {5000, 12345u, 40.0, 1024, 0, 16, 2,
-   {154, 561, 1673, 3369, 4470, 4847, 4967, 4992, 4997, 4998, 4999, 5000, 5000, 5000, 5000, 5000, 5000},
-   {149, 517, 1210, 1184, 491, 152, 33, 8, 3, 2, 1, 0, 0, 0, 0, 0, 0},
-   {606907344u, 251924099u, 3592547414u, 220092997u, 4170046084u, 2925551006u, 3474631211u, 1333171577u, 2017577864u, 2480066375u, 1314005163u, 2356979101u, 2356979101u, 2356979101u, 2356979101u, 2356979101u, 2356979101u},
-   {2008030271u, 2096192001u, 86362713u, 719690823u, 4183232535u, 3830296254u, 3938549614u, 3787935432u, 2530141240u, 998378074u, 4202017556u, 2166136261u, 2166136261u, 2166136261u, 2166136261u, 2166136261u, 2166136261u}},
+   {154, 561, 1673, 3369, 4470, 4847, 4967, 4992, 4997, 4998, 4999, 5000, 5000, 5000, 5000, 5000, 5000, 5000},
+   {149, 517, 1210, 1184, 491, 152, 33, 8, 3, 2, 1, 0, 0, 0, 0, 0, 0, 0},
+   {606907344u, 251924099u, 3592547414u, 220092997u, 4170046084u, 2925551006u, 3474631211u, 1333171577u, 2017577864u, 2480066375u, 1314005163u, 2356979101u, 2356979101u, 2356979101u, 2356979101u, 2356979101u, 2356979101u, 2356979101u},
+   {2008030271u, 2096192001u, 86362713u, 719690823u, 4183232535u, 3830296254u, 3938549614u, 3787935432u, 2530141240u, 998378074u, 4202017556u, 2166136261u, 2166136261u, 2166136261u, 2166136261u, 2166136261u, 2166136261u, 2166136261u}},
   // n=3000 seed=777 radius=80 extent=512 zoom 1..14 minPoints=2
   {3000, 777u, 80.0, 512, 1, 14, 2,
-   {39, 148, 510, 1382, 2342, 2779, 2947, 2984, 2996, 2999, 3000, 3000, 3000, 3000},
-   {38, 143, 447, 832, 539, 212, 52, 16, 4, 1, 0, 0, 0, 0},
-   {993833477u, 2141167518u, 3161340709u, 3918890464u, 1036665440u, 3212688082u, 492023470u, 4180803411u, 921193384u, 4107195081u, 3305376653u, 3305376653u, 3305376653u, 3305376653u},
-   {2013879702u, 2123372854u, 3188312041u, 1403982669u, 2167766900u, 1877615968u, 3665749095u, 2929400263u, 1421908612u, 723098213u, 2166136261u, 2166136261u, 2166136261u, 2166136261u}},
+   {39, 148, 510, 1382, 2342, 2779, 2947, 2984, 2996, 2999, 3000, 3000, 3000, 3000, 3000},
+   {38, 143, 447, 832, 539, 212, 52, 16, 4, 1, 0, 0, 0, 0, 0},
+   {993833477u, 2141167518u, 3161340709u, 3918890464u, 1036665440u, 3212688082u, 492023470u, 4180803411u, 921193384u, 4107195081u, 3305376653u, 3305376653u, 3305376653u, 3305376653u, 3305376653u},
+   {2013879702u, 2123372854u, 3188312041u, 1403982669u, 2167766900u, 1877615968u, 3665749095u, 2929400263u, 1421908612u, 723098213u, 2166136261u, 2166136261u, 2166136261u, 2166136261u, 2166136261u}},
+  // n=5000 seed=12345 radius=40 extent=512 zoom 0..8 minPoints=2
+  {5000, 12345u, 40.0, 512, 0, 8, 2,
+   {37, 154, 561, 1673, 3369, 4470, 4847, 4967, 4992, 5000},
+   {37, 149, 517, 1210, 1184, 491, 152, 33, 8, 0},
+   {1805767755u, 606907344u, 251924099u, 3592547414u, 220092997u, 4170046084u, 2925551006u, 3474631211u, 1333171577u, 2356979101u},
+   {908295453u, 1735606782u, 3222375310u, 4114412131u, 418889501u, 206123500u, 1546608014u, 2620859791u, 3955589788u, 2166136261u}},
   // n=8000 seed=424242 radius=25 extent=512 zoom 0..12 minPoints=2
   {8000, 424242u, 25.0, 512, 0, 12, 2,
-   {94, 372, 1341, 3613, 6142, 7474, 7864, 7969, 7991, 7998, 7999, 8000, 8000},
-   {93, 360, 1200, 2210, 1526, 511, 134, 30, 9, 2, 1, 0, 0},
-   {2473319454u, 999143822u, 3072884681u, 2567654997u, 3013614691u, 3374615311u, 3762316709u, 909188336u, 3632899351u, 26060799u, 1832098647u, 2459957253u, 2459957253u},
-   {193477675u, 364685338u, 1078684228u, 1842364820u, 2604891972u, 3412529013u, 202904108u, 3785568585u, 843412277u, 1752323339u, 831472737u, 2166136261u, 2166136261u}},
+   {94, 372, 1341, 3613, 6142, 7474, 7864, 7969, 7991, 7998, 7999, 8000, 8000, 8000},
+   {93, 360, 1200, 2210, 1526, 511, 134, 30, 9, 2, 1, 0, 0, 0},
+   {2473319454u, 999143822u, 3072884681u, 2567654997u, 3013614691u, 3374615311u, 3762316709u, 909188336u, 3632899351u, 26060799u, 1832098647u, 2459957253u, 2459957253u, 2459957253u},
+   {193477675u, 364685338u, 1078684228u, 1842364820u, 2604891972u, 3412529013u, 202904108u, 3785568585u, 843412277u, 1752323339u, 831472737u, 2166136261u, 2166136261u, 2166136261u}},
   };
 
   for (const auto& testCase : cases) {
@@ -524,7 +530,7 @@ static void testSuperclusterParity() {
     engine.setPoints(ids.data(), lats.data(), lngs.data(), static_cast<size_t>(testCase.pointCount));
     engine.build();
 
-    for (int32_t z = testCase.minZoom; z <= testCase.maxZoom; z++) {
+    for (int32_t z = testCase.minZoom; z <= testCase.maxZoom + 1; z++) {
       const size_t slot = static_cast<size_t>(z - testCase.minZoom);
       const auto nodes = engine.getClusters({85.0, -85.0, 180.0, -180.0, static_cast<double>(z)});
 
@@ -597,38 +603,47 @@ static void testSuperclusterAntimeridianParity() {
   {165.0, -40.0, 185.0, 10.0, 6, 741, 1169371758u},
   {165.0, -40.0, 185.0, 10.0, 10, 1462, 3658265493u},
   {165.0, -40.0, 185.0, 10.0, 16, 1468, 2192578885u},
+  {165.0, -40.0, 185.0, 10.0, 17, 1468, 2192578885u},
   {165.0, -40.0, -175.0, 10.0, 2, 7, 4023661163u},
   {165.0, -40.0, -175.0, 10.0, 6, 741, 1169371758u},
   {165.0, -40.0, -175.0, 10.0, 10, 1462, 3658265493u},
   {165.0, -40.0, -175.0, 10.0, 16, 1468, 2192578885u},
+  {165.0, -40.0, -175.0, 10.0, 17, 1468, 2192578885u},
   {-195.0, -40.0, -175.0, 10.0, 2, 7, 4023661163u},
   {-195.0, -40.0, -175.0, 10.0, 6, 741, 1169371758u},
   {-195.0, -40.0, -175.0, 10.0, 10, 1462, 3658265493u},
   {-195.0, -40.0, -175.0, 10.0, 16, 1468, 2192578885u},
+  {-195.0, -40.0, -175.0, 10.0, 17, 1468, 2192578885u},
   {535.0, -40.0, 545.0, 10.0, 2, 4, 2256261759u},
   {535.0, -40.0, 545.0, 10.0, 6, 486, 486665498u},
   {535.0, -40.0, 545.0, 10.0, 10, 941, 1572366166u},
   {535.0, -40.0, 545.0, 10.0, 16, 942, 1083405345u},
+  {535.0, -40.0, 545.0, 10.0, 17, 942, 1083405345u},
   {175.0, -25.0, 179.5, -5.0, 2, 0, 2166136261u},
   {175.0, -25.0, 179.5, -5.0, 6, 139, 3628311341u},
   {175.0, -25.0, 179.5, -5.0, 10, 256, 148373853u},
   {175.0, -25.0, 179.5, -5.0, 16, 256, 148373853u},
+  {175.0, -25.0, 179.5, -5.0, 17, 256, 148373853u},
   {178.0, -100.0, 182.0, 100.0, 2, 1, 2628540102u},
   {178.0, -100.0, 182.0, 100.0, 6, 193, 230248810u},
   {178.0, -100.0, 182.0, 100.0, 10, 369, 3980967683u},
   {178.0, -100.0, 182.0, 100.0, 16, 369, 3980967683u},
+  {178.0, -100.0, 182.0, 100.0, 17, 369, 3980967683u},
   {-180.0, -90.0, 180.0, 90.0, 2, 10, 2712912158u},
   {-180.0, -90.0, 180.0, 90.0, 6, 1000, 2865334831u},
   {-180.0, -90.0, 180.0, 90.0, 10, 1994, 1817453981u},
   {-180.0, -90.0, 180.0, 90.0, 16, 2000, 3839929109u},
+  {-180.0, -90.0, 180.0, 90.0, 17, 2000, 3839929109u},
   {0.0, -90.0, 360.0, 90.0, 2, 10, 2712912158u},
   {0.0, -90.0, 360.0, 90.0, 6, 1000, 2865334831u},
   {0.0, -90.0, 360.0, 90.0, 10, 1994, 1817453981u},
   {0.0, -90.0, 360.0, 90.0, 16, 2000, 3839929109u},
+  {0.0, -90.0, 360.0, 90.0, 17, 2000, 3839929109u},
   {-200.0, -90.0, 200.0, 90.0, 2, 10, 2712912158u},
   {-200.0, -90.0, 200.0, 90.0, 6, 1000, 2865334831u},
   {-200.0, -90.0, 200.0, 90.0, 10, 1994, 1817453981u},
   {-200.0, -90.0, 200.0, 90.0, 16, 2000, 3839929109u},
+  {-200.0, -90.0, 200.0, 90.0, 17, 2000, 3839929109u},
   };
 
   // Must match ANTIMERIDIAN and makeAntimeridianFeatures in the fixture script.
@@ -787,6 +802,8 @@ static void testExpansionZoomOfIdenticalPoints() {
     assert(clusters.front().count == count);
     assert(engine.getClusterExpansionZoom(clusters.front().id) == config.maxZoom + 1);
   }
+  // Where getClusters returns them on their own, one on top of another.
+  assert(engine.getClusters(worldAt(config.maxZoom + 1)).size() == static_cast<size_t>(count));
 }
 
 static void testExpansionZoomOfPointId() {
@@ -836,8 +853,9 @@ static void testExpansionZoomsMatchWhereClustersSplit() {
   engine.setPoints(ids.data(), lats.data(), lngs.data(), static_cast<size_t>(count));
   engine.build();
 
-  std::vector<std::vector<int32_t>> idsAtZoom(config.maxZoom + 1);
-  for (int32_t z = config.minZoom; z <= config.maxZoom; z++) {
+  // Up to maxZoom + 1, where the clusters created at maxZoom split.
+  std::vector<std::vector<int32_t>> idsAtZoom(config.maxZoom + 2);
+  for (int32_t z = config.minZoom; z <= config.maxZoom + 1; z++) {
     for (const auto& node : engine.getClusters(worldAt(z))) {
       idsAtZoom[z].push_back(node.id);
     }
@@ -855,7 +873,6 @@ static void testExpansionZoomsMatchWhereClustersSplit() {
       assert(expansion > z);
       assert(shownAt(expansion - 1, node.id));
       checked++;
-      if (expansion > config.maxZoom) continue;
 
       assert(!shownAt(expansion, node.id));
       int32_t childrenShown = 0;
@@ -866,6 +883,209 @@ static void testExpansionZoomsMatchWhereClustersSplit() {
     }
   }
   assert(checked > 100);
+}
+
+// Sorted ids of the points a query should return at maxZoom + 1: every point
+// inside the viewport, tested the way getClusters reads a viewport.
+static std::vector<int32_t> idsOfPointsInside(const std::vector<double>& lats, const std::vector<double>& lngs,
+                                              const ViewportBounds& viewport, int32_t extent) {
+  const NormalizedViewport bounds = normalizeViewport(viewport);
+  const double minY = latToY(bounds.north, extent);
+  const double maxY = latToY(bounds.south, extent);
+  std::vector<int32_t> ids;
+  for (size_t i = 0; i < lats.size(); i++) {
+    const double x = lngToX(lngs[i], extent);
+    const double y = latToY(lats[i], extent);
+    if (y < minY || y > maxY) continue;
+    for (int r = 0; r < bounds.rangeCount; r++) {
+      if (x >= lngToX(bounds.ranges[r].west, extent) && x <= lngToX(bounds.ranges[r].east, extent)) {
+        ids.push_back(static_cast<int32_t>(i));
+        break;
+      }
+    }
+  }
+  return ids;
+}
+
+static std::vector<int32_t> sortedIds(const std::vector<ClusterNode>& nodes) {
+  std::vector<int32_t> ids;
+  for (const auto& node : nodes) ids.push_back(node.id);
+  std::sort(ids.begin(), ids.end());
+  return ids;
+}
+
+// Above maxZoom every point stands on its own, as in supercluster, however
+// far past maxZoom the zoom goes.
+static void testPointsStandAloneAboveMaxZoom() {
+  ClusterEngineCore engine;
+  const ClusterEngineConfig config = expansionConfig();
+  engine.setOptions(config);
+
+  // About 0.7 m apart: one cluster up to maxZoom.
+  std::vector<int32_t> ids = {0, 1};
+  std::vector<double> lats = {52.2, 52.2};
+  std::vector<double> lngs = {21.0, 21.00001};
+  engine.setPoints(ids.data(), lats.data(), lngs.data(), ids.size());
+  engine.build();
+
+  const auto clustered = engine.getClusters(worldAt(config.maxZoom));
+  assert(clustered.size() == 1);
+  assert(clustered.front().isCluster);
+
+  const double inf = std::numeric_limits<double>::infinity();
+  for (const double zoom : {config.maxZoom + 1.0, config.maxZoom + 1.5, 25.0, 1e9, inf}) {
+    const auto points = engine.getClusters({85.0, -85.0, 180.0, -180.0, zoom});
+    assert(sortedIds(points) == ids);
+    for (const auto& point : points) {
+      assert(!point.isCluster);
+      assert(point.count == 1);
+      assert(point.zoom == config.maxZoom + 1);
+    }
+  }
+}
+
+// A point inside the viewport is returned at maxZoom + 1 even when the
+// cluster it belongs to at maxZoom is centred outside the viewport.
+static void testPointsAboveMaxZoomOfClustersCentredOutside() {
+  ClusterEngineCore engine;
+  const ClusterEngineConfig config = expansionConfig();
+  engine.setOptions(config);
+
+  // One cluster at maxZoom, centred on 21.00017.
+  std::vector<int32_t> ids = {0, 1, 2};
+  std::vector<double> lats = {52.2, 52.2, 52.2};
+  std::vector<double> lngs = {21.0, 21.0002, 21.0003};
+  engine.setPoints(ids.data(), lats.data(), lngs.data(), ids.size());
+  engine.build();
+  assert(engine.getClusters(worldAt(config.maxZoom)).size() == 1);
+
+  auto idsIn = [&engine](double west, double east, int32_t zoom) {
+    return sortedIds(engine.getClusters({52.3, 52.1, east, west, static_cast<double>(zoom)}));
+  };
+  // East of the centroid, then west of it.
+  assert(idsIn(21.00025, 21.01, config.maxZoom).empty());
+  assert(idsIn(21.00025, 21.01, config.maxZoom + 1) == std::vector<int32_t>({2}));
+  assert(idsIn(20.99, 21.0001, config.maxZoom).empty());
+  assert(idsIn(20.99, 21.0001, config.maxZoom + 1) == std::vector<int32_t>({0}));
+}
+
+// Identical points can sum to a centroid an ulp north of them. With radius 0
+// nothing but the rounding slack reaches their cluster from a viewport whose
+// north edge is their own latitude. (Not a longitude: the viewport's are
+// wrapped, which rounds them.) Which latitudes round that way depends on the
+// libm behind latToY, so the test looks for one.
+static void testPointsAboveMaxZoomOnTheViewportEdge() {
+  ClusterEngineConfig config = expansionConfig();
+  config.radius = 0.0;
+
+  double lat = 0.0;
+  int32_t count = 0;
+  for (int32_t k = 1; k <= 1000 && count == 0; k++) {
+    const double candidate = 52.2 + k / 100000.0;
+    const double y = latToY(candidate, config.extent);
+    for (int32_t n = 3; n <= 8; n++) {
+      // The sum build() forms for a cluster of n points at y.
+      double sum = y;
+      for (int32_t i = 1; i < n; i++) sum += y;
+      if (sum / n < y) {
+        lat = candidate;
+        count = n;
+        break;
+      }
+    }
+  }
+  assert(count > 0);
+
+  ClusterEngineCore engine;
+  engine.setOptions(config);
+  std::vector<int32_t> ids(static_cast<size_t>(count));
+  for (int32_t i = 0; i < count; i++) ids[static_cast<size_t>(i)] = i;
+  std::vector<double> lats(ids.size(), lat);
+  std::vector<double> lngs(ids.size(), 21.0);
+  engine.setPoints(ids.data(), lats.data(), lngs.data(), ids.size());
+  engine.build();
+
+  const auto clusters = engine.getClusters(worldAt(config.maxZoom));
+  assert(clusters.size() == 1);
+  assert(clusters.front().y < latToY(lat, config.extent));
+
+  const ViewportBounds fromTheEdge = {lat, 52.1, 21.01, 20.99, static_cast<double>(config.maxZoom)};
+  assert(engine.getClusters(fromTheEdge).empty());
+  ViewportBounds above = fromTheEdge;
+  above.zoom = config.maxZoom + 1;
+  assert(sortedIds(engine.getClusters(above)) == ids);
+}
+
+// getClusters at maxZoom + 1 returns exactly the points inside the viewport,
+// each once, on dense data whose maxZoom clusters the viewports cut through,
+// around the antimeridian too.
+static void testPointsAboveMaxZoomMatchABruteForceFilter() {
+  // Blobs a few hundred metres wide, one of them across the antimeridian, and
+  // stacks of identical points.
+  const std::vector<std::pair<double, double>> centres = {
+    {52.23, 21.01}, {52.25, 21.05}, {-17.8, 179.999}, {40.7, -74.0},
+  };
+  const int32_t count = 4000;
+  std::vector<int32_t> ids(count);
+  std::vector<double> lats(count);
+  std::vector<double> lngs(count);
+  uint32_t seed = 2026u;
+  auto random = [&seed]() {
+    seed = seed * 1664525u + 1013904223u;
+    return static_cast<double>(seed >> 8) / static_cast<double>(1u << 24);
+  };
+  for (int32_t i = 0; i < count; i++) {
+    const auto& [lat, lng] = centres[static_cast<size_t>(i) % centres.size()];
+    ids[i] = i;
+    if (i % 10 == 0) {
+      lats[i] = lat;
+      lngs[i] = lng;
+    } else {
+      lats[i] = lat + (random() - 0.5) * 0.004;
+      lngs[i] = wrapLongitude(lng + (random() - 0.5) * 0.006);
+    }
+  }
+
+  ClusterEngineConfig dense = expansionConfig();
+  dense.maxZoom = 14;
+  ClusterEngineConfig minPoints = expansionConfig();
+  minPoints.radius = 60.0;
+  minPoints.minPoints = 3;
+  minPoints.maxZoom = 13;
+
+  for (const auto& config : {dense, minPoints}) {
+    ClusterEngineCore engine;
+    engine.setOptions(config);
+    engine.setPoints(ids.data(), lats.data(), lngs.data(), static_cast<size_t>(count));
+    engine.build();
+
+    int32_t viewportsCuttingClusters = 0;
+    for (int32_t q = 0; q < 400; q++) {
+      const auto& [lat, lng] = centres[static_cast<size_t>(q) % centres.size()];
+      const double halfHeight = 0.0002 + random() * 0.003;
+      const double halfWidth = 0.0002 + random() * 0.004;
+      const double centreLat = lat + (random() - 0.5) * 0.004;
+      // Unwrapped, as regionToBBox leaves a region across the antimeridian.
+      const double centreLng = lng + (random() - 0.5) * 0.006;
+      ViewportBounds viewport = {centreLat + halfHeight, centreLat - halfHeight, centreLng + halfWidth,
+                                 centreLng - halfWidth, static_cast<double>(config.maxZoom + 1)};
+
+      const auto points = engine.getClusters(viewport);
+      const std::vector<int32_t> expected = idsOfPointsInside(lats, lngs, viewport, config.extent);
+      assert(sortedIds(points) == expected);
+      for (const auto& point : points) assert(!point.isCluster);
+
+      // The points the maxZoom nodes inside the viewport hold differ from
+      // those inside it when the viewport cuts through a cluster.
+      viewport.zoom = config.maxZoom;
+      size_t heldInside = 0;
+      for (const auto& node : engine.getClusters(viewport)) {
+        heldInside += static_cast<size_t>(node.count);
+      }
+      if (heldInside != expected.size()) viewportsCuttingClusters++;
+    }
+    assert(viewportsCuttingClusters > 20);
+  }
 }
 
 // Numbers JS can pass where the engine needs an int32. Run this file under
@@ -1066,6 +1286,10 @@ int main() {
   testExpansionZoomOfIdenticalPoints();
   testExpansionZoomOfPointId();
   testExpansionZoomsMatchWhereClustersSplit();
+  testPointsStandAloneAboveMaxZoom();
+  testPointsAboveMaxZoomOfClustersCentredOutside();
+  testPointsAboveMaxZoomOnTheViewportEdge();
+  testPointsAboveMaxZoomMatchABruteForceFilter();
   testBoundaryClusterIds();
   testBoundaryLeafLimits();
   testBoundaryLeafOffsets();

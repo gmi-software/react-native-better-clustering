@@ -81,10 +81,11 @@ feature-for-feature: with the same points, `radius`, `extent`, `minPoints` and
 zoom range, `getClusters` returns the same clusters with the same members, and
 `getClusterExpansionZoom` returns the same zoom for each of them. A checked-in
 fixture in `package/cpp/ClusterEngineCore.test.cpp`, generated from
-supercluster 8.0.1 and verified in CI, pins this for five seeded datasets of
+supercluster 8.0.1 and verified in CI, pins this for six seeded cases of
 3,000–8,000 points (`extent` 256, 512 and 1024, `minPoints: 2`): at every zoom
-the engine must return the same number of features and of clusters, group the
-same points into each cluster, and give each cluster the same expansion zoom. A
+from `minZoom` to `maxZoom + 1`, where every point stands on its own, the engine
+must return the same number of features and of clusters, group the same points
+into each cluster, and give each cluster the same expansion zoom. A
 second table pins viewport queries around the antimeridian, with the bbox
 written unwrapped, wrapped, far outside ±180° and 360° or wider.
 
@@ -124,3 +125,10 @@ such prop and always uses `256`, as react-native-map-clustering does. See
 > the old `/engine` or `/hooks` behaviour, multiply it by `256 / extent` to keep
 > the previous clustering: halve it at the default `extent: 512`, keep it at
 > `256`, quarter it at `1024`.
+
+> Earlier releases also clamped every query to `maxZoom`, so `/engine` and
+> `/hooks` never returned unclustered points: points closer than the cluster
+> radius at `maxZoom` stayed clustered however far the map zoomed in. As in
+> supercluster and react-native-clusterer, a query above `maxZoom` now returns
+> every point on its own (see [Above `maxZoom`](./api/engine.md#above-maxzoom)).
+> `MapView` is unchanged: it stops at `maxZoom` and spiderfies those clusters.

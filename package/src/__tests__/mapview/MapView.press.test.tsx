@@ -194,6 +194,19 @@ describe('MapView spiderfy', () => {
     expect(clusterLabels(container)).toEqual(['5'])
   })
 
+  it('keeps markers clustered past maxZoom, where useClusterer shows them apart (#26)', async () => {
+    const { container } = render(
+      <Map
+        points={GROUP}
+        maxZoom={14}
+        initialRegion={regionAt(GROUP[2]!, 17)}
+      />
+    )
+    await flush()
+
+    expect(clusterLabels(container)).toEqual(['5'])
+  })
+
   it('does not spiderfy clusters of points that can still split', async () => {
     const { container } = render(
       <Map points={GROUP} initialRegion={regionAt(GROUP[2]!, 20)} />
