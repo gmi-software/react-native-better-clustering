@@ -37,7 +37,7 @@ import {
   DEFAULT_MIN_ZOOM,
   GEO_VIEWPORT_TILE_SIZE,
 } from '../engine/defaults'
-import { clusterZoomFromRegion } from '../engine/geometry'
+import { cameraZoomFromRegion, clusterZoomFromRegion } from '../engine/geometry'
 import { useClusterIndex } from '../hooks/useClusterIndex'
 import type { UseClustererOptions } from '../hooks/types'
 import ClusterMarker from './ClusterMarker'
@@ -180,11 +180,25 @@ export interface ClusteredMapViewProps extends Omit<
   superClusterRef?: MutableRefObject<Supercluster | null>
   /** Callback ref for the underlying `react-native-maps` map instance. */
   mapRef?: (map: MapView | null) => void
-  /** When `true`, overlapping markers spiderfy on cluster press. */
+  /**
+   * When `true`, a cluster whose markers zooming can't separate (they share a
+   * location) spreads them into a spiral: from
+   * {@linkcode ClusteredMapViewProps.spiderfyMinZoom spiderfyMinZoom}, or at
+   * any zoom when pressed.
+   *
+   * @default `true`
+   */
   spiralEnabled?: boolean
   /**
+   * Camera zoom from which clusters that can't split spiderfy without being
+   * pressed. Matches react-native-map-clustering.
+   *
+   * @default `19`
+   */
+  spiderfyMinZoom?: number
+  /**
    * Most markers a cluster spiderfies into. A larger cluster of overlapping
-   * markers stays a cluster bubble at max zoom; pressing it still calls
+   * markers stays a cluster bubble; pressing it still calls
    * {@linkcode ClusteredMapViewProps.onClusterPress onClusterPress} with every
    * marker, so the app can list them instead.
    *
@@ -295,6 +309,7 @@ const CompatMapView = forwardRef(function CompatMapView(
     height,
     clusterUpdateIntervalMs = 100,
     spiralEnabled = true,
+    spiderfyMinZoom = 19,
     spiderfyMaxLeaves = 50,
     spiderLineColor = '#FF0000',
     renderCluster,
@@ -443,9 +458,9 @@ const CompatMapView = forwardRef(function CompatMapView(
     }
   }, [clusters, supercluster])
 
-  // Must use the same tile size as `clustererOptions`, otherwise `isAtMaxZoom`
-  // (and with it spiderfying) triggers a zoom level away from the clusters
-  // actually being rendered.
+  // The zoom `clusters` are queried at, so it must use the same tile size as
+  // `clustererOptions`. A pressed spider collapses when it changes, which is
+  // exactly when the cluster it belongs to can be replaced.
   const currentZoom = useMemo(
     () =>
       clusterZoomFromRegion(
@@ -458,7 +473,45 @@ const CompatMapView = forwardRef(function CompatMapView(
     [currentRegion, mapDimensions, minZoom, maxZoom]
   )
 
-  const isAtMaxZoom = currentZoom >= maxZoom
+  const spiderfyByZoom =
+    spiralEnabled &&
+    cameraZoomFromRegion(currentRegion, mapDimensions) >= spiderfyMinZoom
+
+  // Read through a ref by the press handler, so the handler keeps one identity
+  // across zooms and the `ClusterMarker` memo holds.
+  const currentZoomRef = useRef(currentZoom)
+  useEffect(() => {
+    currentZoomRef.current = currentZoom
+  })
+
+  // A cluster spiderfied by a press, until the zoom changes.
+  const [pressedSpider, setPressedSpider] = useState<{
+    supercluster: Supercluster
+    clusterId: number
+    zoom: number
+  } | null>(null)
+  const pressedSpiderId =
+    pressedSpider != null &&
+    pressedSpider.supercluster === supercluster &&
+    pressedSpider.zoom === currentZoom
+      ? pressedSpider.clusterId
+      : null
+
+  // Spiderfying is the only way to tell these markers apart: zooming never
+  // splits the cluster within the index's zoom range.
+  const canSpiderfy = useCallback(
+    (cluster: ClusterFeature) => {
+      const { cluster_id: clusterId, point_count: pointCount } =
+        cluster.properties
+      // A `NaN` cap fails `<=`, so it disables spiderfy rather than the cap.
+      return (
+        spiralEnabled &&
+        pointCount <= spiderfyMaxLeaves &&
+        supercluster.getClusterExpansionZoom(clusterId) > maxZoom
+      )
+    },
+    [spiralEnabled, spiderfyMaxLeaves, supercluster, maxZoom]
+  )
 
   const clusterFadeIn = animationEnabled ? clusterFadeInDuration : 0
 
@@ -498,6 +551,18 @@ const CompatMapView = forwardRef(function CompatMapView(
         return
       }
 
+      // Fitting to markers that share a location changes nothing, so spread
+      // them out in place.
+      if (canSpiderfy(cluster)) {
+        setPressedSpider({
+          supercluster,
+          clusterId,
+          zoom: currentZoomRef.current,
+        })
+        onClusterPress(cluster, leaves)
+        return
+      }
+
       const coordinates = leaves.map((leaf) => {
         const [longitude, latitude] = leaf.geometry.coordinates
         return { latitude, longitude }
@@ -523,6 +588,7 @@ const CompatMapView = forwardRef(function CompatMapView(
     [
       supercluster,
       preserveClusterPressBehavior,
+      canSpiderfy,
       onClusterPress,
       edgePadding,
       isMapReady,
@@ -619,7 +685,7 @@ const CompatMapView = forwardRef(function CompatMapView(
   // leaf objects are fine because `markerFor` resolves them by child index.
   const spiderLeaves = useMemo(() => {
     const leavesByClusterId = new Map<number, PointFeature[]>()
-    if (!spiralEnabled || !isAtMaxZoom) {
+    if (!spiderfyByZoom && pressedSpiderId == null) {
       return leavesByClusterId
     }
 
@@ -627,26 +693,16 @@ const CompatMapView = forwardRef(function CompatMapView(
       if (!isClusterFeature(feature)) {
         continue
       }
-      const { cluster_id: clusterId, point_count: pointCount } =
-        feature.properties
-      // Negated so a `NaN` cap disables spiderfy instead of the cap.
+      const clusterId = feature.properties.cluster_id
       if (
-        !(pointCount <= spiderfyMaxLeaves) ||
-        supercluster.getClusterExpansionZoom(clusterId) < maxZoom
+        (spiderfyByZoom || clusterId === pressedSpiderId) &&
+        canSpiderfy(feature)
       ) {
-        continue
+        leavesByClusterId.set(clusterId, supercluster.getAllLeaves(clusterId))
       }
-      leavesByClusterId.set(clusterId, supercluster.getAllLeaves(clusterId))
     }
     return leavesByClusterId
-  }, [
-    clusters,
-    supercluster,
-    spiralEnabled,
-    isAtMaxZoom,
-    maxZoom,
-    spiderfyMaxLeaves,
-  ])
+  }, [clusters, supercluster, spiderfyByZoom, pressedSpiderId, canSpiderfy])
 
   // Spider spacing is fixed on screen, so it depends on the zoom. `null` while
   // nothing spiderfies, so ordinary zooms never re-render every marker.

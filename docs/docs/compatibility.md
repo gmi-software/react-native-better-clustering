@@ -46,6 +46,11 @@ Supported props include `radius`, `minPoints`, `minZoom`, `maxZoom`, `extent`,
 | Unstable clusters on zoom ([#255](https://github.com/tomekvenits/react-native-map-clustering/issues/255)) | Stable references |
 | Per-marker `cluster={false}` ([#297](https://github.com/tomekvenits/react-native-map-clustering/issues/297)) | Supported |
 
+Spiderfy keeps react-native-map-clustering's camera zoom 19 threshold
+(`spiderfyMinZoom`), but only spreads clusters that zooming can't split, caps
+them at `spiderfyMaxLeaves`, and also spreads them in place when pressed. See
+[Markers at the same location](./api/mapview.md#markers-at-the-same-location).
+
 ## Migrate from react-native-clusterer
 
 For custom map stacks, use advanced subpaths:

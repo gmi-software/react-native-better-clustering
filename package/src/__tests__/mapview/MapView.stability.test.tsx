@@ -17,14 +17,7 @@ import {
 import { act, render } from '@testing-library/react'
 import React, { StrictMode, useState } from 'react'
 
-import {
-  CENTER,
-  CITY_ZOOM,
-  GROUP,
-  SAME_SPOT,
-  SINGLES,
-  type TestPoint,
-} from './fixtures'
+import { CENTER, CITY_ZOOM, GROUP, SINGLES, type TestPoint } from './fixtures'
 import {
   Marker,
   clusterLabels,
@@ -533,28 +526,5 @@ describe('Marker cluster prop (#14)', () => {
     expect(clusterLabels(container)).toEqual(['5'])
     expect(renderedMarkerIds(container)).toEqual(['s0', 's1', 's2'])
     expect(consoleError).not.toHaveBeenCalled()
-  })
-})
-
-describe('MapView known issues', () => {
-  let consoleError: ReturnType<typeof spyOn>
-
-  beforeEach(() => {
-    consoleError = spyOn(console, 'error').mockImplementation(() => {})
-  })
-
-  afterEach(() => {
-    consoleError.mockRestore()
-  })
-
-  it.failing('#22: co-located markers spiderfy by camera zoom 19', async () => {
-    // Today spiderfy needs camera zoom 22+, beyond Google Maps' maximum.
-    const { container } = render(
-      <Map points={SAME_SPOT} initialRegion={regionAt(CENTER, 19)} />
-    )
-    await flush()
-
-    expect(clusterLabels(container)).toEqual([])
-    expect(renderedMarkerIds(container)).toHaveLength(SAME_SPOT.length)
   })
 })

@@ -176,7 +176,8 @@ Everything from `react-native-maps` `MapView`, plus:
 | `minZoom`                      | `1`                   | Minimum zoom level                |
 | `maxZoom`                      | `20`                  | Maximum zoom level for clustering |
 | `clusteringEnabled`            | `true`                | Toggle clustering                 |
-| `spiralEnabled`                | `true`                | Spider layout at max zoom         |
+| `spiralEnabled`                | `true`                | Spread markers that share a location into a spiral |
+| `spiderfyMinZoom`              | `19`                  | Camera zoom from which they spread without a press |
 | `spiderfyMaxLeaves`            | `50`                  | Most markers a cluster spiderfies into; larger ones stay a bubble |
 | `spiderLineColor`              | `#FF0000`             | Color of spider connector lines   |
 | `clusterColor`                 | `#0F52FF`             | Default cluster bubble color (GMI brand blue) |

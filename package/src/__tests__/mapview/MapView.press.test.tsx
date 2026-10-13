@@ -161,8 +161,7 @@ describe('MapView cluster press', () => {
 })
 
 describe('MapView spiderfy', () => {
-  // The cluster zoom MapView computes is about two levels below the camera
-  // zoom, so the default maxZoom of 20 is only reached from ~camera zoom 22.
+  // Above the default spiderfyMinZoom (19) and at the index's maxZoom.
   const SPIDER_ZOOM = 23
 
   it('spreads co-located markers into a spiral with connector lines at maxZoom', async () => {
@@ -325,5 +324,190 @@ describe('MapView bounded spiderfy (#16)', () => {
     expect(polylineCount(container)).toBe(SAME_SPOT.length)
     expect(fakeClusterEngineStats.getLeaves).toBe(leafQueries)
     expect(fakeClusterEngineStats.getClusterExpansionZoom).toBe(zoomQueries)
+  })
+})
+
+describe('MapView reachable spiderfy (#22)', () => {
+  function crowd(count: number): TestPoint[] {
+    return Array.from({ length: count }, (_, i) => ({
+      id: `c${i}`,
+      latitude: CENTER.latitude,
+      longitude: CENTER.longitude,
+    }))
+  }
+
+  it.each([17, 18, 18.99])(
+    'keeps co-located markers as a cluster at camera zoom %p',
+    async (zoom) => {
+      const { container } = render(
+        <Map points={SAME_SPOT} initialRegion={regionAt(CENTER, zoom)} />
+      )
+      await flush()
+
+      expect(clusterLabels(container)).toEqual(['5'])
+      expect(polylineCount(container)).toBe(0)
+    }
+  )
+
+  it.each([19, 20, 21])(
+    'spiderfies co-located markers at camera zoom %p',
+    async (zoom) => {
+      const { container } = render(
+        <Map points={SAME_SPOT} initialRegion={regionAt(CENTER, zoom)} />
+      )
+      await flush()
+
+      expect(clusterLabels(container)).toEqual([])
+      expect(renderedMarkerIds(container)).toHaveLength(SAME_SPOT.length)
+      expect(polylineCount(container)).toBe(SAME_SPOT.length)
+    }
+  )
+
+  it('lets distinct nearby markers expand by zooming instead', async () => {
+    // GROUP's ~13 m spacing still clusters at camera zoom 18 and splits at 19,
+    // so lower the threshold to have the cluster sit past it.
+    const at18 = render(
+      <Map
+        points={GROUP}
+        spiderfyMinZoom={18}
+        initialRegion={regionAt(GROUP[2]!, 18)}
+      />
+    )
+    await flush()
+    expect(clusterLabels(at18.container).length).toBeGreaterThan(0)
+    expect(polylineCount(at18.container)).toBe(0)
+
+    press(theCluster(at18.container))
+    await flush()
+    expect(mapState.fitToCoordinates).toHaveLength(1)
+    expect(polylineCount(at18.container)).toBe(0)
+    at18.unmount()
+
+    const at19 = render(
+      <Map
+        points={GROUP}
+        spiderfyMinZoom={18}
+        initialRegion={regionAt(GROUP[2]!, 19)}
+      />
+    )
+    await flush()
+    expect(renderedMarkerIds(at19.container)).toHaveLength(GROUP.length)
+    expect(polylineCount(at19.container)).toBe(0)
+  })
+
+  it('honours spiderfyMinZoom', async () => {
+    const at = (zoom: number) =>
+      render(
+        <Map
+          points={SAME_SPOT}
+          spiderfyMinZoom={21}
+          initialRegion={regionAt(CENTER, zoom)}
+        />
+      )
+
+    const below = at(19)
+    await flush()
+    expect(clusterLabels(below.container)).toEqual(['5'])
+    below.unmount()
+
+    const from = at(21)
+    await flush()
+    expect(polylineCount(from.container)).toBe(SAME_SPOT.length)
+  })
+
+  describe('on press, below spiderfyMinZoom', () => {
+    const PRESS_ZOOM = 14
+
+    it('spreads co-located markers in place instead of fitting the map', async () => {
+      const onClusterPress = jest.fn()
+      const { container } = render(
+        <Map
+          points={SAME_SPOT}
+          onClusterPress={onClusterPress}
+          initialRegion={regionAt(CENTER, PRESS_ZOOM)}
+        />
+      )
+      await flush()
+
+      press(theCluster(container))
+      await flush()
+
+      expect(clusterLabels(container)).toEqual([])
+      expect(renderedMarkerIds(container)).toHaveLength(SAME_SPOT.length)
+      expect(polylineCount(container)).toBe(SAME_SPOT.length)
+      expect(mapState.fitToCoordinates).toEqual([])
+      expect(onClusterPress).toHaveBeenCalledTimes(1)
+      expect(onClusterPress.mock.calls[0]![1]).toHaveLength(SAME_SPOT.length)
+    })
+
+    it('spreads them when pressed after a zoom change', async () => {
+      const { container } = render(
+        <Map points={SAME_SPOT} initialRegion={regionAt(CENTER, PRESS_ZOOM)} />
+      )
+      await flush()
+      await settleRegion(regionAt(CENTER, PRESS_ZOOM + 1))
+
+      press(theCluster(container))
+      await flush()
+
+      expect(polylineCount(container)).toBe(SAME_SPOT.length)
+    })
+
+    it('stays spread on a pan and collapses when the zoom changes', async () => {
+      const { container } = render(
+        <Map points={SAME_SPOT} initialRegion={regionAt(CENTER, PRESS_ZOOM)} />
+      )
+      await flush()
+      press(theCluster(container))
+      await flush()
+
+      await settleRegion(
+        regionAt(
+          { latitude: CENTER.latitude + 0.001, longitude: CENTER.longitude },
+          PRESS_ZOOM
+        )
+      )
+      expect(polylineCount(container)).toBe(SAME_SPOT.length)
+
+      await settleRegion(regionAt(CENTER, PRESS_ZOOM - 2))
+      expect(clusterLabels(container)).toEqual(['5'])
+      expect(polylineCount(container)).toBe(0)
+    })
+
+    it.each([
+      ['preserveClusterPressBehavior', { preserveClusterPressBehavior: true }],
+      ['spiralEnabled={false}', { spiralEnabled: false }],
+    ] as const)('does not spread them with %s', async (_, props) => {
+      const onClusterPress = jest.fn()
+      const { container } = render(
+        <Map
+          points={SAME_SPOT}
+          onClusterPress={onClusterPress}
+          initialRegion={regionAt(CENTER, PRESS_ZOOM)}
+          {...props}
+        />
+      )
+      await flush()
+
+      press(theCluster(container))
+      await flush()
+
+      expect(clusterLabels(container)).toEqual(['5'])
+      expect(polylineCount(container)).toBe(0)
+      expect(onClusterPress).toHaveBeenCalledTimes(1)
+    })
+
+    it('fits the map for a cluster above spiderfyMaxLeaves', async () => {
+      const { container } = render(
+        <Map points={crowd(200)} initialRegion={regionAt(CENTER, PRESS_ZOOM)} />
+      )
+      await flush()
+
+      press(theCluster(container))
+      await flush()
+
+      expect(polylineCount(container)).toBe(0)
+      expect(mapState.fitToCoordinates).toHaveLength(1)
+    })
   })
 })
