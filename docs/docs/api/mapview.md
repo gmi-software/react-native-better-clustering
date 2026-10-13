@@ -60,6 +60,7 @@ are supported, plus:
 | `nodeSize` | `64` | KD-tree leaf size |
 | `clusteringEnabled` | `true` | Toggle clustering |
 | `spiralEnabled` | `true` | Spider layout at max zoom |
+| `spiderfyMaxLeaves` | `50` | Most markers a cluster spiderfies into. A larger cluster of overlapping markers stays a bubble at max zoom; pressing it still calls `onClusterPress` with every marker, so you can list them instead. Spider markers are spaced about 40 pt apart on screen |
 | `spiderLineColor` | `#FF0000` | Color of spider connector lines |
 | `clusterColor` | `#0F52FF` | Default cluster bubble color (GMI brand blue) |
 | `clusterTextColor` | `#FFFFFF` | Default cluster label color |
