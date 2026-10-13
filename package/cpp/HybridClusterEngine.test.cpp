@@ -94,6 +94,31 @@ void testReleaseDuringBuildAsync() {
   }
 }
 
+// setPoints, setOptions and queries while buildAsync runs. The rebuild works
+// on its own copy, so none of them race it, and its stale index is dropped.
+void testCallsDuringBuildAsync() {
+  const Viewport world(85, -85, 180, -180, 3);
+  for (int i = 0; i < 5; i++) {
+    auto engine = makeEngine(20000);
+    engine->build();
+    auto build = engine->buildAsync();
+
+    // The current index keeps answering while the rebuild runs.
+    assert(engine->getIsBuilt());
+    assert(!engine->getClusters(world).empty());
+    assert(engine->getExternalMemorySize() > 0);
+
+    engine->setOptions(ClusterEngineOptions(60, 2, 0, 16, 512, 64, {}));
+    engine->setPoints(packPoints(1000));
+    build->await().get();
+
+    assert(!engine->getIsBuilt());
+    assert(engine->getPointCount() == 1000);
+    engine->build();
+    assert(engine->getIsBuilt());
+  }
+}
+
 void testDisposeReleasesTheIndex() {
   auto engine = makeEngine(5000);
   engine->buildAsync()->await().get();
@@ -114,6 +139,7 @@ void testDisposeReleasesTheIndex() {
 int main() {
   testDisposeDuringBuildAsync();
   testReleaseDuringBuildAsync();
+  testCallsDuringBuildAsync();
   testDisposeReleasesTheIndex();
   std::puts("HybridClusterEngine tests passed");
   return 0;
