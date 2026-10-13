@@ -19,6 +19,10 @@ import {
 import { createNativeClusterEngine } from './createNativeClusterEngine'
 import { DEFAULT_SUPERCLUSTER_OPTIONS } from './defaults'
 import type { SuperclusterOptions, ClusterPropertyConfig } from './types'
+import {
+  validateClusterId,
+  validateSuperclusterOptions,
+} from './validateOptions'
 import { partitionValidPoints, warnSkippedPoints } from './validatePoints'
 
 export type { SuperclusterOptions, ClusterPropertyConfig }
@@ -72,6 +76,7 @@ export class Supercluster<P extends AnyProps = AnyProps> {
   /**
    * Loads points and builds the cluster index synchronously on the JS thread.
    *
+   * @throws A `RangeError` naming the first invalid option (see {@linkcode SuperclusterOptions}).
    * @throws When called more than once on the same instance.
    * @throws When the instance was {@linkcode Supercluster.destroy destroyed}.
    * @throws When the native module is missing from the app binary.
@@ -96,6 +101,7 @@ export class Supercluster<P extends AnyProps = AnyProps> {
    *
    * Prefer this for large datasets (10k+ points).
    *
+   * @throws A `RangeError` naming the first invalid option (see {@linkcode SuperclusterOptions}).
    * @throws When called more than once on the same instance.
    * @throws When the instance was destroyed during the async build.
    * @throws When the native module is missing from the app binary.
@@ -226,12 +232,15 @@ export class Supercluster<P extends AnyProps = AnyProps> {
   }
 
   /**
-   * Returns direct child features of a cluster id.
+   * Returns direct child features of a cluster id, or `[]` for an id that is
+   * not a cluster.
    *
    * @throws When {@linkcode Supercluster.load load} has not completed.
+   * @throws A `RangeError` when `clusterId` is not a 32-bit integer.
    */
   getChildren(clusterId: number): Array<PointFeature<P> | ClusterFeature<P>> {
     this.throwIfNotInitialized()
+    validateClusterId(clusterId)
 
     return this.engine!.getChildren(clusterId).map((feature) =>
       this.engineFeatureToGeoJSON(feature)
@@ -241,12 +250,19 @@ export class Supercluster<P extends AnyProps = AnyProps> {
   /**
    * Returns leaf point features under a cluster (paginated).
    *
+   * A `limit` of `Infinity` (as in supercluster) or `0` returns every leaf.
+   *
    * @throws When {@linkcode Supercluster.load load} has not completed.
+   * @throws A `RangeError` when `clusterId` is not a 32-bit integer.
+   * @throws When `limit` or `offset` is fractional, or `offset` is `NaN`.
    */
   getLeaves(clusterId: number, limit = 10, offset = 0): PointFeature<P>[] {
     this.throwIfNotInitialized()
+    validateClusterId(clusterId)
 
-    return this.engine!.getLeaves(clusterId, limit, offset).map(
+    // The native engine reads `limit <= 0` as unlimited.
+    const nativeLimit = Number.isFinite(limit) ? limit : 0
+    return this.engine!.getLeaves(clusterId, nativeLimit, offset).map(
       (feature) => this.engineFeatureToGeoJSON(feature) as PointFeature<P>
     )
   }
@@ -265,9 +281,11 @@ export class Supercluster<P extends AnyProps = AnyProps> {
    * range (points at the same coordinate, for example) and for a point id.
    *
    * @throws When {@linkcode Supercluster.load load} has not completed.
+   * @throws A `RangeError` when `clusterId` is not a 32-bit integer.
    */
   getClusterExpansionZoom(clusterId: number): number {
     this.throwIfNotInitialized()
+    validateClusterId(clusterId)
     return this.engine!.getClusterExpansionZoom(clusterId)
   }
 
@@ -302,6 +320,8 @@ export class Supercluster<P extends AnyProps = AnyProps> {
   }
 
   private prepareEngine(points: PointFeature<P>[]): ClusterEngine {
+    validateSuperclusterOptions(this.options)
+
     // Filtered first so `loadedFeatures` stays index-aligned with the packed
     // buffer that `pointIndex` is reported against.
     const { valid, invalidIndices } = partitionValidPoints(points)

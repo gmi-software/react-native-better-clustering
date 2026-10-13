@@ -79,6 +79,11 @@ are supported, plus:
 | `superClusterRef` | — | Ref to access the underlying `Supercluster` engine |
 | `mapRef` | — | Callback ref to the inner `react-native-maps` instance |
 
+`radius`, `minPoints`, `minZoom`, `maxZoom`, `extent` and `nodeSize` must be in
+their [valid ranges](./types.md#valid-values). An invalid one fails like a
+failed build (passed to `onError`, or thrown during render without it), with a
+message that names the prop.
+
 ## Callbacks
 
 | Prop | Signature | Description |

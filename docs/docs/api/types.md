@@ -58,6 +58,22 @@ import type {
 | `clusterProperties` | `[]` | Map/reduce aggregation configs |
 | `viewportTileSize` | `extent` | Tile size used to pick a zoom from a map region (see [note](#viewport-tile-size)) |
 
+#### Valid values
+
+Loading points throws a `RangeError` naming the first option outside these
+ranges, instead of building an empty or unbounded index:
+
+| Option | Must be |
+|--------|---------|
+| `radius` | A finite number `>= 0` |
+| `minZoom`, `maxZoom` | Integers from `0` to `30` (supercluster's limit), with `minZoom <= maxZoom` |
+| `extent` | An integer `>= 1` |
+| `minPoints`, `nodeSize` | 32-bit integers. Below `2` and `1` they act as `2` and `1` |
+| `viewportTileSize` | A finite number `> 0` |
+
+`useClusterer`, `Clusterer` and `MapView` pass the error to `onError`, or throw
+it during render when `onError` is not set.
+
 #### Radius and extent
 
 `radius` and `extent` mean exactly what they mean in

@@ -1,13 +1,16 @@
 // Standalone sanity test for ClusterEngineCore getLeaves/indexes.
-// Compile: c++ -std=c++20 -I. ClusterEngineCore.test.cpp -o cluster_test && ./cluster_test
+// Compile: c++ -std=c++20 -I. -fsanitize=undefined,float-cast-overflow -fno-sanitize-recover=all ClusterEngineCore.test.cpp -o cluster_test && ./cluster_test
 
 #include "ClusterEngineCore.hpp"
 #include <algorithm>
 #include <cassert>
+#include <cmath>
 #include <cstdint>
 #include <cstdio>
 #include <cstring>
 #include <limits>
+#include <stdexcept>
+#include <string>
 #include <utility>
 #include <vector>
 
@@ -865,6 +868,184 @@ static void testExpansionZoomsMatchWhereClustersSplit() {
   assert(checked > 100);
 }
 
+// Numbers JS can pass where the engine needs an int32. Run this file under
+// `-fsanitize=undefined,float-cast-overflow` so a raw cast of any of them fails.
+static const double kBoundaryInputs[] = {
+  std::numeric_limits<double>::infinity(),
+  -std::numeric_limits<double>::infinity(),
+  std::numeric_limits<double>::quiet_NaN(),
+  1e12,
+  -1e12,
+  -1.0,
+  0.5,
+};
+
+template <typename Call>
+static bool throwsInvalidArgument(Call call, const char* expectedMessage) {
+  try {
+    call();
+  } catch (const std::invalid_argument& error) {
+    assert(std::strstr(error.what(), expectedMessage) != nullptr);
+    return true;
+  }
+  return false;
+}
+
+static RawClusterEngineOptions validRawOptions() {
+  return {.radius = 40.0, .minPoints = 2.0, .minZoom = 0.0, .maxZoom = 16.0, .extent = 512.0, .nodeSize = 64.0};
+}
+
+// One cluster of four co-located points, built through the same helpers
+// HybridClusterEngine uses.
+static ClusterEngineCore builtBoundaryEngine(int32_t& rootClusterId) {
+  ClusterEngineCore engine;
+  engine.setOptions(toClusterEngineConfig(validRawOptions()));
+  std::vector<int32_t> ids = {0, 1, 2, 3};
+  std::vector<double> lats = {52.0, 52.0001, 52.0002, 52.0003};
+  std::vector<double> lngs = {21.0, 21.0001, 21.0002, 21.0003};
+  engine.setPoints(ids.data(), lats.data(), lngs.data(), ids.size());
+  engine.build();
+  const auto clusters = engine.getClusters(worldAt(0));
+  assert(clusters.size() == 1 && clusters.front().isCluster);
+  rootClusterId = clusters.front().id;
+  return engine;
+}
+
+static void testBoundaryClusterIds() {
+  int32_t root = 0;
+  const ClusterEngineCore engine = builtBoundaryEngine(root);
+
+  for (const double id : kBoundaryInputs) {
+    if (id == -1.0) {
+      // A whole number that is no node: the same empty answer as any unknown id.
+      assert(engine.getChildren(toClusterId(id)).empty());
+      assert(engine.getLeaves(toClusterId(id), 0, 0).empty());
+      assert(engine.getClusterExpansionZoom(toClusterId(id)) == 16);
+      continue;
+    }
+    assert(throwsInvalidArgument([&] { engine.getChildren(toClusterId(id)); }, "clusterId"));
+    assert(throwsInvalidArgument([&] { engine.getLeaves(toClusterId(id), toLeafLimit(10), toLeafOffset(0)); }, "clusterId"));
+    assert(throwsInvalidArgument([&] { engine.getClusterExpansionZoom(toClusterId(id)); }, "clusterId"));
+  }
+
+  assert(toClusterId(static_cast<double>(root)) == root);
+}
+
+static void testBoundaryLeafLimits() {
+  int32_t root = 0;
+  const ClusterEngineCore engine = builtBoundaryEngine(root);
+
+  // supercluster's idiomatic "every leaf".
+  const double infinity = std::numeric_limits<double>::infinity();
+  assert(engine.getLeaves(root, toLeafLimit(infinity), toLeafOffset(0)).size() == 4);
+
+  for (const double limit : kBoundaryInputs) {
+    if (limit == 0.5) {
+      assert(throwsInvalidArgument([&] { toLeafLimit(limit); }, "limit"));
+      continue;
+    }
+    assert(engine.getLeaves(root, toLeafLimit(limit), toLeafOffset(0)).size() == 4);
+  }
+
+  assert(engine.getLeaves(root, toLeafLimit(3), toLeafOffset(0)).size() == 3);
+}
+
+static void testBoundaryLeafOffsets() {
+  int32_t root = 0;
+  const ClusterEngineCore engine = builtBoundaryEngine(root);
+
+  for (const double offset : kBoundaryInputs) {
+    if (std::isnan(offset) || offset == 0.5) {
+      assert(throwsInvalidArgument([&] { toLeafOffset(offset); }, "offset"));
+      continue;
+    }
+    const auto leaves = engine.getLeaves(root, toLeafLimit(0), toLeafOffset(offset));
+    // Negative offsets skip nothing; offsets past every leaf skip them all.
+    assert(leaves.size() == (offset < 0 ? 4u : 0u));
+  }
+
+  assert(engine.getLeaves(root, toLeafLimit(0), toLeafOffset(1)).size() == 3);
+}
+
+static void testBoundaryOptions() {
+  int32_t root = 0;
+  ClusterEngineCore engine = builtBoundaryEngine(root);
+  const auto before = engine.getClusters(worldAt(0));
+
+  struct Field {
+    const char* name;
+    double RawClusterEngineOptions::*member;
+  };
+  const Field fields[] = {
+    {"radius", &RawClusterEngineOptions::radius},
+    {"minPoints", &RawClusterEngineOptions::minPoints},
+    {"minZoom", &RawClusterEngineOptions::minZoom},
+    {"maxZoom", &RawClusterEngineOptions::maxZoom},
+    {"extent", &RawClusterEngineOptions::extent},
+    {"nodeSize", &RawClusterEngineOptions::nodeSize},
+  };
+
+  for (const Field& field : fields) {
+    for (const double value : kBoundaryInputs) {
+      RawClusterEngineOptions options = validRawOptions();
+      options.*field.member = value;
+      const bool rejected = throwsInvalidArgument(
+        [&] { engine.setOptions(toClusterEngineConfig(options)); },
+        field.name
+      );
+
+      const std::string name = field.name;
+      // Unusual but well defined: a large or fractional radius, and any
+      // 32-bit minPoints or nodeSize (below 2 and 1, they act as 2 and 1).
+      const bool accepted = (name == "radius" && (value == 1e12 || value == 0.5)) ||
+        ((name == "minPoints" || name == "nodeSize") && value == -1.0);
+      assert(rejected != accepted);
+
+      if (rejected) {
+        // A rejected config leaves the built index serving as before.
+        assert(engine.isBuilt());
+        assert(engine.getClusters(worldAt(0)).size() == before.size());
+      } else {
+        engine = builtBoundaryEngine(root);
+      }
+    }
+  }
+}
+
+static void testInvalidOptionsNameTheOption() {
+  ClusterEngineCore engine;
+
+  ClusterEngineConfig inverted;
+  inverted.minZoom = 12;
+  inverted.maxZoom = 10;
+  assert(throwsInvalidArgument([&] { engine.setOptions(inverted); }, "minZoom (12) must not be greater than maxZoom (10)"));
+
+  ClusterEngineConfig zeroExtent;
+  zeroExtent.extent = 0;
+  assert(throwsInvalidArgument([&] { engine.setOptions(zeroExtent); }, "extent must be an integer >= 1, got 0."));
+
+  ClusterEngineConfig nanRadius;
+  nanRadius.radius = std::numeric_limits<double>::quiet_NaN();
+  assert(throwsInvalidArgument([&] { engine.setOptions(nanRadius); }, "radius must be a finite number >= 0"));
+
+  RawClusterEngineOptions deepZoom = validRawOptions();
+  deepZoom.maxZoom = 100;
+  assert(throwsInvalidArgument(
+    [&] { toClusterEngineConfig(deepZoom); },
+    "ClusterEngine: maxZoom must be an integer from 0 to 30, got 100."
+  ));
+
+  RawClusterEngineOptions hugeNodeSize = validRawOptions();
+  hugeNodeSize.nodeSize = 3e9;
+  assert(throwsInvalidArgument([&] { toClusterEngineConfig(hugeNodeSize); }, "nodeSize must be a 32-bit integer, got 3000000000."));
+
+  // The supported zoom range itself is accepted.
+  RawClusterEngineOptions fullRange = validRawOptions();
+  fullRange.minZoom = 0;
+  fullRange.maxZoom = kMaxSupportedZoom;
+  engine.setOptions(toClusterEngineConfig(fullRange));
+}
+
 int main() {
   testGetLeavesReturnsAllPointsInCluster();
   testGetLeavesPagination();
@@ -885,6 +1066,11 @@ int main() {
   testExpansionZoomOfIdenticalPoints();
   testExpansionZoomOfPointId();
   testExpansionZoomsMatchWhereClustersSplit();
+  testBoundaryClusterIds();
+  testBoundaryLeafLimits();
+  testBoundaryLeafOffsets();
+  testBoundaryOptions();
+  testInvalidOptionsNameTheOption();
   std::printf("ClusterEngineCore tests passed.\n");
   return 0;
 }

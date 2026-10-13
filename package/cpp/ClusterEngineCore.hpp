@@ -1,6 +1,7 @@
 #pragma once
 
 #include "GeoUtils.hpp"
+#include "InputValidation.hpp"
 #include <vector>
 #include <cstdint>
 #include <cstring>
@@ -152,7 +153,9 @@ private:
 
 class ClusterEngineCore {
 public:
+  /** Throws `std::invalid_argument` for an invalid config, leaving the engine unchanged. */
   void setOptions(const ClusterEngineConfig& options) {
+    validateClusterEngineConfig(options);
     _options = options;
     resetDerivedState();
   }
