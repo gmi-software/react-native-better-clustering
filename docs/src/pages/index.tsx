@@ -42,7 +42,7 @@ export default function Home(): ReactNode {
   return (
     <Layout
       title={siteConfig.title}
-      description="High-performance React Native map clustering powered by Nitro."
+      description="Native C++ map clustering for React Native, powered by Nitro."
     >
       <HomepageHeader />
       <main>
