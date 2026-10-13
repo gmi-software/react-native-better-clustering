@@ -1,5 +1,13 @@
 #pragma once
 
+// The generated bindings include NitroModules/PropNameIDCache.hpp, which
+// react-native-nitro-modules added in 0.32.0. Against an older Nitro they stop
+// at "NitroModules cannot be found!", which sends people looking for a missing
+// install; say what is actually wrong first.
+#if __has_include(<NitroModules/HybridObject.hpp>) && !__has_include(<NitroModules/PropNameIDCache.hpp>)
+#error react-native-better-clustering needs react-native-nitro-modules 0.32.0 or newer. Upgrade it, then reinstall pods (iOS) or rebuild (Android).
+#endif
+
 #include "HybridClusterEngineSpec.hpp"
 #include "ThreadSafeClusterEngine.hpp"
 #include <NitroModules/ArrayBuffer.hpp>

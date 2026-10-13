@@ -32,6 +32,7 @@ import {
   fakeClusterEngineStats,
   resetFakeClusterEngineStats,
 } from '../fakes/fakeClusterEngine'
+import { fakeReanimated } from '../fakes/fakeReanimated'
 
 export { fakeClusterEngineStats }
 
@@ -161,15 +162,7 @@ mock.module('react-native', () => ({
 // react-native-reanimated
 // ---------------------------------------------------------------------------
 
-mock.module('react-native-reanimated', () => ({
-  __esModule: true,
-  default: {
-    createAnimatedComponent: <T,>(component: T): T => component,
-  },
-  useSharedValue: <T,>(value: T) => ({ value }),
-  useAnimatedProps: <T,>(worklet: () => T): T => worklet(),
-  withTiming: <T,>(value: T): T => value,
-}))
+mock.module('react-native-reanimated', () => fakeReanimated)
 
 // ---------------------------------------------------------------------------
 // react-native-maps

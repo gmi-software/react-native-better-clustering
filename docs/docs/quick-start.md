@@ -9,8 +9,10 @@ sidebar_position: 2
 ## Requirements
 
 - React Native **0.78+** with the **New Architecture** enabled.
-- `react-native-nitro-modules` (required).
-- `react-native-maps` (required).
+- `react-native-nitro-modules` 0.32.0 or newer (required).
+- `react-native-maps` 1.20.1 or newer (required).
+- `react-native-reanimated` 4.1 or a later 4.x (optional): fades the cluster
+  bubbles on zoom.
 
 ## Install
 
@@ -25,7 +27,8 @@ Expo requires a [development build](https://docs.expo.dev/develop/development-bu
 npx expo install react-native-better-clustering react-native-nitro-modules react-native-maps
 ```
 
-See [Platform Setup](./setup/installation.md) for `react-native-maps` plugin config.
+See [Platform Setup](./setup/installation.md) for `react-native-maps` plugin config
+and the optional Reanimated fade.
 
 ## Clustered map
 

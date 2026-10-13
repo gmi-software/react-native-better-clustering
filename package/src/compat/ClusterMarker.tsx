@@ -1,12 +1,8 @@
-import React, { memo, useEffect, useRef } from 'react'
+import React, { memo, useEffect, useRef, type Ref } from 'react'
 import { Platform, StyleSheet, Text, View } from 'react-native'
-import Animated, {
-  useAnimatedProps,
-  useSharedValue,
-  withTiming,
-} from 'react-native-reanimated'
-import { Marker, type MapMarker } from 'react-native-maps'
+import { Marker, type MapMarker, type MapMarkerProps } from 'react-native-maps'
 import type { ClusterFeature } from '../geojson/types'
+import { reanimated, type Reanimated } from './reanimated'
 
 const BUBBLE_BORDER_WIDTH = 2.5
 const HALO_SCALE = 1.18
@@ -26,8 +22,53 @@ const SHADOW_PADDING = 6
  * update runs on the UI thread. A previous JS-driven `Animated` implementation
  * pushed `setNativeProps` from JS every frame for every bubble, which dominated
  * the CPU profile (~23% self-time) when dozens of clusters remounted on each zoom.
+ *
+ * Reanimated is an optional peer dependency, so the fading marker only exists
+ * when the app includes it; without it every bubble is a plain marker.
  */
-const AnimatedMarker = Animated.createAnimatedComponent(Marker)
+function createFadingMarker({
+  default: Animated,
+  useAnimatedProps,
+  useSharedValue,
+  withTiming,
+}: Reanimated) {
+  const AnimatedMarker = Animated.createAnimatedComponent(Marker)
+
+  return function FadingMarker({
+    ref,
+    fadeInDuration,
+    fadeOutDuration,
+    exiting,
+    ...markerProps
+  }: MapMarkerProps & {
+    ref: Ref<MapMarker>
+    fadeInDuration: number
+    fadeOutDuration: number
+    exiting: boolean
+  }) {
+    const opacity = useSharedValue(0)
+
+    useEffect(() => {
+      if (exiting) {
+        opacity.value = withTiming(0, { duration: fadeOutDuration })
+      } else {
+        opacity.value = withTiming(1, { duration: fadeInDuration })
+      }
+    }, [exiting, fadeInDuration, fadeOutDuration, opacity])
+
+    const animatedProps = useAnimatedProps(() => ({ opacity: opacity.value }))
+
+    return (
+      <AnimatedMarker
+        ref={ref}
+        {...markerProps}
+        animatedProps={animatedProps}
+      />
+    )
+  }
+}
+
+const FadingMarker = reanimated ? createFadingMarker(reanimated) : null
 
 function clusterBubbleMetrics(pointCount: number): {
   width: number
@@ -73,7 +114,8 @@ export interface ClusterMarkerProps {
   tracksViewChanges?: boolean
   /**
    * Fade-in duration (ms) applied to the native marker `opacity` when this bubble
-   * mounts. `0` disables the animation and renders a plain (non-animated) marker.
+   * mounts. `0` disables the animation and renders a plain (non-animated) marker,
+   * as does an app without `react-native-reanimated`.
    *
    * @default 0
    */
@@ -112,22 +154,6 @@ function ClusterMarker({
   const [longitude, latitude] = feature.geometry.coordinates
   const label = formatClusterCount(points)
 
-  const fadeEnabled = fadeInDuration > 0
-  const opacity = useSharedValue(fadeEnabled ? 0 : 1)
-
-  useEffect(() => {
-    if (!fadeEnabled) {
-      return
-    }
-    if (exiting) {
-      opacity.value = withTiming(0, { duration: fadeOutDuration })
-    } else {
-      opacity.value = withTiming(1, { duration: fadeInDuration })
-    }
-  }, [fadeEnabled, exiting, fadeInDuration, fadeOutDuration, opacity])
-
-  const animatedProps = useAnimatedProps(() => ({ opacity: opacity.value }))
-
   // The bubble keeps its native marker while its cluster splits, merges or
   // changes colour, but with `tracksViewChanges` off Google Maps keeps showing
   // the bitmap it took first, so ask for a new one when the look changes.
@@ -144,57 +170,72 @@ function ClusterMarker({
     }
   }, [appearance, tracksViewChanges])
 
-  const MarkerComponent = fadeEnabled ? AnimatedMarker : Marker
+  const markerProps = {
+    coordinate: { latitude, longitude },
+    onPress: exiting ? undefined : () => onPress(feature),
+    tracksViewChanges,
+  }
 
-  return (
-    <MarkerComponent
-      ref={markerRef}
-      coordinate={{ latitude, longitude }}
-      onPress={exiting ? undefined : () => onPress(feature)}
-      tracksViewChanges={tracksViewChanges}
-      // Drive the native `opacity` prop on the UI thread; omit when fade is off.
-      animatedProps={fadeEnabled ? animatedProps : undefined}
-    >
-      <View style={[styles.container, { width, height }]}>
-        <View
+  const bubble = (
+    <View style={[styles.container, { width, height }]}>
+      <View
+        style={[
+          styles.halo,
+          {
+            backgroundColor: clusterColor,
+            width: haloSize,
+            height: haloSize,
+            borderRadius: haloSize / 2,
+          },
+        ]}
+      />
+      <View
+        style={[
+          styles.bubble,
+          styles.bubbleShadow,
+          {
+            backgroundColor: clusterColor,
+            width: size,
+            height: size,
+            borderRadius: size / 2,
+            borderWidth: BUBBLE_BORDER_WIDTH,
+          },
+        ]}
+      >
+        <Text
           style={[
-            styles.halo,
+            styles.text,
             {
-              backgroundColor: clusterColor,
-              width: haloSize,
-              height: haloSize,
-              borderRadius: haloSize / 2,
-            },
-          ]}
-        />
-        <View
-          style={[
-            styles.bubble,
-            styles.bubbleShadow,
-            {
-              backgroundColor: clusterColor,
-              width: size,
-              height: size,
-              borderRadius: size / 2,
-              borderWidth: BUBBLE_BORDER_WIDTH,
+              color: clusterTextColor,
+              fontSize,
+              ...(clusterFontFamily ? { fontFamily: clusterFontFamily } : {}),
             },
           ]}
         >
-          <Text
-            style={[
-              styles.text,
-              {
-                color: clusterTextColor,
-                fontSize,
-                ...(clusterFontFamily ? { fontFamily: clusterFontFamily } : {}),
-              },
-            ]}
-          >
-            {label}
-          </Text>
-        </View>
+          {label}
+        </Text>
       </View>
-    </MarkerComponent>
+    </View>
+  )
+
+  if (fadeInDuration > 0 && FadingMarker) {
+    return (
+      <FadingMarker
+        ref={markerRef}
+        {...markerProps}
+        fadeInDuration={fadeInDuration}
+        fadeOutDuration={fadeOutDuration}
+        exiting={exiting}
+      >
+        {bubble}
+      </FadingMarker>
+    )
+  }
+
+  return (
+    <Marker ref={markerRef} {...markerProps}>
+      {bubble}
+    </Marker>
   )
 }
 

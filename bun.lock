@@ -89,13 +89,13 @@
       "peerDependencies": {
         "react": "*",
         "react-native": "*",
-        "react-native-maps": "*",
+        "react-native-maps": ">=1.20.1",
         "react-native-nitro-modules": "*",
-        "react-native-reanimated": ">=4.0.0",
-        "react-native-worklets": ">=0.6.0",
+        "react-native-reanimated": "^4.1.0",
       },
       "optionalPeers": [
-        "react-native-maps",
+        "react-native-nitro-modules",
+        "react-native-reanimated",
       ],
     },
   },

@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, jest, mock } from 'bun:test'
 import { render } from '@testing-library/react'
 import React from 'react'
 
+import { fakeReanimated } from '../__tests__/fakes/fakeReanimated'
 import type { ClusterFeature } from '../geojson/types'
 import type { ClusterMarkerProps } from './ClusterMarker'
 
@@ -14,20 +15,16 @@ mock.module('react-native', () => ({
   View: 'View',
 }))
 
-mock.module('react-native-reanimated', () => ({
-  __esModule: true,
-  default: { createAnimatedComponent: (component: unknown) => component },
-  useSharedValue: (value: unknown) => ({ value }),
-  useAnimatedProps: (worklet: () => unknown) => worklet(),
-  withTiming: (value: unknown) => value,
-}))
+mock.module('react-native-reanimated', () => fakeReanimated)
 
 const redraw = jest.fn()
+const markerProps: Array<Record<string, unknown>> = []
 
 mock.module('react-native-maps', () => ({
   Marker: class Marker extends React.Component<{ children?: React.ReactNode }> {
     redraw = redraw
     render() {
+      markerProps.push(this.props)
       return React.createElement('rn-marker', null, this.props.children)
     }
   },
@@ -66,6 +63,25 @@ function baseProps(
   }
 }
 
+describe('ClusterMarker fade', () => {
+  beforeEach(() => {
+    markerProps.length = 0
+  })
+
+  it('drives the native opacity through Reanimated when a fade is requested', () => {
+    render(<ClusterMarker {...baseProps({ fadeInDuration: 250 })} />)
+
+    // Mounts transparent; the effect then animates the shared value to 1.
+    expect(markerProps.at(-1)?.animatedProps).toEqual({ opacity: 0 })
+  })
+
+  it('renders a plain marker when the fade is off', () => {
+    render(<ClusterMarker {...baseProps({ fadeInDuration: 0 })} />)
+
+    expect(markerProps.at(-1)).not.toHaveProperty('animatedProps')
+  })
+})
+
 describe('ClusterMarker redraw', () => {
   const withCount = (count: number): ClusterFeature => ({
     ...CLUSTER,
@@ -98,6 +114,24 @@ describe('ClusterMarker redraw', () => {
       />
     )
     expect(redraw).toHaveBeenCalledTimes(2)
+  })
+
+  it('redraws a fading bubble through its animated marker', () => {
+    const onPress = jest.fn()
+    const { rerender } = render(
+      <ClusterMarker
+        {...baseProps({ onPress, fadeInDuration: 250, feature: withCount(12) })}
+      />
+    )
+
+    rerender(
+      <ClusterMarker
+        {...baseProps({ onPress, fadeInDuration: 250, feature: withCount(7) })}
+      />
+    )
+
+    expect(markerProps.at(-1)).toHaveProperty('animatedProps')
+    expect(redraw).toHaveBeenCalledTimes(1)
   })
 
   it('does not redraw when only the position changes', () => {

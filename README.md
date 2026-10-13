@@ -56,26 +56,26 @@ That is it. Your `<Marker>` children, cluster props, and `react-native-maps` opt
 
 ## Installation
 
+| Peer dependency              | Version    | Notes                                       |
+| ---------------------------- | ---------- | ------------------------------------------- |
+| `react-native-maps`          | `>=1.20.1` | Required                                    |
+| `react-native-nitro-modules` | `>=0.32.0` | Required; install it next to the library    |
+| `react-native-reanimated`    | `^4.1.0`   | Optional; fades the cluster bubbles on zoom |
+
 ### Bare React Native
 
 ```bash
-npm install react-native-better-clustering react-native-nitro-modules react-native-maps react-native-reanimated react-native-worklets
+npm install react-native-better-clustering react-native-nitro-modules react-native-maps
 cd ios && pod install && cd ..
 ```
 
-Rebuild the native app after installing. Add the Worklets Babel plugin (last in the list) to `babel.config.js`:
-
-```js
-plugins: ['react-native-worklets/plugin']
-```
+Rebuild the native app after installing.
 
 ### Expo
 
 ```bash
-npx expo install react-native-better-clustering react-native-nitro-modules react-native-maps react-native-reanimated react-native-worklets
+npx expo install react-native-better-clustering react-native-nitro-modules react-native-maps
 ```
-
-`babel-preset-expo` wires up the Worklets plugin automatically.
 
 Add the `react-native-maps` plugin to `app.json`:
 
@@ -93,6 +93,20 @@ Add the `react-native-maps` plugin to `app.json`:
 npx expo prebuild --clean
 npx expo run:ios   # or: npx expo run:android
 ```
+
+### Optional: fading cluster bubbles
+
+With [Reanimated](https://docs.swmansion.com/react-native-reanimated/) installed,
+the default cluster bubbles cross-fade on zoom. Follow Reanimated's own
+[installation guide](https://docs.swmansion.com/react-native-reanimated/docs/fundamentals/getting-started/)
+(it also needs `react-native-worklets`), or with Expo:
+
+```bash
+npx expo install react-native-reanimated react-native-worklets
+```
+
+Without it, bubbles appear and disappear without a fade, and development builds
+log a one-time notice unless you pass `clusterFadeInDuration={0}`.
 
 ## Usage
 

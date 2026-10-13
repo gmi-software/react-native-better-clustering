@@ -74,6 +74,7 @@ body:
   - type: input
     attributes:
       label: react-native-nitro-modules version
+      description: The library needs 0.32.0 or newer.
       placeholder: ex. 0.35.9
     validations:
       required: true
