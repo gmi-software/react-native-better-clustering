@@ -1,11 +1,12 @@
-// Regenerates the ground-truth table in `cpp/ClusterEngineCore.test.cpp`
-// (testSuperclusterParity) from the reference supercluster implementation.
+// Regenerates the ground-truth tables in `cpp/ClusterEngineCore.test.cpp`
+// (testSuperclusterParity and testSuperclusterAntimeridianParity) from the
+// reference supercluster implementation.
 //
 //   node scripts/generate-supercluster-parity-fixture.mjs
 //
 // Run from `package/`, so it uses the pinned supercluster devDependency. Paste
-// the output over the `cases` table in the test. The fixture is checked in so
-// the C++ test stays independent of Node.
+// each section of the output over the table it names in the test. The fixture
+// is checked in so the C++ test stays independent of Node.
 
 import Supercluster from 'supercluster'
 
@@ -157,7 +158,92 @@ function expansionHash(index, features) {
   return hash
 }
 
-const lines = []
+// Points within 10 degrees of the antimeridian on both sides. Longitudes come
+// from integers, as in makeFeatures, and are wrapped into [-180, 180].
+function makeAntimeridianFeatures(n, seed) {
+  const rng = makeRng(seed)
+  const features = []
+  for (let i = 0; i < n; i++) {
+    const a = rng()
+    const b = rng()
+    let lngE4 = 1700000 + (b % 200001)
+    if (lngE4 > 1800000) lngE4 -= 3600000
+    features.push({
+      type: 'Feature',
+      id: i,
+      properties: {},
+      geometry: {
+        type: 'Point',
+        coordinates: [lngE4 / 10000, -30 + (a % 300001) / 10000],
+      },
+    })
+  }
+  return features
+}
+
+// Must match the constants in testSuperclusterAntimeridianParity.
+const ANTIMERIDIAN = {
+  n: 2000,
+  seed: 2024,
+  radius: 40,
+  extent: 512,
+  minZoom: 0,
+  maxZoom: 16,
+  minPoints: 2,
+}
+
+// Query bboxes in every form a caller can pass around the antimeridian:
+// unwrapped past 180 (what a map region produces), wrapped with west > east,
+// far outside [-180, 180], latitudes past the poles, and 360 degrees or wider.
+const ANTIMERIDIAN_BBOXES = [
+  [165, -40, 185, 10],
+  [165, -40, -175, 10],
+  [-195, -40, -175, 10],
+  [535, -40, 545, 10],
+  [175, -25, 179.5, -5],
+  [178, -100, 182, 100],
+  [-180, -90, 180, 90],
+  [0, -90, 360, 90],
+  [-200, -90, 200, 90],
+]
+const ANTIMERIDIAN_ZOOMS = [2, 6, 10, 16]
+
+// Hashes the set of features a query returns: `(minLeafId, point count)` per
+// feature, sorted, folded with 32-bit FNV-1a. A missing or duplicated feature
+// changes it.
+function featureSetHash(index, features) {
+  const pairs = []
+  for (const feature of features) {
+    if (!feature.properties.cluster) {
+      pairs.push([feature.id, 1])
+      continue
+    }
+    let minLeafId = Infinity
+    for (const leaf of index.getLeaves(
+      feature.properties.cluster_id,
+      Infinity
+    )) {
+      if (leaf.id < minLeafId) minLeafId = leaf.id
+    }
+    pairs.push([minLeafId, feature.properties.point_count])
+  }
+  pairs.sort((a, b) => a[0] - b[0])
+
+  let hash = 2166136261
+  for (const pair of pairs) {
+    for (const value of pair) {
+      hash = (hash ^ value) >>> 0
+      hash = Math.imul(hash, 16777619) >>> 0
+    }
+  }
+  return hash
+}
+
+function cppDouble(value) {
+  return Number.isInteger(value) ? `${value}.0` : `${value}`
+}
+
+const lines = ['// testSuperclusterParity: cases']
 for (const testCase of CASES) {
   const index = new Supercluster({
     radius: testCase.radius,
@@ -190,6 +276,25 @@ for (const testCase of CASES) {
     `   {${memberships.join(', ')}},`,
     `   {${expansions.join(', ')}}},`
   )
+}
+
+const antimeridianIndex = new Supercluster({
+  radius: ANTIMERIDIAN.radius,
+  extent: ANTIMERIDIAN.extent,
+  minZoom: ANTIMERIDIAN.minZoom,
+  maxZoom: ANTIMERIDIAN.maxZoom,
+  minPoints: ANTIMERIDIAN.minPoints,
+  nodeSize: 64,
+}).load(makeAntimeridianFeatures(ANTIMERIDIAN.n, ANTIMERIDIAN.seed))
+
+lines.push('// testSuperclusterAntimeridianParity: queries')
+for (const bbox of ANTIMERIDIAN_BBOXES) {
+  for (const zoom of ANTIMERIDIAN_ZOOMS) {
+    const features = antimeridianIndex.getClusters(bbox, zoom)
+    lines.push(
+      `  {${bbox.map(cppDouble).join(', ')}, ${zoom}, ${features.length}, ${featureSetHash(antimeridianIndex, features)}u},`
+    )
+  }
 }
 
 console.log(lines.join('\n'))
