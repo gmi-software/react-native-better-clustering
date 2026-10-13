@@ -97,7 +97,7 @@ react-native-better-clustering/
 │   │   └── utils/        # Shared utilities
 │   ├── cpp/              # Shared C++ clustering core (ClusterEngine)
 │   ├── android/          # Android native module (C++ via CMake)
-│   ├── bench/            # Local C++ micro-benchmark (not published)
+│   ├── bench/            # Core benchmark and its CI gate (not published)
 │   ├── scripts/          # npm package checks (verify-pack, verify-exports)
 │   ├── test/             # bun test preload (happy-dom)
 │   └── nitrogen/         # Nitrogen-generated bindings (generated, not committed)
@@ -129,6 +129,7 @@ From `package/`:
 | `bun run build` | react-native-builder-bob → `lib/module` (ESM) + `lib/typescript` |
 | `bun run verify:pack` | Check what `npm pack` would publish |
 | `bun run verify:exports` | Check every `exports` subpath resolves from the packed tarball |
+| `bun run bench` | Benchmark the C++ core → `bench/results/latest.json` ([`package/bench/README.md`](package/bench/README.md)) |
 
 ## Building the Native Code
 
@@ -177,6 +178,10 @@ The pod scheme only exists after Xcode has loaded the workspace once (`xcodebuil
   cd package
   bun run test:native          # or: bun run test:native thread
   ```
+
+## Benchmarks
+
+The C++ core has a benchmark with seeded datasets, `cd package && bun run bench`. On pull requests that touch `package/cpp/` or `package/bench/`, the `Bench` workflow compares the engine's instruction counts, allocations and memory with the base branch, comments the results and fails on a regression past the gate. [`package/bench/README.md`](package/bench/README.md) describes the datasets, the metrics, the gate and how to refresh the committed baseline.
 
 ## Nitro Modules
 

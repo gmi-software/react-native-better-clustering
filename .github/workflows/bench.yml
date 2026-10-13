@@ -1,0 +1,209 @@
+name: Bench
+
+# Core benchmark (package/bench). On a pull request it measures the base and the
+# head engine on the same runner and fails when the head regresses past the
+# gate in package/bench/compare.mjs: instructions (callgrind), allocations and
+# engine memory, which are deterministic. Wall time is reported, never gated.
+# On main and on demand it records the head results as the `bench-core`
+# artifact, which is what package/bench/baseline.json is refreshed from.
+#
+# Two jobs, so the pull request's code never runs next to a token that can
+# write: `core` builds and runs it with a read-only token, and `comment` posts
+# the summary it leaves behind without checking anything out.
+#
+# Not a required status check: a required check that a `paths:` filter skips
+# stays pending forever and blocks the pull request (see native.yml).
+#
+# The two path lists are identical — GitHub Actions has no YAML anchors.
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/bench.yml'
+      - 'package/cpp/**'
+      - 'package/bench/**'
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/bench.yml'
+      - 'package/cpp/**'
+      - 'package/bench/**'
+  workflow_dispatch:
+
+concurrency:
+  group: bench-${{ github.event.pull_request.number || github.sha }}
+  # Only on pull requests: on main every commit keeps its own results.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
+jobs:
+  core:
+    # Pinned rather than ubuntu-latest: instruction and allocation counts
+    # depend on the compiler and the C++ standard library, so the committed
+    # baseline is only comparable with runs on the same image.
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    permissions:
+      contents: read
+    outputs:
+      summary: ${{ steps.compare.outputs.summary }}
+    steps:
+      # On a pull request this is the test merge commit. Its parents come
+      # along so the base below is exactly the commit it was merged onto.
+      - name: Checkout head
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          path: head
+          fetch-depth: 2
+          persist-credentials: false
+
+      - name: Find the base commit
+        id: base
+        if: github.event_name == 'pull_request'
+        # An empty sha would make the base checkout fall back to the merge
+        # commit itself, comparing head with head; fail instead.
+        run: |
+          sha=$(git -C head rev-parse --verify HEAD^1)
+          test -n "$sha"
+          echo "sha=$sha" >> "$GITHUB_OUTPUT"
+
+      - name: Checkout base
+        if: github.event_name == 'pull_request'
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ steps.base.outputs.sha }}
+          path: base
+          persist-credentials: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22
+
+      # The package ships <valgrind/callgrind.h>, which the harness needs to
+      # attribute instructions to each operation.
+      - name: Install valgrind
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes --no-install-recommends valgrind
+          valgrind --version
+          test -f /usr/include/valgrind/callgrind.h
+
+      # The head's harness against the base's engine, so both sides run the
+      # same measurement code. run.mjs exits 3 only when a harness cannot be
+      # used with the engine (it does not compile against it, or predates
+      # run.mjs); then the base's own harness is tried, and with neither,
+      # compare.mjs reports that there is no base to compare with. Any other
+      # failure fails the job.
+      - name: Benchmark base
+        if: github.event_name == 'pull_request'
+        run: |
+          set +e
+          node head/package/bench/run.mjs --mode all --quick --label base --cpp base/package/cpp --out base.json
+          status=$?
+          if [ "$status" -eq 3 ]; then
+            echo "::notice::The head's benchmark harness does not compile against the base engine; measuring the base with its own harness."
+            node head/package/bench/run.mjs --mode all --quick --label base --cpp base/package/cpp --src base/package/bench --out base.json
+            status=$?
+          fi
+          if [ "$status" -eq 3 ]; then
+            echo "::warning::No benchmark harness compiles against the base engine, so there is nothing to compare with."
+            exit 0
+          fi
+          exit "$status"
+
+      - name: Benchmark head
+        run: node head/package/bench/run.mjs --mode all --quick --label head --cpp head/package/cpp --out head.json
+
+      - name: Compare with base
+        id: compare
+        if: github.event_name == 'pull_request'
+        # Exit 1 with a summary is a regression; without one, compare.mjs
+        # crashed. Only a regular file counts as a summary.
+        run: |
+          set +e
+          node head/package/bench/compare.mjs base.json head.json --out summary.md
+          status=$?
+          set -e
+          if [ -L summary.md ] || [ ! -f summary.md ]; then
+            echo "::error::compare.mjs failed before writing its summary (exit $status)."
+            exit 1
+          fi
+          cat summary.md >> "$GITHUB_STEP_SUMMARY"
+          echo "status=$status" >> "$GITHUB_OUTPUT"
+          echo "summary=true" >> "$GITHUB_OUTPUT"
+
+      # The only thing the comment job receives from this one.
+      - name: Upload the summary
+        if: steps.compare.outcome == 'success'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: bench-summary
+          path: summary.md
+
+      - name: Upload results
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: bench-core
+          path: |
+            base.json
+            head.json
+            summary.md
+          if-no-files-found: ignore
+
+      - name: Fail on a regression
+        if: steps.compare.outcome == 'success' && steps.compare.outputs.status != '0'
+        run: |
+          echo "::error::The core benchmark regressed past the gate. The job summary lists each regression."
+          exit 1
+
+  # Posts the summary as one comment on the pull request, updated on every
+  # push. It checks out nothing and runs no code from the pull request; the
+  # summary is the only input. Pull requests from forks get a read-only token,
+  # so for them the post fails and only the job summary has the results.
+  comment:
+    needs: core
+    if: ${{ !cancelled() && github.event_name == 'pull_request' && needs.core.outputs.summary == 'true' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      pull-requests: write
+    steps:
+      - name: Download the summary
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: bench-summary
+          path: bench-summary
+
+      # Written by the pull request's code, so it must at least be the regular
+      # file compare.mjs writes, starting with its marker.
+      - name: Check the summary
+        run: |
+          summary=bench-summary/summary.md
+          if [ -L "$summary" ] || [ ! -f "$summary" ]; then
+            echo "::error::The benchmark summary is not a regular file."
+            exit 1
+          fi
+          if [ "$(head -n 1 "$summary")" != '<!-- cluster-bench-core -->' ]; then
+            echo "::error::The benchmark summary does not start with the compare.mjs marker."
+            exit 1
+          fi
+
+      - name: Comment on the pull request
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          REPOSITORY: ${{ github.repository }}
+        run: |
+          comment_id=$(gh api "repos/$REPOSITORY/issues/$PR_NUMBER/comments" --paginate \
+            --jq '.[] | select(.user.login == "github-actions[bot]" and (.body | startswith("<!-- cluster-bench-core -->"))) | .id' \
+            | head -n 1)
+          if [ -n "$comment_id" ]; then
+            gh api --method PATCH "repos/$REPOSITORY/issues/comments/$comment_id" -F body=@bench-summary/summary.md > /dev/null
+          else
+            gh api --method POST "repos/$REPOSITORY/issues/$PR_NUMBER/comments" -F body=@bench-summary/summary.md > /dev/null
+          fi
