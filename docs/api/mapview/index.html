@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="generator" content="Docusaurus v3.9.2">
 <title data-rh="true">MapView | React Native Better Clustering</title><meta data-rh="true" name="viewport" content="width=device-width,initial-scale=1"><meta data-rh="true" name="twitter:card" content="summary_large_image"><meta data-rh="true" property="og:url" content="https://gmi-software.github.io/react-native-better-clustering/docs/api/mapview"><meta data-rh="true" property="og:locale" content="en"><meta data-rh="true" name="docusaurus_locale" content="en"><meta data-rh="true" name="docsearch:language" content="en"><meta data-rh="true" name="docusaurus_version" content="current"><meta data-rh="true" name="docusaurus_tag" content="docs-default-current"><meta data-rh="true" name="docsearch:version" content="current"><meta data-rh="true" name="docsearch:docusaurus_tag" content="docs-default-current"><meta data-rh="true" property="og:title" content="MapView | React Native Better Clustering"><meta data-rh="true" name="description" content="The main export — a clustered MapView with the same API as"><meta data-rh="true" property="og:description" content="The main export — a clustered MapView with the same API as"><link data-rh="true" rel="icon" href="/react-native-better-clustering/img/favicon.svg"><link data-rh="true" rel="canonical" href="https://gmi-software.github.io/react-native-better-clustering/docs/api/mapview"><link data-rh="true" rel="alternate" href="https://gmi-software.github.io/react-native-better-clustering/docs/api/mapview" hreflang="en"><link data-rh="true" rel="alternate" href="https://gmi-software.github.io/react-native-better-clustering/docs/api/mapview" hreflang="x-default"><script data-rh="true" type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"API Reference","item":"https://gmi-software.github.io/react-native-better-clustering/docs/api/mapview"}]}</script><link rel="stylesheet" href="/react-native-better-clustering/assets/css/styles.e4ef878d.css">
-<script src="/react-native-better-clustering/assets/js/runtime~main.0f0331e0.js" defer="defer"></script>
+<script src="/react-native-better-clustering/assets/js/runtime~main.7d365477.js" defer="defer"></script>
 <script src="/react-native-better-clustering/assets/js/main.28ccab37.js" defer="defer"></script>
 </head>
 <body class="navigation-with-keyboard">
@@ -43,6 +43,10 @@ collapses when the zoom changes. This also covers maps whose maximum zoom
 distinct nearby markers keep expanding by zooming, and clusters larger than
 <code>spiderfyMaxLeaves</code> stay bubbles. With <code>preserveClusterPressBehavior</code>, a press
 only calls <code>onClusterPress</code>.</p>
+<p><code>MapView</code> never clusters at a zoom above <code>maxZoom</code>, so a cluster still there at
+<code>maxZoom</code> stays a cluster however far the map zooms in, and spreads out as
+above. <code>useClusterer</code> instead returns its markers on their own there (see
+<a class="" href="/react-native-better-clustering/docs/api/engine#above-maxzoom">Above <code>maxZoom</code></a>).</p>
 <h2 class="anchor anchorTargetStickyNavbar_lz6K" id="per-marker-opt-out">Per-marker opt-out<a href="#per-marker-opt-out" class="hash-link" aria-label="Direct link to Per-marker opt-out" title="Direct link to Per-marker opt-out" translate="no">​</a></h2>
 <p>Markers cluster by default (<code>cluster</code> omitted or <code>cluster={true}</code>). Exclude
 individual markers from clustering:</p>
