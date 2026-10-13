@@ -124,8 +124,8 @@ engine.isBuilt // false: build again for nextBuffer
 
 ## Native memory
 
-The index lives in native memory, which grows with the number of points (a
-desktop measurement put 100k spread-out points at about 176 MB). The JS garbage
+The index lives in native memory, which grows with the number of points (the
+core benchmark puts 100k points spread over the world at about 43 MB). The JS garbage
 collector does not see that memory, so an engine you drop is freed only when the
 collector happens to run, and engines discarded on every data refresh can pile
 up.
