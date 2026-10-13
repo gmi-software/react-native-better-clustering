@@ -1,0 +1,17 @@
+appId: com.nitromapcluster.example
+name: Antimeridian
+---
+- runFlow:
+    file: subflows/open-scenario.yaml
+    env:
+      SCENARIO: antimeridian
+- extendedWaitUntil:
+    visible:
+      id: hud-engine-builds
+      text: 'Engine builds: 1'
+    timeout: 30000
+- assertVisible:
+    id: visible-points
+    text: 'Visible points: \d+ of 40'
+- tapOn:
+    id: recentre

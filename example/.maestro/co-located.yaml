@@ -1,0 +1,65 @@
+# On iOS, react-native-maps reports no region for an animateToRegion that
+# leaves a very high zoom for a distant spot, so this flow never jumps away
+# from a zoomed-in press. The nearby markers have their own flow.
+appId: com.nitromapcluster.example
+name: Co-located markers
+---
+- runFlow:
+    file: subflows/open-scenario.yaml
+    env:
+      SCENARIO: co-located
+- extendedWaitUntil:
+    visible:
+      id: hud-engine-builds
+      text: 'Engine builds: 1'
+    timeout: 30000
+
+# From zoom 19, 5 markers that share a coordinate spiderfy without a press.
+- tapOn:
+    id: go-small-close
+- extendedWaitUntil:
+    visible:
+      id: hud-markers-mounted
+      text: 'Markers mounted: 5'
+    timeout: 10000
+
+# Below it they are a bubble again, and pressing it spiderfies them.
+- tapOn:
+    id: go-small
+- extendedWaitUntil:
+    visible:
+      id: hud-markers-mounted
+      text: 'Markers mounted: 0'
+    timeout: 10000
+- tapOn:
+    id: map
+- extendedWaitUntil:
+    visible:
+      id: last-press
+      text: 'Last cluster press: 5 markers'
+    timeout: 5000
+- extendedWaitUntil:
+    visible:
+      id: hud-markers-mounted
+      text: 'Markers mounted: 5'
+    timeout: 5000
+
+# 1,000 are too many to spiderfy: the bubble stays and hands them to onClusterPress.
+- tapOn:
+    id: go-large
+- extendedWaitUntil:
+    visible:
+      id: hud-markers-mounted
+      text: 'Markers mounted: 0'
+    timeout: 10000
+- tapOn:
+    id: map
+- extendedWaitUntil:
+    visible:
+      id: last-press
+      text: 'Last cluster press: 1000 markers'
+    timeout: 5000
+- runFlow: subflows/settle.yaml
+- assertVisible:
+    id: hud-markers-mounted
+    text: 'Markers mounted: 0'

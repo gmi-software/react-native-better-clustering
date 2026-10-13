@@ -71,6 +71,20 @@ bunx expo prebuild
 bunx expo run:android
 ```
 
+The app opens on a menu of scenarios, defined in `example/src/scenarios.tsx`. Add one when a bug needs a real map to reproduce.
+
+### End-to-end flows
+
+`example/.maestro/` holds a [Maestro](https://maestro.mobile.dev) flow for each scenario. The flows assert on the dev HUD and on each scenario's status text, not on map annotations. Run them against a Release build: it embeds the JS bundle, while a Debug build opens the dev client launcher first.
+
+```bash
+cd example
+bunx expo run:ios --configuration Release   # or: bunx expo run:android --variant release
+bun run e2e
+```
+
+A flow tagged `known-issue` asserts the fix for an open bug and is skipped by default. Run it by passing its file to `maestro test`, and remove the tag in the PR that fixes the bug.
+
 ## Project Structure
 
 ```

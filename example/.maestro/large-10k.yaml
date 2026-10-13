@@ -1,0 +1,18 @@
+appId: com.nitromapcluster.example
+name: 10k markers
+---
+- runFlow:
+    file: subflows/open-scenario.yaml
+    env:
+      SCENARIO: large-10k
+- extendedWaitUntil:
+    visible:
+      id: visible-points
+      text: 'Visible points: 10000'
+    timeout: 60000
+- assertVisible:
+    id: first-markers
+    text: 'First markers: \d+ ms'
+- assertVisible:
+    id: hud-engine-builds
+    text: 'Engine builds: 1'

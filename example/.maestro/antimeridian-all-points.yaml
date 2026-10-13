@@ -1,0 +1,18 @@
+# Fails until #18 (markers across ±180° disappear) is fixed.
+appId: com.nitromapcluster.example
+name: Antimeridian shows every marker
+tags:
+  - known-issue
+---
+- runFlow:
+    file: subflows/open-scenario.yaml
+    env:
+      SCENARIO: antimeridian
+- extendedWaitUntil:
+    visible:
+      id: hud-engine-builds
+      text: 'Engine builds: 1'
+    timeout: 30000
+- assertVisible:
+    id: visible-points
+    text: 'Visible points: 40 of 40'

@@ -1,73 +1,30 @@
-import MapView from "react-native-better-clustering";
-import { StatusBar } from "expo-status-bar";
-import { useMemo } from "react";
-import { StyleSheet, View } from "react-native";
-import { Marker } from "react-native-maps";
-
-const POLAND_BOUNDS = {
-  minLat: 49.0,
-  maxLat: 54.8,
-  minLng: 14.1,
-  maxLng: 24.1,
-} as const;
-
-const INITIAL_REGION = {
-  latitude: 50.0647,
-  longitude: 19.945,
-  latitudeDelta: 0.3,
-  longitudeDelta: 0.3,
-};
-
-interface MapPoint {
-  id: string;
-  latitude: number;
-  longitude: number;
-}
-
-function randomInRange(min: number, max: number): number {
-  return Math.random() * (max - min) + min;
-}
-
-function generatePoints(count: number): MapPoint[] {
-  const points: MapPoint[] = [];
-
-  for (let i = 0; i < count; i++) {
-    points.push({
-      id: String(i),
-      latitude: randomInRange(POLAND_BOUNDS.minLat, POLAND_BOUNDS.maxLat),
-      longitude: randomInRange(POLAND_BOUNDS.minLng, POLAND_BOUNDS.maxLng),
-    });
-  }
-
-  return points;
-}
+import { StatusBar } from 'expo-status-bar'
+import { useCallback, useState } from 'react'
+import { SafeAreaProvider } from 'react-native-safe-area-context'
+import { resetStats } from './src/hud/stats'
+import { ScenarioMenu } from './src/ScenarioMenu'
+import { ScenarioScreen } from './src/ScenarioScreen'
+import { SCENARIOS } from './src/scenarios'
 
 export default function App() {
-  const points = useMemo(() => generatePoints(2000), []);
+  const [scenarioId, setScenarioId] = useState<string | null>(null)
+  const scenario = SCENARIOS.find(({ id }) => id === scenarioId)
+
+  const open = (id: string) => {
+    // Each scenario starts its HUD counters from zero.
+    resetStats()
+    setScenarioId(id)
+  }
+  const close = useCallback(() => setScenarioId(null), [])
 
   return (
-    <View style={styles.container}>
+    <SafeAreaProvider>
       <StatusBar style="dark" />
-      <MapView style={styles.map} initialRegion={INITIAL_REGION}>
-        {points.map((point) => (
-          <Marker
-            key={point.id}
-            coordinate={{
-              latitude: point.latitude,
-              longitude: point.longitude,
-            }}
-          />
-        ))}
-      </MapView>
-    </View>
-  );
+      {scenario == null ? (
+        <ScenarioMenu onOpen={open} />
+      ) : (
+        <ScenarioScreen key={scenario.id} onBack={close} scenario={scenario} />
+      )}
+    </SafeAreaProvider>
+  )
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  map: {
-    flex: 1,
-  },
-});

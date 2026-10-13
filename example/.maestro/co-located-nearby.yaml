@@ -1,0 +1,29 @@
+appId: com.nitromapcluster.example
+name: Co-located markers, distinct neighbours
+---
+- runFlow:
+    file: subflows/open-scenario.yaml
+    env:
+      SCENARIO: co-located
+- extendedWaitUntil:
+    visible:
+      id: hud-engine-builds
+      text: 'Engine builds: 1'
+    timeout: 30000
+
+# Distinct markers close together split by zooming, not by spiderfying.
+- tapOn:
+    id: go-nearby
+- runFlow: subflows/settle.yaml
+- tapOn:
+    id: map
+- extendedWaitUntil:
+    visible:
+      id: last-press
+      text: 'Last cluster press: 12 markers'
+    timeout: 5000
+- extendedWaitUntil:
+    visible:
+      id: hud-markers-mounted
+      text: 'Markers mounted: ([6-9]|1[0-2])'
+    timeout: 10000

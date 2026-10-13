@@ -1,0 +1,31 @@
+appId: com.nitromapcluster.example
+name: clusteringEnabled toggle
+---
+- runFlow:
+    file: subflows/open-scenario.yaml
+    env:
+      SCENARIO: clustering-toggle
+- extendedWaitUntil:
+    visible:
+      id: hud-engine-builds
+      text: 'Engine builds: 1'
+    timeout: 30000
+- assertNotVisible:
+    id: hud-markers-mounted
+    text: 'Markers mounted: 300'
+
+# Off renders all 300 markers; on clusters them again.
+- tapOn:
+    id: clustering-toggle
+- extendedWaitUntil:
+    visible:
+      id: hud-markers-mounted
+      text: 'Markers mounted: 300'
+    timeout: 10000
+- tapOn:
+    id: clustering-toggle
+- extendedWaitUntil:
+    notVisible:
+      id: hud-markers-mounted
+      text: 'Markers mounted: 300'
+    timeout: 10000
