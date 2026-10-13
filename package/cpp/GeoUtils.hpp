@@ -139,6 +139,60 @@ struct ViewportBounds {
   double zoom;
 };
 
+/** Longitude wrapped into [-180, 180), with supercluster's arithmetic. */
+inline double wrapLongitude(double lng) {
+  return std::fmod(std::fmod(lng + 180.0, 360.0) + 360.0, 360.0) - 180.0;
+}
+
+struct LongitudeRange {
+  double west;
+  double east;
+};
+
+/**
+ * A viewport as supercluster normalizes a query bbox: latitudes clamped to
+ * [-90, 90] and longitudes wrapped into [-180, 180]. A viewport that crosses
+ * the antimeridian becomes two ranges, [west, 180] and [-180, east]; one that
+ * spans 360 degrees or more becomes the whole world. Any non-finite bound,
+ * infinities included, gives no range, so the query returns nothing (where
+ * supercluster would read an infinite span as the whole world).
+ */
+struct NormalizedViewport {
+  double south = 0.0;
+  double north = 0.0;
+  LongitudeRange ranges[2] = {};
+  int rangeCount = 0;
+};
+
+inline NormalizedViewport normalizeViewport(const ViewportBounds& viewport) {
+  NormalizedViewport normalized;
+  if (!std::isfinite(viewport.south) || !std::isfinite(viewport.north) ||
+      !std::isfinite(viewport.west) || !std::isfinite(viewport.east)) {
+    return normalized;
+  }
+  normalized.south = clamp(viewport.south, -90.0, 90.0);
+  normalized.north = clamp(viewport.north, -90.0, 90.0);
+
+  if (viewport.east - viewport.west >= 360.0) {
+    normalized.ranges[0] = {-180.0, 180.0};
+    normalized.rangeCount = 1;
+    return normalized;
+  }
+
+  // An east edge of exactly 180 stays 180 rather than wrapping to -180.
+  const double west = wrapLongitude(viewport.west);
+  const double east = viewport.east == 180.0 ? 180.0 : wrapLongitude(viewport.east);
+  if (west <= east) {
+    normalized.ranges[0] = {west, east};
+    normalized.rangeCount = 1;
+  } else {
+    normalized.ranges[0] = {west, 180.0};
+    normalized.ranges[1] = {-180.0, east};
+    normalized.rangeCount = 2;
+  }
+  return normalized;
+}
+
 struct ClusterEngineConfig {
   double radius = 40.0;
   int32_t minPoints = 2;

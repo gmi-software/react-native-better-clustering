@@ -1,5 +1,6 @@
 #include "HybridClusterEngine.hpp"
 
+#include "InputValidation.hpp"
 #include <stdexcept>
 
 namespace margelo::nitro::nitromapcluster {
@@ -48,13 +49,14 @@ void HybridClusterEngine::setPoints(const std::shared_ptr<ArrayBuffer>& buffer) 
 }
 
 void HybridClusterEngine::setOptions(const ClusterEngineOptions& options) {
-  ClusterEngineConfig config;
-  config.radius = options.radius;
-  config.minPoints = static_cast<int32_t>(options.minPoints);
-  config.minZoom = static_cast<int32_t>(options.minZoom);
-  config.maxZoom = static_cast<int32_t>(options.maxZoom);
-  config.extent = static_cast<int32_t>(options.extent);
-  config.nodeSize = static_cast<int32_t>(options.nodeSize);
+  ClusterEngineConfig config = toClusterEngineConfig({
+    .radius = options.radius,
+    .minPoints = options.minPoints,
+    .minZoom = options.minZoom,
+    .maxZoom = options.maxZoom,
+    .extent = options.extent,
+    .nodeSize = options.nodeSize,
+  });
   config.reducers.reserve(options.reducers.size());
   for (const auto reducer : options.reducers) {
     config.reducers.push_back(toAggregationReducer(reducer));
@@ -106,7 +108,7 @@ std::vector<EngineClusterNode> HybridClusterEngine::getClusters(const Viewport& 
 
 std::vector<EngineClusterNode> HybridClusterEngine::getChildren(double clusterId) {
   requireBuilt(_engine);
-  const auto nodes = _engine.getChildren(static_cast<int32_t>(clusterId));
+  const auto nodes = _engine.getChildren(toClusterId(clusterId));
   std::vector<EngineClusterNode> result;
   result.reserve(nodes.size());
   for (const auto& node : nodes) {
@@ -117,11 +119,7 @@ std::vector<EngineClusterNode> HybridClusterEngine::getChildren(double clusterId
 
 std::vector<EngineClusterNode> HybridClusterEngine::getLeaves(double clusterId, double limit, double offset) {
   requireBuilt(_engine);
-  const auto nodes = _engine.getLeaves(
-    static_cast<int32_t>(clusterId),
-    static_cast<int32_t>(limit),
-    static_cast<int32_t>(offset)
-  );
+  const auto nodes = _engine.getLeaves(toClusterId(clusterId), toLeafLimit(limit), toLeafOffset(offset));
   std::vector<EngineClusterNode> result;
   result.reserve(nodes.size());
   for (const auto& node : nodes) {
@@ -132,7 +130,7 @@ std::vector<EngineClusterNode> HybridClusterEngine::getLeaves(double clusterId, 
 
 double HybridClusterEngine::getClusterExpansionZoom(double clusterId) {
   requireBuilt(_engine);
-  return static_cast<double>(_engine.getClusterExpansionZoom(static_cast<int32_t>(clusterId)));
+  return static_cast<double>(_engine.getClusterExpansionZoom(toClusterId(clusterId)));
 }
 
 double HybridClusterEngine::getPointCount() {

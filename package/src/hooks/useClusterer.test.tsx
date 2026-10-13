@@ -155,3 +155,23 @@ describe('useClusterer build failures (#15)', () => {
     expect(onError).toHaveBeenCalledTimes(1)
   })
 })
+
+describe('useClusterer invalid options (#19)', () => {
+  it('reports invalid options to onError, naming the option', async () => {
+    const onError = jest.fn()
+
+    const { result } = renderHook(() =>
+      useClusterer([POINT_A], MAP_DIMENSIONS, REGION, {
+        maxZoom: 100,
+        onError,
+      })
+    )
+    await act(async () => {})
+
+    expect(onError).toHaveBeenCalledTimes(1)
+    expect((onError.mock.calls[0]![0] as Error).message).toBe(
+      'react-native-better-clustering: maxZoom must be an integer from 0 to 30, got 100.'
+    )
+    expect(result.current[0]).toEqual([])
+  })
+})

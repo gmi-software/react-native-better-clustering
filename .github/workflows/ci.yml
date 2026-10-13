@@ -112,8 +112,11 @@ jobs:
         with:
           persist-credentials: false
 
+      # g++'s `undefined` group leaves out float-cast-overflow, which catches a
+      # NaN or out-of-range double cast to int; name it, and stop on the first
+      # report so undefined behaviour fails the job.
       - name: Compile and run the ClusterEngineCore tests
         working-directory: package/cpp
         run: |
-          c++ -std=c++20 -I. ClusterEngineCore.test.cpp -o cluster_test
+          c++ -std=c++20 -I. -fsanitize=undefined,float-cast-overflow -fno-sanitize-recover=all ClusterEngineCore.test.cpp -o cluster_test
           ./cluster_test

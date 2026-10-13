@@ -16,7 +16,7 @@ For native changes, name the platform, map provider and device you tested on.
 - [ ] `bun run lint` and `bun run format:check`
 - [ ] `cd package && bun run typecheck && bun run test`
 - [ ] `cd package && bun run build && bun run verify:pack && bun run verify:exports`
-- [ ] C++ changes: `cd package/cpp && c++ -std=c++20 -I. ClusterEngineCore.test.cpp -o cluster_test && ./cluster_test`
+- [ ] C++ changes: `cd package/cpp && c++ -std=c++20 -I. -fsanitize=undefined,float-cast-overflow -fno-sanitize-recover=all ClusterEngineCore.test.cpp -o cluster_test && ./cluster_test`
 - [ ] Native changes: example app on iOS / Android (`cd example && bunx expo prebuild --clean && bunx expo run:ios`)
 
 ## Scope
