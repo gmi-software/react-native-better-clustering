@@ -1,4 +1,5 @@
 import type { ReactElement } from 'react'
+import { BenchmarkScreen } from './bench/BenchmarkScreen'
 import { AntimeridianScreen } from './screens/AntimeridianScreen'
 import { BasicScreen } from './screens/BasicScreen'
 import { ClusteringToggleScreen } from './screens/ClusteringToggleScreen'
@@ -71,5 +72,12 @@ export const SCENARIOS: Scenario[] = [
     title: 'clusteringEnabled toggle',
     description: 'Turn clustering off and on without unmounting the map.',
     render: () => <ClusteringToggleScreen />,
+  },
+  {
+    id: 'benchmark',
+    title: 'Benchmark',
+    description:
+      'react-native-map-clustering vs this build, same markers: mount, parent re-renders, zoom.',
+    render: () => <BenchmarkScreen />,
   },
 ]

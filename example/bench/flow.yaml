@@ -1,0 +1,70 @@
+# One benchmark run: library ${LIB}, ${COUNT} markers, on a fresh launch.
+# run.mjs passes APP_ID, LIB, COUNT and HOST (its collector), and samples the
+# app's memory each time this flow posts a mark.
+appId: ${APP_ID}
+name: Benchmark ${LIB} ${COUNT}
+---
+- launchApp:
+    clearState: true
+    stopApp: true
+- scrollUntilVisible:
+    element:
+      id: scenario-benchmark
+    direction: DOWN
+- tapOn:
+    id: scenario-benchmark
+- tapOn:
+    id: bench-lib-${LIB}
+- tapOn:
+    id: bench-count-${COUNT}
+- tapOn:
+    id: bench-start
+
+- extendedWaitUntil:
+    visible:
+      id: bench-phase
+      text: 'Phase: ready'
+    timeout: 60000
+- runScript:
+    file: mark.js
+    env:
+      PHASE: baseline
+- tapOn:
+    id: bench-next
+
+- extendedWaitUntil:
+    visible:
+      id: bench-phase
+      text: 'Phase: mounted'
+    timeout: 300000
+- runScript:
+    file: mark.js
+    env:
+      PHASE: mounted
+- tapOn:
+    id: bench-next
+
+- extendedWaitUntil:
+    visible:
+      id: bench-phase
+      text: 'Phase: rerendered'
+    timeout: 300000
+- runScript:
+    file: mark.js
+    env:
+      PHASE: rerendered
+- tapOn:
+    id: bench-next
+
+- extendedWaitUntil:
+    visible:
+      id: bench-phase
+      text: 'Phase: (done|failed)'
+    timeout: 300000
+- runScript:
+    file: mark.js
+    env:
+      PHASE: done
+- copyTextFrom:
+    id: bench-result
+- runScript: result.js
