@@ -182,6 +182,15 @@ export interface ClusteredMapViewProps extends Omit<
   mapRef?: (map: MapView | null) => void
   /** When `true`, overlapping markers spiderfy on cluster press. */
   spiralEnabled?: boolean
+  /**
+   * Most markers a cluster spiderfies into. A larger cluster of overlapping
+   * markers stays a cluster bubble at max zoom; pressing it still calls
+   * {@linkcode ClusteredMapViewProps.onClusterPress onClusterPress} with every
+   * marker, so the app can list them instead.
+   *
+   * @default `50`
+   */
+  spiderfyMaxLeaves?: number
   /** Line color for spiderfied connector lines. */
   spiderLineColor?: string
   /** Custom renderer for cluster markers. */
@@ -286,6 +295,7 @@ const CompatMapView = forwardRef(function CompatMapView(
     height,
     clusterUpdateIntervalMs = 100,
     spiralEnabled = true,
+    spiderfyMaxLeaves = 50,
     spiderLineColor = '#FF0000',
     renderCluster,
     superClusterRef,
@@ -604,16 +614,53 @@ const CompatMapView = forwardRef(function CompatMapView(
     onRegionChangeCompleteRef.current(pending.region, pending.details, clusters)
   }, [currentRegion, clusters])
 
-  const shouldSpiderCluster = useCallback(
-    (clusterId: number) => {
-      if (!spiralEnabled || !isAtMaxZoom) {
-        return false
-      }
+  // Leaves of the clusters that spiderfy. `clusters` keeps its identity across
+  // pans and equal re-renders, so those never query the engine again; stale
+  // leaf objects are fine because `markerFor` resolves them by child index.
+  const spiderLeaves = useMemo(() => {
+    const leavesByClusterId = new Map<number, PointFeature[]>()
+    if (!spiralEnabled || !isAtMaxZoom) {
+      return leavesByClusterId
+    }
 
-      return supercluster.getClusterExpansionZoom(clusterId) >= maxZoom
-    },
-    [spiralEnabled, isAtMaxZoom, supercluster, maxZoom]
-  )
+    for (const feature of clusters) {
+      if (!isClusterFeature(feature)) {
+        continue
+      }
+      const { cluster_id: clusterId, point_count: pointCount } =
+        feature.properties
+      // Negated so a `NaN` cap disables spiderfy instead of the cap.
+      if (
+        !(pointCount <= spiderfyMaxLeaves) ||
+        supercluster.getClusterExpansionZoom(clusterId) < maxZoom
+      ) {
+        continue
+      }
+      leavesByClusterId.set(clusterId, supercluster.getAllLeaves(clusterId))
+    }
+    return leavesByClusterId
+  }, [
+    clusters,
+    supercluster,
+    spiralEnabled,
+    isAtMaxZoom,
+    maxZoom,
+    spiderfyMaxLeaves,
+  ])
+
+  // Spider spacing is fixed on screen, so it depends on the zoom. `null` while
+  // nothing spiderfies, so ordinary zooms never re-render every marker.
+  const { longitudeDelta: regionLongitudeDelta } = currentRegion
+  const spiderLongitudePerPoint = useMemo(() => {
+    if (
+      spiderLeaves.size === 0 ||
+      !(regionLongitudeDelta > 0) ||
+      !(mapDimensions.width > 0)
+    ) {
+      return null
+    }
+    return regionLongitudeDelta / mapDimensions.width
+  }, [spiderLeaves, regionLongitudeDelta, mapDimensions.width])
 
   // Split rendering: everything except the default cluster bubbles is rendered
   // immediately, while the default bubbles go through `useFadePresence` so a
@@ -667,12 +714,14 @@ const CompatMapView = forwardRef(function CompatMapView(
       const cluster = feature as ClusterFeature
       const clusterId = cluster.properties.cluster_id
 
-      if (shouldSpiderCluster(clusterId)) {
+      const leaves = spiderLeaves.get(clusterId)
+      if (leaves != null && spiderLongitudePerPoint != null) {
         immediate.push(
           ...renderSpiderClusterMarkers(
             cluster,
+            leaves,
             markerFor,
-            supercluster,
+            spiderLongitudePerPoint,
             spiderLineColor
           )
         )
@@ -729,8 +778,9 @@ const CompatMapView = forwardRef(function CompatMapView(
     selectedClusterColor,
     renderCluster,
     tracksViewChanges,
-    shouldSpiderCluster,
     supercluster,
+    spiderLeaves,
+    spiderLongitudePerPoint,
     spiderLineColor,
   ])
 

@@ -13,6 +13,7 @@ import {
 import {
   Marker,
   clusterLabels,
+  fakeClusterEngineStats,
   flush,
   harnessControls,
   mapState,
@@ -22,8 +23,10 @@ import {
   renderedMarkerIds,
   renderedMarkers,
   resetHarness,
+  settleRegion,
   type LatLng,
 } from './harness'
+import { SPIRAL_SPACING_PT } from '../../compat/spiral'
 
 const { default: MapView } = await import('../../compat/MapView')
 
@@ -199,5 +202,128 @@ describe('MapView spiderfy', () => {
     await flush()
 
     expect(polylineCount(container)).toBe(0)
+  })
+})
+
+describe('MapView bounded spiderfy (#16)', () => {
+  const SPIDER_ZOOM = 23
+  const SPIDER_REGION = regionAt(CENTER, SPIDER_ZOOM)
+
+  function crowd(count: number): TestPoint[] {
+    return Array.from({ length: count }, (_, i) => ({
+      id: `c${i}`,
+      latitude: CENTER.latitude,
+      longitude: CENTER.longitude,
+    }))
+  }
+
+  it.each([200, 1000])(
+    'keeps %i identical markers as one cluster bubble',
+    async (count) => {
+      const { container } = render(
+        <Map points={crowd(count)} initialRegion={SPIDER_REGION} />
+      )
+      await flush()
+
+      expect(clusterLabels(container)).toHaveLength(1)
+      expect(renderedMarkerIds(container)).toEqual([])
+      expect(polylineCount(container)).toBe(0)
+    }
+  )
+
+  it('spiderfies a cluster of exactly spiderfyMaxLeaves markers', async () => {
+    const { container } = render(
+      <Map points={crowd(50)} initialRegion={SPIDER_REGION} />
+    )
+    await flush()
+
+    expect(clusterLabels(container)).toEqual([])
+    expect(renderedMarkerIds(container)).toHaveLength(50)
+    expect(polylineCount(container)).toBe(50)
+  })
+
+  it.each([3, Number.NaN])(
+    'keeps the cluster with spiderfyMaxLeaves=%p',
+    async (spiderfyMaxLeaves) => {
+      const { container } = render(
+        <Map
+          points={SAME_SPOT}
+          spiderfyMaxLeaves={spiderfyMaxLeaves}
+          initialRegion={SPIDER_REGION}
+        />
+      )
+      await flush()
+
+      expect(clusterLabels(container)).toEqual(['5'])
+      expect(polylineCount(container)).toBe(0)
+    }
+  )
+
+  it('reports every marker of an over-cap cluster to onClusterPress', async () => {
+    const onClusterPress = jest.fn()
+    const { container } = render(
+      <Map
+        points={crowd(200)}
+        onClusterPress={onClusterPress}
+        initialRegion={SPIDER_REGION}
+      />
+    )
+    await flush()
+
+    press(theCluster(container))
+
+    expect(onClusterPress).toHaveBeenCalledTimes(1)
+    expect(onClusterPress.mock.calls[0]![1]).toHaveLength(200)
+  })
+
+  it('keeps spider markers a marker width apart on screen', async () => {
+    const { container } = render(
+      <Map points={crowd(50)} initialRegion={SPIDER_REGION} />
+    )
+    await flush()
+
+    // Back to screen points, as the 390 pt wide harness map shows them.
+    const longitudePerPoint = SPIDER_REGION.longitudeDelta / 390
+    const latitudePerPoint =
+      longitudePerPoint * Math.cos((CENTER.latitude * Math.PI) / 180)
+    const points = renderedMarkers(container).map((marker) => ({
+      x: (marker.longitude - CENTER.longitude) / longitudePerPoint,
+      y: (marker.latitude - CENTER.latitude) / latitudePerPoint,
+    }))
+    let minDistance = Infinity
+    for (let i = 0; i < points.length; i++) {
+      const a = points[i]!
+      expect(Math.hypot(a.x, a.y)).toBeGreaterThan(0.9 * SPIRAL_SPACING_PT)
+      for (let j = i + 1; j < points.length; j++) {
+        const b = points[j]!
+        minDistance = Math.min(minDistance, Math.hypot(a.x - b.x, a.y - b.y))
+      }
+    }
+
+    expect(points).toHaveLength(50)
+    expect(minDistance).toBeGreaterThanOrEqual(0.9 * SPIRAL_SPACING_PT)
+  })
+
+  it('does not refetch leaves on re-renders and pans that keep the spider', async () => {
+    const { container, rerender } = render(
+      <Map points={SAME_SPOT} initialRegion={SPIDER_REGION} />
+    )
+    await flush()
+    expect(polylineCount(container)).toBe(SAME_SPOT.length)
+    const leafQueries = fakeClusterEngineStats.getLeaves
+    const zoomQueries = fakeClusterEngineStats.getClusterExpansionZoom
+
+    rerender(<Map points={[...SAME_SPOT]} initialRegion={SPIDER_REGION} />)
+    await flush()
+    await settleRegion(
+      regionAt(
+        { latitude: CENTER.latitude + 0.00001, longitude: CENTER.longitude },
+        SPIDER_ZOOM
+      )
+    )
+
+    expect(polylineCount(container)).toBe(SAME_SPOT.length)
+    expect(fakeClusterEngineStats.getLeaves).toBe(leafQueries)
+    expect(fakeClusterEngineStats.getClusterExpansionZoom).toBe(zoomQueries)
   })
 })
