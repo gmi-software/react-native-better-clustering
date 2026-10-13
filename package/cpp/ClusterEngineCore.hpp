@@ -428,12 +428,7 @@ public:
       tree.range(minX, minY, maxX, maxY, idxBuf);
       result.reserve(result.size() + idxBuf.size());
       for (int32_t idx : idxBuf) {
-        // A node as it stands at this level: processed at z, and not yet
-        // folded into a parent here.
-        ClusterNode node = _nodes[idx];
-        node.zoom = z;
-        node.parentId = -1;
-        result.push_back(std::move(node));
+        appendAtLevel(result, _nodes[idx], z);
       }
     };
 
@@ -688,6 +683,27 @@ private:
   void linkChild(int32_t parentId, int32_t childIndex) {
     _nodes[childIndex].parentId = parentId;
     _childNodes.push_back(childIndex);
+  }
+
+  // Appends `node` as it stands at level `zoom`: processed at that zoom, and
+  // not yet folded into a parent there. Field by field on purpose: copying
+  // the whole node, or a modified local copy, costs up to half again as many
+  // instructions per result (the `values` vector), and getClusters returns
+  // thousands. Keep the list in step with ClusterNode.
+  static void appendAtLevel(std::vector<ClusterNode>& result, const ClusterNode& node, int32_t zoom) {
+    ClusterNode& out = result.emplace_back();
+    out.id = node.id;
+    out.x = node.x;
+    out.y = node.y;
+    out.count = node.count;
+    out.parentId = -1;
+    out.pointIndex = node.pointIndex;
+    out.isCluster = node.isCluster;
+    out.zoom = zoom;
+    out.minLeafId = node.minLeafId;
+    if (!node.values.empty()) {
+      out.values = node.values;
+    }
   }
 
   // Point ids come from the caller. packPoints numbers them 0..count-1, so a
