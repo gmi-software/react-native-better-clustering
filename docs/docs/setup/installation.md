@@ -66,11 +66,19 @@ Add the `react-native-maps` config plugin to `app.json`:
 {
   "expo": {
     "plugins": [
-      ["react-native-maps", { "googleMapsApiKey": "YOUR_GOOGLE_MAPS_API_KEY" }]
+      [
+        "react-native-maps",
+        { "androidGoogleMapsApiKey": "YOUR_GOOGLE_MAPS_API_KEY" }
+      ]
     ]
   }
 }
 ```
+
+The plugin reads `androidGoogleMapsApiKey`, not `googleMapsApiKey`: without it,
+Android apps crash with "API key not found" when a map mounts. iOS uses Apple
+Maps and needs no key, unless you render with `provider={PROVIDER_GOOGLE}`;
+then add `iosGoogleMapsApiKey` too.
 
 Then regenerate native projects:
 

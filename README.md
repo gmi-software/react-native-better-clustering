@@ -87,7 +87,10 @@ Add the `react-native-maps` plugin to `app.json`:
 {
   "expo": {
     "plugins": [
-      ["react-native-maps", { "googleMapsApiKey": "YOUR_GOOGLE_MAPS_API_KEY" }]
+      [
+        "react-native-maps",
+        { "androidGoogleMapsApiKey": "YOUR_GOOGLE_MAPS_API_KEY" }
+      ]
     ]
   }
 }

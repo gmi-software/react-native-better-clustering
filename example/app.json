@@ -16,7 +16,7 @@
       [
         "react-native-maps",
         {
-          "googleMapsApiKey": "YOUR_GOOGLE_MAPS_API_KEY"
+          "androidGoogleMapsApiKey": "YOUR_GOOGLE_MAPS_API_KEY"
         }
       ],
       "expo-status-bar"
