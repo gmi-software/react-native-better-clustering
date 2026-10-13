@@ -13,8 +13,9 @@ const FeatureList: FeatureItem[] = [
     title: 'C++ Supercluster Engine',
     description: (
       <>
-        Clustering runs in native C++ via Nitro Modules — faster than JS
-        supercluster on the React Native bridge.
+        Clustering runs in native C++ via Nitro Modules instead of JS
+        supercluster, and <code>MapView</code> builds the index on a background
+        thread.
       </>
     ),
   },

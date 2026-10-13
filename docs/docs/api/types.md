@@ -111,6 +111,7 @@ from `/engine`. See the [headless engine guide](./engine.md) for lifecycle,
 ```tsx
 import {
   createClusterEngine,
+  type ClusterBounds,
   type ClusterEngine,
   type ClusterEngineOptions,
   type EngineClusterNode,

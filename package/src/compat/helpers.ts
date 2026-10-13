@@ -1,6 +1,6 @@
 import React from 'react'
 import { isClusterFeature } from '../geojson'
-import type { ClusterFeature, PointFeature } from '../geojson/types'
+import type { BBox, ClusterFeature, PointFeature } from '../geojson/types'
 
 /**
  * Whether a React child is a clusterable `react-native-maps` `Marker`.
@@ -115,4 +115,21 @@ export function computeClusterLayoutSignature(
       return `p:${index}:${latitude}:${longitude}`
     })
     .join('|')
+}
+
+/**
+ * Coordinates for `fitToCoordinates` that fit `bbox`: its corners with its
+ * centre between them. Google Maps grows the fitted box point by point, each
+ * time the shorter way round the globe, so the corners alone would fit the
+ * other side of the world for a box wider than 180° of longitude.
+ */
+export function bboxToFitCoordinates([west, south, east, north]: BBox): Array<{
+  latitude: number
+  longitude: number
+}> {
+  return [
+    { latitude: south, longitude: west },
+    { latitude: (south + north) / 2, longitude: (west + east) / 2 },
+    { latitude: north, longitude: east },
+  ]
 }

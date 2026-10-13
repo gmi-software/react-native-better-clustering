@@ -298,6 +298,88 @@ static void testGetLeavesUnlimited() {
   assert(all.size() == 4);
 }
 
+static void testClusterBoundsSpanTheLeaves() {
+  ClusterEngineCore engine;
+  ClusterEngineConfig config;
+  config.minPoints = 2;
+  config.minZoom = 0;
+  config.maxZoom = 16;
+  engine.setOptions(config);
+
+  const int32_t count = 2000;
+  std::vector<int32_t> ids(count);
+  std::vector<double> lats(count);
+  std::vector<double> lngs(count);
+  uint32_t seed = 7;
+  const auto next = [&seed] {
+    seed = seed * 1664525u + 1013904223u;
+    return static_cast<double>(seed) / 4294967296.0;
+  };
+  for (int32_t i = 0; i < count; i++) {
+    ids[i] = i;
+    lats[i] = 50.0 + next() * 4.0;
+    lngs[i] = 18.0 + next() * 6.0;
+  }
+
+  assert(!engine.getClusterBounds(0).has_value());
+
+  engine.setPoints(ids.data(), lats.data(), lngs.data(), static_cast<size_t>(count));
+  engine.build();
+
+  // Exactly the extremes of the coordinates each leaf was loaded with.
+  size_t checked = 0;
+  for (const double zoom : {0.0, 4.0, 8.0}) {
+    for (const auto& node : engine.getClusters({90.0, -90.0, 180.0, -180.0, zoom})) {
+      if (!node.isCluster) continue;
+      double north = -std::numeric_limits<double>::infinity();
+      double south = std::numeric_limits<double>::infinity();
+      double east = -std::numeric_limits<double>::infinity();
+      double west = std::numeric_limits<double>::infinity();
+      for (const auto& leaf : engine.getLeaves(node.id, 0, 0)) {
+        north = std::max(north, lats[leaf.pointIndex]);
+        south = std::min(south, lats[leaf.pointIndex]);
+        east = std::max(east, lngs[leaf.pointIndex]);
+        west = std::min(west, lngs[leaf.pointIndex]);
+      }
+      const auto bounds = engine.getClusterBounds(node.id);
+      assert(bounds.has_value());
+      assert(bounds->north == north && bounds->south == south);
+      assert(bounds->east == east && bounds->west == west);
+      checked++;
+    }
+  }
+  assert(checked > 10);
+
+  // A point spans itself; an id that is no node has no box.
+  const auto point = engine.getClusterBounds(42);
+  assert(point.has_value());
+  assert(point->north == lats[42] && point->south == lats[42]);
+  assert(point->east == lngs[42] && point->west == lngs[42]);
+  assert(!engine.getClusterBounds(-1).has_value());
+  assert(!engine.getClusterBounds(std::numeric_limits<int32_t>::max()).has_value());
+}
+
+static void testClusterBoundsUseClampedLatitudes() {
+  ClusterEngineCore engine;
+  ClusterEngineConfig config;
+  config.minPoints = 2;
+  config.minZoom = 0;
+  config.maxZoom = 16;
+  engine.setOptions(config);
+
+  std::vector<int32_t> ids = {0, 1};
+  std::vector<double> lats = {89.0, 84.0};
+  std::vector<double> lngs = {10.0, 10.0};
+  engine.setPoints(ids.data(), lats.data(), lngs.data(), ids.size());
+  engine.build();
+
+  const auto clusters = engine.getClusters({90.0, -90.0, 180.0, -180.0, 0.0});
+  assert(clusters.size() == 1 && clusters.front().isCluster);
+  const auto bounds = engine.getClusterBounds(clusters.front().id);
+  assert(bounds.has_value());
+  assert(bounds->north == CLAMP_MAX_LATITUDE && bounds->south == 84.0);
+}
+
 static void testInvalidBufferRejected() {
   ClusterEngineCore engine;
   ClusterEngineConfig config;
@@ -1276,6 +1358,8 @@ int main() {
   testClusterIdsSkipSurvivingPointIdsFromBuffer();
   testClusterIdsSkipSparsePointIds();
   testGetLeavesUnlimited();
+  testClusterBoundsSpanTheLeaves();
+  testClusterBoundsUseClampedLatitudes();
   testInvalidBufferRejected();
   testMemorySizeReflectsNativeAllocations();
   testMinLeafIdIsTheSmallestLeafAtEveryZoom();

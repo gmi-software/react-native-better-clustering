@@ -544,6 +544,7 @@ int main(int argc, char** argv) {
 
   const ClusterNode top = topNode(engine, config);
   ops.push_back(measure("leaves_top", options, [&]() -> int64_t { return static_cast<int64_t>(engine.getLeaves(top.id, 0, 0).size()); }));
+  ops.push_back(measure("bounds_top", options, [&]() -> int64_t { return engine.getClusterBounds(top.id).has_value() ? 1 : 0; }));
   ops.push_back(measure("expansion_top", options, [&]() -> int64_t { return engine.getClusterExpansionZoom(top.id); }));
 
   std::vector<ViewportBounds> sweep;

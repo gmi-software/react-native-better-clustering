@@ -26,6 +26,7 @@ public:
   std::vector<EngineClusterNode> getClusters(const Viewport& viewport) override;
   std::vector<EngineClusterNode> getChildren(double clusterId) override;
   std::vector<EngineClusterNode> getLeaves(double clusterId, double limit, double offset) override;
+  std::optional<ClusterBounds> getClusterBounds(double clusterId) override;
   double getClusterExpansionZoom(double clusterId) override;
   double getPointCount() override;
   bool getIsBuilt() override;

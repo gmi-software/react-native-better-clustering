@@ -8,6 +8,7 @@
 #include <algorithm>
 #include <cmath>
 #include <limits>
+#include <optional>
 #include <utility>
 
 namespace margelo::nitro::nitromapcluster {
@@ -525,6 +526,46 @@ public:
       }
     }
     return result;
+  }
+
+  // The box getLeaves() would span, without collecting the leaves: a cluster
+  // press needs four numbers, not every point. A point id spans its own point;
+  // an id that is no node, or an index not built yet, has no box.
+  std::optional<LeafBounds> getClusterBounds(int32_t clusterId) const {
+    if (!_built) return std::nullopt;
+
+    const int32_t root = findNode(clusterId);
+    if (root < 0) return std::nullopt;
+
+    LeafBounds bounds{
+      -std::numeric_limits<double>::infinity(),
+      std::numeric_limits<double>::infinity(),
+      -std::numeric_limits<double>::infinity(),
+      std::numeric_limits<double>::infinity(),
+    };
+    std::vector<int32_t> stack;
+    stack.push_back(root);
+
+    while (!stack.empty()) {
+      const size_t index = static_cast<size_t>(stack.back());
+      stack.pop_back();
+
+      // Points come first in `_nodes`, in `_points` order, so a leaf's
+      // coordinates are read where they were loaded, as JS has them.
+      if (index < _points.size()) {
+        const PointData& point = _points[index];
+        bounds.north = std::max(bounds.north, point.latitude);
+        bounds.south = std::min(bounds.south, point.latitude);
+        bounds.east = std::max(bounds.east, point.longitude);
+        bounds.west = std::min(bounds.west, point.longitude);
+      } else {
+        const size_t cluster = index - _points.size();
+        for (int32_t i = _childOffsets[cluster]; i < _childOffsets[cluster + 1]; i++) {
+          stack.push_back(_childNodes[i]);
+        }
+      }
+    }
+    return bounds;
   }
 
   int32_t getClusterExpansionZoom(int32_t clusterId) const {

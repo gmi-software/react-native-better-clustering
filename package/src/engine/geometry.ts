@@ -259,12 +259,21 @@ export function coordinatesToRegion(
     maxLng = Math.max(maxLng, point.longitude)
   }
 
-  const latitudeDelta = calculateDelta(maxLat, minLat) * 1.5
-  const longitudeDelta = calculateDelta(maxLng, minLng) * 1.5
+  return bboxToRegion([minLng, minLat, maxLng, maxLat])
+}
+
+/**
+ * Region that fits a {@linkcode BBox} with the margin of
+ * {@linkcode coordinatesToRegion}, which returns the same region for the
+ * coordinates the box spans.
+ */
+export function bboxToRegion([west, south, east, north]: BBox): MapRegion {
+  const latitudeDelta = calculateDelta(north, south) * 1.5
+  const longitudeDelta = calculateDelta(east, west) * 1.5
 
   return {
-    latitude: calculateAverage(minLat, maxLat),
-    longitude: calculateAverage(minLng, maxLng),
+    latitude: calculateAverage(south, north),
+    longitude: calculateAverage(west, east),
     latitudeDelta: Math.max(latitudeDelta, 0.001),
     longitudeDelta: Math.max(longitudeDelta, 0.001),
   }

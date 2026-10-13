@@ -24,7 +24,6 @@ import {
   renderedMarkers,
   resetHarness,
   settleRegion,
-  type LatLng,
 } from './harness'
 import { SPIRAL_SPACING_PT } from '../../compat/spiral'
 
@@ -53,12 +52,6 @@ function Map({
   )
 }
 
-function sortCoordinates(coordinates: LatLng[]): LatLng[] {
-  return [...coordinates]
-    .map(({ latitude, longitude }) => ({ latitude, longitude }))
-    .sort((a, b) => a.latitude - b.latitude || a.longitude - b.longitude)
-}
-
 function theCluster(container: HTMLElement) {
   const cluster = renderedMarkers(container).find((m) => m.isCluster)
   if (cluster == null) throw new Error('no cluster rendered')
@@ -70,10 +63,11 @@ beforeEach(() => {
 })
 
 describe('MapView cluster press', () => {
-  it('fits the map to every leaf of the pressed cluster and reports them to onClusterPress', async () => {
+  it('fits the map to the bounds of the pressed cluster and reports its markers to onClusterPress', async () => {
     const onClusterPress = jest.fn()
     const { container } = render(<Map onClusterPress={onClusterPress} />)
     await flush()
+    const leafQueries = fakeClusterEngineStats.getLeaves
 
     press(theCluster(container))
 
@@ -81,7 +75,17 @@ describe('MapView cluster press', () => {
     const [{ coordinates, options }] = mapState.fitToCoordinates as [
       (typeof mapState.fitToCoordinates)[number],
     ]
-    expect(sortCoordinates(coordinates)).toEqual(sortCoordinates(GROUP))
+    const latitudes = GROUP.map((point) => point.latitude)
+    const longitudes = GROUP.map((point) => point.longitude)
+    expect(coordinates).toHaveLength(3)
+    expect(coordinates[0]).toEqual({
+      latitude: Math.min(...latitudes),
+      longitude: Math.min(...longitudes),
+    })
+    expect(coordinates[2]).toEqual({
+      latitude: Math.max(...latitudes),
+      longitude: Math.max(...longitudes),
+    })
     expect(options).toEqual({
       edgePadding: { top: 50, left: 50, right: 50, bottom: 50 },
     })
@@ -93,6 +97,18 @@ describe('MapView cluster press', () => {
     ]
     expect(cluster.properties.point_count).toBe(5)
     expect(leaves).toHaveLength(5)
+    expect(fakeClusterEngineStats.getLeaves - leafQueries).toBe(1)
+  })
+
+  it('reads no markers on press without an onClusterPress', async () => {
+    const { container } = render(<Map />)
+    await flush()
+    const leafQueries = fakeClusterEngineStats.getLeaves
+
+    press(theCluster(container))
+
+    expect(mapState.fitToCoordinates).toHaveLength(1)
+    expect(fakeClusterEngineStats.getLeaves).toBe(leafQueries)
   })
 
   it('forwards a custom edgePadding to fitToCoordinates', async () => {

@@ -44,6 +44,7 @@ import {
 } from '../hooks/useClusterIndex'
 import ClusterMarker from './ClusterMarker'
 import {
+  bboxToFitCoordinates,
   computeClusterLayoutSignature,
   isMarker,
   markerElementOf,
@@ -563,10 +564,16 @@ const CompatMapView = forwardRef(function CompatMapView(
   const handleClusterPress = useCallback(
     (cluster: ClusterFeature) => {
       const clusterId = cluster.properties.cluster_id
-      const leaves = supercluster.getAllLeaves(clusterId)
+      // Reading every leaf is what makes a press on a large cluster slow, so
+      // only an `onClusterPress` the app passed pays for it.
+      const reportPress = () => {
+        if (onClusterPress !== noop) {
+          onClusterPress(cluster, supercluster.getAllLeaves(clusterId))
+        }
+      }
 
       if (preserveClusterPressBehavior) {
-        onClusterPress(cluster, leaves)
+        reportPress()
         return
       }
 
@@ -578,16 +585,12 @@ const CompatMapView = forwardRef(function CompatMapView(
           clusterId,
           zoom: currentZoomRef.current,
         })
-        onClusterPress(cluster, leaves)
+        reportPress()
         return
       }
 
-      const coordinates = leaves.map((leaf) => {
-        const [longitude, latitude] = leaf.geometry.coordinates
-        return { latitude, longitude }
-      })
-
-      if (coordinates.length > 0) {
+      const bounds = supercluster.getClusterBounds(clusterId)
+      if (bounds != null) {
         const map = mapRef.current
         const canFitToCoordinates =
           isMapReady &&
@@ -596,13 +599,13 @@ const CompatMapView = forwardRef(function CompatMapView(
           mapDimensions.height > 0
 
         if (canFitToCoordinates) {
-          map?.fitToCoordinates(coordinates, { edgePadding })
+          map?.fitToCoordinates(bboxToFitCoordinates(bounds), { edgePadding })
         } else {
           map?.animateToRegion(cluster.properties.getExpansionRegion(), 300)
         }
       }
 
-      onClusterPress(cluster, leaves)
+      reportPress()
     },
     [
       supercluster,

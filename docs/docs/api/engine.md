@@ -37,7 +37,8 @@ Call methods in this order:
 1. **`setOptions`** — radius, zoom range, reducers, tile extent, etc.
 2. **`setPoints`** — binary buffer from `packPoints()` (`/utils` export; must match options).
 3. **`build()`** or **`buildAsync()`** — build the spatial index.
-4. **Query** — `getClusters`, `getChildren`, `getLeaves`, `getClusterExpansionZoom`.
+4. **Query** — `getClusters`, `getChildren`, `getLeaves`, `getClusterBounds`,
+   `getClusterExpansionZoom`.
 5. **`dispose()`** — free the native index when you are done (see
    [Native memory](#native-memory)).
 
@@ -82,6 +83,15 @@ split into its children, whichever zoom you saw it at, so "zoom to the expansion
 zoom on press" always reveals the children. It returns `maxZoom + 1` for a
 cluster still there at `maxZoom` (points at the same coordinate, for example)
 and for a point id.
+
+`getClusterBounds(id)` returns the box `{ north, south, east, west }` that every
+leaf under the cluster spans, without the leaves: four numbers cross into JS
+for a cluster of 100k points, where `getLeaves` would convert each point. Fit
+the map to it on a cluster press. A point id spans its own point. The box uses
+the coordinates the engine indexed, which [clamps](../troubleshooting.md#some-markers-never-appear-on-the-map)
+latitudes beyond ±85.05° and longitudes beyond ±180°. `Supercluster` has the
+same method, returning a `[west, south, east, north]` bbox, and uses it for a
+cluster's `getExpansionRegion()`.
 
 Always guard queries with `isBuilt` when options or points can change between
 renders:
@@ -171,8 +181,8 @@ results:
 |------|-----------|--------|
 | `setOptions` | an option outside its [valid values](./types.md#valid-values) | throws, naming the option; the previous options and index stay |
 | `setPoints` | `null` / wrong layout | throws |
-| `getClusters`, `getChildren`, `getLeaves`, `getClusterExpansionZoom` | `isBuilt === false` | throws |
-| `getChildren`, `getLeaves`, `getClusterExpansionZoom` | `clusterId` is not a 32-bit integer (`NaN`, `Infinity`, `1.5`) | throws |
+| `getClusters`, `getChildren`, `getLeaves`, `getClusterBounds`, `getClusterExpansionZoom` | `isBuilt === false` | throws |
+| `getChildren`, `getLeaves`, `getClusterBounds`, `getClusterExpansionZoom` | `clusterId` is not a 32-bit integer (`NaN`, `Infinity`, `1.5`) | throws |
 | `getLeaves` | fractional `limit` or `offset`, or `NaN` `offset` | throws |
 | any method or property | after `dispose()` | throws |
 
@@ -183,9 +193,11 @@ after reloads.
 `getLeaves` reads a `limit` of `0`, a negative number, `Infinity` or `NaN` as no
 limit, so supercluster's `getLeaves(id, Infinity)` returns every leaf. A
 negative `offset` skips none. For an id that is a whole number but no node, such
-as `-1`, `getChildren` and `getLeaves` return `[]`.
+as `-1`, `getChildren` and `getLeaves` return `[]` and `getClusterBounds`
+returns `undefined`.
 
 ## Types
 
 See [Types — Headless engine](./types.md#headless-engine-clusterengine) for
-`ClusterEngine`, `ClusterEngineOptions`, `Viewport`, and `EngineClusterNode`.
+`ClusterEngine`, `ClusterEngineOptions`, `Viewport`, `EngineClusterNode` and
+`ClusterBounds`.

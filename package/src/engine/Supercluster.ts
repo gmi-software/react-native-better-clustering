@@ -10,6 +10,7 @@ import {
   extractGeoJSONAggregationValues,
 } from '../utils/clusterProperties'
 import {
+  bboxToRegion,
   bboxToViewport,
   clusterZoomFromRegion,
   coordinatesToRegion,
@@ -359,20 +360,36 @@ export class Supercluster<P extends AnyProps = AnyProps> {
   }
 
   /**
+   * {@linkcode BBox} that every leaf in a cluster spans, as
+   * `[west, south, east, north]`. The native engine walks the cluster and hands
+   * JS four numbers however many points it holds, where
+   * {@linkcode Supercluster.getLeaves getLeaves} hands over every point.
+   *
+   * A point id spans its own point. Returns `undefined` for an id that is no
+   * cluster or point. Coordinates are the ones the index was built from: a
+   * latitude beyond ±85.05° or a longitude beyond ±180° counts as that limit.
+   *
+   * @throws When {@linkcode Supercluster.load load} has not completed.
+   * @throws A `RangeError` when `clusterId` is not a 32-bit integer.
+   */
+  getClusterBounds(clusterId: number): BBox | undefined {
+    this.throwIfNotInitialized()
+    validateClusterId(clusterId)
+
+    const bounds = this.engine!.getClusterBounds(clusterId)
+    return bounds == null
+      ? undefined
+      : [bounds.west, bounds.south, bounds.east, bounds.north]
+  }
+
+  /**
    * {@linkcode MapRegion} that fits all leaves in a cluster.
    *
    * Used by cluster {@linkcode ClusterFeature} `getExpansionRegion` callbacks.
    */
   getClusterExpansionRegion(clusterId: number): MapRegion {
-    this.throwIfNotInitialized()
-
-    const leaves = this.getAllLeaves(clusterId)
-    return coordinatesToRegion(
-      leaves.map((leaf) => {
-        const [longitude, latitude] = leaf.geometry.coordinates
-        return { latitude, longitude }
-      })
-    )
+    const bounds = this.getClusterBounds(clusterId)
+    return bounds == null ? coordinatesToRegion([]) : bboxToRegion(bounds)
   }
 
   private prepareEngine(points: PointFeature<P>[]): ClusterEngine {
