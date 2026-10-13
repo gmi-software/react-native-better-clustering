@@ -10,6 +10,7 @@ import {
 } from '../components/Controls'
 import {
   colocatedPoints,
+  countPoints,
   generatePoints,
   POLAND_REGION,
   regionAtZoom,
@@ -53,6 +54,7 @@ export function CoLocatedScreen() {
   const engineRef = useEngineBuildCounter()
   const mapRef = useRef<RNMapView>(null)
   const [pressedCount, setPressedCount] = useState<number | null>(null)
+  const [visiblePoints, setVisiblePoints] = useState(0)
 
   const flyTo = (spot: { latitude: number; longitude: number }, zoom: number) =>
     mapRef.current?.animateToRegion(
@@ -66,6 +68,7 @@ export function CoLocatedScreen() {
         ref={mapRef}
         initialRegion={POLAND_REGION}
         onClusterPress={(_cluster, markers) => setPressedCount(markers.length)}
+        onMarkersChange={(features) => setVisiblePoints(countPoints(features))}
         style={styles.map}
         superClusterRef={engineRef}
         testID="map"
@@ -81,10 +84,15 @@ export function CoLocatedScreen() {
         ))}
       </MapView>
       <ControlPanel>
-        <StatusText testID="last-press">
-          Last cluster press:{' '}
-          {pressedCount == null ? 'none' : `${pressedCount} markers`}
-        </StatusText>
+        <ControlRow>
+          <StatusText testID="visible-points">
+            Visible points: {visiblePoints}
+          </StatusText>
+          <StatusText testID="last-press">
+            Last cluster press:{' '}
+            {pressedCount == null ? 'none' : `${pressedCount} markers`}
+          </StatusText>
+        </ControlRow>
         <ControlRow>
           <ActionButton
             label="5 at one spot"

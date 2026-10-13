@@ -83,8 +83,6 @@ bunx expo run:ios --configuration Release   # or: bunx expo run:android --varian
 bun run e2e
 ```
 
-A flow tagged `known-issue` asserts the fix for an open bug and is skipped by default. Run it by passing its file to `maestro test`, and remove the tag in the PR that fixes the bug.
-
 ## Project Structure
 
 ```

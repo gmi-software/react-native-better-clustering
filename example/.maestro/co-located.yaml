@@ -19,6 +19,11 @@ name: Co-located markers
     id: go-small-close
 - extendedWaitUntil:
     visible:
+      id: visible-points
+      text: 'Visible points: 5'
+    timeout: 10000
+- extendedWaitUntil:
+    visible:
       id: hud-markers-mounted
       text: 'Markers mounted: 5'
     timeout: 10000
@@ -49,9 +54,12 @@ name: Co-located markers
     id: go-large
 - extendedWaitUntil:
     visible:
-      id: hud-markers-mounted
-      text: 'Markers mounted: 0'
+      id: visible-points
+      text: 'Visible points: 1000'
     timeout: 10000
+- assertVisible:
+    id: hud-markers-mounted
+    text: 'Markers mounted: 0'
 - tapOn:
     id: map
 - extendedWaitUntil:

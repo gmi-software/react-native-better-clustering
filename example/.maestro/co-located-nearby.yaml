@@ -14,7 +14,11 @@ name: Co-located markers, distinct neighbours
 # Distinct markers close together split by zooming, not by spiderfying.
 - tapOn:
     id: go-nearby
-- runFlow: subflows/settle.yaml
+- extendedWaitUntil:
+    visible:
+      id: visible-points
+      text: 'Visible points: 12'
+    timeout: 10000
 - tapOn:
     id: map
 - extendedWaitUntil:

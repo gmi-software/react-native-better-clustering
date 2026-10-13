@@ -32,7 +32,7 @@ const ANTIMERIDIAN_REGION = {
 
 /**
  * Markers on both sides of ±180°, all on screen. Every one of them should be
- * clustered and shown; fewer reproduces #18.
+ * clustered and shown; fewer is a regression of #18.
  */
 export function AntimeridianScreen() {
   const engineRef = useEngineBuildCounter()
@@ -63,7 +63,7 @@ export function AntimeridianScreen() {
           Visible points: {visiblePoints} of {POINTS.length}
         </StatusText>
         <StatusText testID="antimeridian-hint">
-          All {POINTS.length} are on screen; fewer is #18.
+          All {POINTS.length} are on screen; fewer is a bug.
         </StatusText>
         <ActionButton
           label="Centre on 180°"
