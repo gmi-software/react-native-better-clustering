@@ -73,7 +73,9 @@ fixture in `package/cpp/ClusterEngineCore.test.cpp`, generated from
 supercluster 8.0.1 and verified in CI, pins this for five seeded datasets of
 3,000–8,000 points (`extent` 256, 512 and 1024, `minPoints: 2`): at every zoom
 the engine must return the same number of features and of clusters, group the
-same points into each cluster, and give each cluster the same expansion zoom.
+same points into each cluster, and give each cluster the same expansion zoom. A
+second table pins viewport queries around the antimeridian, with the bbox
+written unwrapped, wrapped, far outside ±180° and 360° or wider.
 
 Two deliberate differences remain, neither of which changes cluster membership
 in practice:

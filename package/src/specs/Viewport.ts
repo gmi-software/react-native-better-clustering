@@ -1,7 +1,11 @@
 /**
  * Map viewport bounds for native cluster queries via {@linkcode ClusterEngine.getClusters}.
  *
- * Built from a `BBox` and zoom by `bboxToViewport`.
+ * Built from a `BBox` and zoom by `bboxToViewport`. Longitudes are normalized
+ * the way supercluster normalizes a bbox, so a viewport across the antimeridian
+ * can be passed unwrapped (`west: 170, east: 190`) or wrapped
+ * (`west: 170, east: -170`), and a span of 360° or more covers the whole world.
+ * Latitudes are clamped to ±90°.
  */
 export interface Viewport {
   /** Northern latitude bound in degrees. */
