@@ -61,6 +61,52 @@ describe('Supercluster default options', () => {
   })
 })
 
+describe('Supercluster viewport tile size', () => {
+  const dimensions = { width: 400, height: 800 }
+  const region = {
+    latitude: 52.25,
+    longitude: 21.05,
+    latitudeDelta: 0.05,
+    longitudeDelta: 0.05,
+  }
+
+  function zoomQueriedFor(
+    options?: ConstructorParameters<typeof Supercluster>[0]
+  ) {
+    jest.clearAllMocks()
+    mockEngine.isBuilt = false
+    const clusterer = new Supercluster(options).load([SAMPLE_POINT])
+    clusterer.getClustersFromRegion(region, dimensions)
+    const calls = mockEngine.getClusters.mock.calls as unknown as Array<
+      [{ zoom: number }]
+    >
+    const viewport = calls[0]?.[0]
+    if (viewport == null) {
+      throw new Error('expected getClusters to be called')
+    }
+    return viewport.zoom
+  }
+
+  it('defaults to extent, keeping react-native-clusterer parity', () => {
+    expect(zoomQueriedFor()).toBe(zoomQueriedFor({ viewportTileSize: 512 }))
+    expect(zoomQueriedFor({ extent: 256 })).toBe(
+      zoomQueriedFor({ extent: 256, viewportTileSize: 256 })
+    )
+  })
+
+  it('queries one zoom higher at the geo-viewport tile size', () => {
+    expect(zoomQueriedFor({ viewportTileSize: 256 })).toBe(
+      zoomQueriedFor({ viewportTileSize: 512 }) + 1
+    )
+  })
+
+  it('is independent of extent', () => {
+    expect(zoomQueriedFor({ extent: 1024, viewportTileSize: 256 })).toBe(
+      zoomQueriedFor({ extent: 256, viewportTileSize: 256 })
+    )
+  })
+})
+
 describe('Supercluster.destroy', () => {
   beforeEach(() => {
     jest.clearAllMocks()

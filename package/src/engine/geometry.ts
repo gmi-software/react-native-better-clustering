@@ -1,7 +1,11 @@
 import type { BBox } from '../geojson/types'
 import type { MapRegion } from '../types'
 import type { Viewport } from '../specs/Viewport'
-import { DEFAULT_MAX_ZOOM, DEFAULT_MIN_ZOOM } from './defaults'
+import {
+  DEFAULT_MAX_ZOOM,
+  DEFAULT_MIN_ZOOM,
+  DEFAULT_VIEWPORT_TILE_SIZE,
+} from './defaults'
 
 /**
  * Pixel dimensions of the map view used for zoom calculations.
@@ -68,9 +72,9 @@ function lngLatToPixel(
   lng: number,
   lat: number,
   zoom: number,
-  extent: number
+  tileSize: number
 ): { x: number; y: number } {
-  const scale = extent * 2 ** zoom
+  const scale = tileSize * 2 ** zoom
   const sinLat = Math.sin((lat * Math.PI) / 180)
   const x = ((lng + 180) / 360) * scale
   const y =
@@ -79,8 +83,18 @@ function lngLatToPixel(
 }
 
 /**
- * Supercluster zoom from a bbox and map size — matches `geo-viewport` /
- * react-native-clusterer (uses width and height, not longitudeDelta alone).
+ * Supercluster zoom from a bbox and map size — matches `geo-viewport` (uses
+ * width and height, not longitudeDelta alone).
+ *
+ * `tileSize` is the slippy-map tile size the zoom is measured against, not the
+ * clustering `extent`. The two upstreams disagree here, and the choice shifts
+ * the result by a whole zoom level:
+ *
+ * - `256` — `geo-viewport`'s default, used by react-native-map-clustering.
+ *   Correct for `mapDimensions` measured in logical points, which is what
+ *   `onLayout` reports.
+ * - `extent` (`512`) — what react-native-clusterer passes. One zoom level
+ *   lower, and the default here so `/hooks` and `/engine` keep that parity.
  *
  * @see {@linkcode clusterZoomFromRegion}
  * @see {@linkcode MapDimensions}
@@ -90,7 +104,7 @@ export function bboxToZoom(
   mapDimensions: MapDimensions,
   minZoom = DEFAULT_MIN_ZOOM,
   maxZoom = DEFAULT_MAX_ZOOM,
-  extent = 512
+  tileSize = DEFAULT_VIEWPORT_TILE_SIZE
 ): number {
   const { width, height } = mapDimensions
   if (width <= 0 || height <= 0) {
@@ -108,8 +122,8 @@ export function bboxToZoom(
   }
 
   const base = maxZoom + 1
-  const bl = lngLatToPixel(west, south, base, extent)
-  const tr = lngLatToPixel(east, north, base, extent)
+  const bl = lngLatToPixel(west, south, base, tileSize)
+  const tr = lngLatToPixel(east, north, base, tileSize)
   const widthPx = tr.x - bl.x
   const heightPx = bl.y - tr.y
 
@@ -135,6 +149,9 @@ export function bboxToZoom(
  * [react-native-clusterer v5](https://github.com/JiriHoffmann/react-native-clusterer)
  * (`GeoViewport.viewport` + `longitudeDelta >= 40` shortcut).
  *
+ * Pass `tileSize` `256` for react-native-map-clustering parity, which is what
+ * the `MapView` compat layer does. See {@linkcode bboxToZoom}.
+ *
  * @see {@linkcode bboxToZoom}
  * @see {@linkcode regionToBBox}
  */
@@ -143,7 +160,7 @@ export function clusterZoomFromRegion(
   mapDimensions: MapDimensions,
   minZoom = DEFAULT_MIN_ZOOM,
   maxZoom = DEFAULT_MAX_ZOOM,
-  extent = 512
+  tileSize = DEFAULT_VIEWPORT_TILE_SIZE
 ): number {
   if (!isValidRegion(region)) {
     return minZoom
@@ -158,7 +175,7 @@ export function clusterZoomFromRegion(
     mapDimensions,
     minZoom,
     maxZoom,
-    extent
+    tileSize
   )
 }
 

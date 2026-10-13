@@ -39,6 +39,17 @@ export interface SuperclusterOptions {
   nodeSize?: number
   /** Numeric properties to fold into clusters natively in C++. @default `[]` */
   clusterProperties?: ClusterPropertyConfig[]
+  /**
+   * Slippy-map tile size used to pick a zoom level from the map region.
+   *
+   * Independent of {@linkcode SuperclusterOptions.extent}, which only affects
+   * clustering. Changing this shifts the queried zoom by a whole level:
+   * `256` matches react-native-map-clustering (and is what the `MapView`
+   * compat layer uses), `512` matches react-native-clusterer.
+   *
+   * @default `extent`
+   */
+  viewportTileSize?: number
 }
 
 export type { AnyProps }

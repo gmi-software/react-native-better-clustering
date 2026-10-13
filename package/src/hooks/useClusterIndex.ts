@@ -87,6 +87,8 @@ export function useClusterIndex<P extends AnyProps = AnyProps>(
     extent = DEFAULT_SUPERCLUSTER_OPTIONS.extent,
     nodeSize = DEFAULT_SUPERCLUSTER_OPTIONS.nodeSize,
     clusterProperties = DEFAULT_SUPERCLUSTER_OPTIONS.clusterProperties,
+    // Left undefined on purpose: `Supercluster` defaults it to `extent`.
+    viewportTileSize,
     onError,
   } = options ?? {}
 
@@ -143,6 +145,7 @@ export function useClusterIndex<P extends AnyProps = AnyProps>(
       extent,
       nodeSize,
       clusterProperties,
+      viewportTileSize,
     })
 
     next.loadAsync(indexed).then(
@@ -187,6 +190,7 @@ export function useClusterIndex<P extends AnyProps = AnyProps>(
     extent,
     nodeSize,
     clusterPropertiesKey,
+    viewportTileSize,
   ])
 
   // Destroy a retired engine only after the commit that stopped rendering it:

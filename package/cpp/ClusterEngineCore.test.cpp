@@ -2,7 +2,9 @@
 // Compile: c++ -std=c++20 -I. ClusterEngineCore.test.cpp -o cluster_test && ./cluster_test
 
 #include "ClusterEngineCore.hpp"
+#include <algorithm>
 #include <cassert>
+#include <cstdint>
 #include <cstdio>
 #include <cstring>
 #include <limits>
@@ -375,6 +377,146 @@ static void testMinLeafIdIsTheSmallestLeafAtEveryZoom() {
   assert(clustersChecked > 10);
 }
 
+// Output of the reference supercluster implementation (supercluster@8.0.1) for
+// the same points, options and viewport: node and cluster counts, plus a hash
+// of which points share a cluster. Clustering must match feature-for-feature at
+// every zoom, members included, otherwise `radius`, `extent` and `minPoints` do
+// not mean what a migrating user expects.
+//
+// Regenerate from `package/` with:
+//   node scripts/generate-supercluster-parity-fixture.mjs
+struct SuperclusterParityCase {
+  int pointCount;
+  uint32_t seed;
+  double radius;
+  int32_t extent;
+  int32_t minZoom;
+  int32_t maxZoom;
+  int32_t minPoints;
+  std::vector<int> expectedNodes;           // features returned per zoom, minZoom first
+  std::vector<int> expectedClusters;        // of which are clusters
+  std::vector<uint32_t> expectedMembership; // parityMembershipHash per zoom
+};
+
+// xorshift32, bit-identical to the JS generator in the fixture script.
+static uint32_t parityRandom(uint32_t& state) {
+  state ^= state << 13;
+  state ^= state >> 17;
+  state ^= state << 5;
+  return state;
+}
+
+// Hashes which points share a cluster, independent of cluster ids. Every point
+// is labelled with the smallest id among the leaves of the node that contains
+// it, then the labels are folded with 32-bit FNV-1a in point-id order.
+// Bit-identical to membershipHash in the fixture script.
+static uint32_t parityMembershipHash(const ClusterEngineCore& engine,
+                                     const std::vector<ClusterNode>& nodes,
+                                     int pointCount) {
+  std::vector<uint32_t> labels(static_cast<size_t>(pointCount), 0);
+  for (const auto& node : nodes) {
+    if (!node.isCluster) {
+      labels[static_cast<size_t>(node.id)] = static_cast<uint32_t>(node.id);
+      continue;
+    }
+    const auto leaves = engine.getLeaves(node.id, 0, 0);
+    int32_t label = leaves.front().id;
+    for (const auto& leaf : leaves) label = std::min(label, leaf.id);
+    for (const auto& leaf : leaves) labels[static_cast<size_t>(leaf.id)] = static_cast<uint32_t>(label);
+  }
+
+  uint32_t hash = 2166136261u;
+  for (const uint32_t label : labels) {
+    hash ^= label;
+    hash *= 16777619u;
+  }
+  return hash;
+}
+
+static void testSuperclusterParity() {
+  // Note the one-zoom shift between the 256/512/1024 rows: doubling `extent`
+  // halves the radius in supercluster's [0,1] projection, which is exactly one
+  // zoom level. `extent` belongs to the projection, not to the radius.
+  const std::vector<SuperclusterParityCase> cases = {
+  // n=5000 seed=12345 radius=40 extent=512 zoom 0..16 minPoints=2
+  {5000, 12345u, 40.0, 512, 0, 16, 2,
+   {37, 154, 561, 1673, 3369, 4470, 4847, 4967, 4992, 4997, 4998, 4999, 5000, 5000, 5000, 5000, 5000},
+   {37, 149, 517, 1210, 1184, 491, 152, 33, 8, 3, 2, 1, 0, 0, 0, 0, 0},
+   {1805767755u, 606907344u, 251924099u, 3592547414u, 220092997u, 4170046084u, 2925551006u, 3474631211u, 1333171577u, 2017577864u, 2480066375u, 1314005163u, 2356979101u, 2356979101u, 2356979101u, 2356979101u, 2356979101u}},
+  // n=5000 seed=12345 radius=40 extent=256 zoom 0..16 minPoints=2
+  {5000, 12345u, 40.0, 256, 0, 16, 2,
+   {11, 37, 154, 561, 1673, 3369, 4470, 4847, 4967, 4992, 4997, 4998, 4999, 5000, 5000, 5000, 5000},
+   {11, 37, 149, 517, 1210, 1184, 491, 152, 33, 8, 3, 2, 1, 0, 0, 0, 0},
+   {2501411492u, 1805767755u, 606907344u, 251924099u, 3592547414u, 220092997u, 4170046084u, 2925551006u, 3474631211u, 1333171577u, 2017577864u, 2480066375u, 1314005163u, 2356979101u, 2356979101u, 2356979101u, 2356979101u}},
+  // n=5000 seed=12345 radius=40 extent=1024 zoom 0..16 minPoints=2
+  {5000, 12345u, 40.0, 1024, 0, 16, 2,
+   {154, 561, 1673, 3369, 4470, 4847, 4967, 4992, 4997, 4998, 4999, 5000, 5000, 5000, 5000, 5000, 5000},
+   {149, 517, 1210, 1184, 491, 152, 33, 8, 3, 2, 1, 0, 0, 0, 0, 0, 0},
+   {606907344u, 251924099u, 3592547414u, 220092997u, 4170046084u, 2925551006u, 3474631211u, 1333171577u, 2017577864u, 2480066375u, 1314005163u, 2356979101u, 2356979101u, 2356979101u, 2356979101u, 2356979101u, 2356979101u}},
+  // n=3000 seed=777 radius=80 extent=512 zoom 1..14 minPoints=2
+  {3000, 777u, 80.0, 512, 1, 14, 2,
+   {39, 148, 510, 1382, 2342, 2779, 2947, 2984, 2996, 2999, 3000, 3000, 3000, 3000},
+   {38, 143, 447, 832, 539, 212, 52, 16, 4, 1, 0, 0, 0, 0},
+   {993833477u, 2141167518u, 3161340709u, 3918890464u, 1036665440u, 3212688082u, 492023470u, 4180803411u, 921193384u, 4107195081u, 3305376653u, 3305376653u, 3305376653u, 3305376653u}},
+  // n=8000 seed=424242 radius=25 extent=512 zoom 0..12 minPoints=2
+  {8000, 424242u, 25.0, 512, 0, 12, 2,
+   {94, 372, 1341, 3613, 6142, 7474, 7864, 7969, 7991, 7998, 7999, 8000, 8000},
+   {93, 360, 1200, 2210, 1526, 511, 134, 30, 9, 2, 1, 0, 0},
+   {2473319454u, 999143822u, 3072884681u, 2567654997u, 3013614691u, 3374615311u, 3762316709u, 909188336u, 3632899351u, 26060799u, 1832098647u, 2459957253u, 2459957253u}},
+  };
+
+  for (const auto& testCase : cases) {
+    uint32_t state = testCase.seed;
+    std::vector<int32_t> ids(static_cast<size_t>(testCase.pointCount));
+    std::vector<double> lats(static_cast<size_t>(testCase.pointCount));
+    std::vector<double> lngs(static_cast<size_t>(testCase.pointCount));
+    for (int i = 0; i < testCase.pointCount; i++) {
+      const uint32_t a = parityRandom(state);
+      const uint32_t b = parityRandom(state);
+      ids[static_cast<size_t>(i)] = i;
+      lats[static_cast<size_t>(i)] = -60.0 + static_cast<double>(a % 1200001u) / 10000.0;
+      lngs[static_cast<size_t>(i)] = -180.0 + static_cast<double>(b % 3600001u) / 10000.0;
+    }
+
+    ClusterEngineCore engine;
+    ClusterEngineConfig config;
+    config.radius = testCase.radius;
+    config.minPoints = testCase.minPoints;
+    config.minZoom = testCase.minZoom;
+    config.maxZoom = testCase.maxZoom;
+    config.extent = testCase.extent;
+    config.nodeSize = 64;
+    engine.setOptions(config);
+    engine.setPoints(ids.data(), lats.data(), lngs.data(), static_cast<size_t>(testCase.pointCount));
+    engine.build();
+
+    for (int32_t z = testCase.minZoom; z <= testCase.maxZoom; z++) {
+      const size_t slot = static_cast<size_t>(z - testCase.minZoom);
+      const auto nodes = engine.getClusters({85.0, -85.0, 180.0, -180.0, static_cast<double>(z)});
+
+      int clusterCount = 0;
+      for (const auto& node : nodes) {
+        if (node.isCluster) clusterCount++;
+      }
+
+      const uint32_t membership = parityMembershipHash(engine, nodes, testCase.pointCount);
+
+      if (static_cast<int>(nodes.size()) != testCase.expectedNodes[slot] ||
+          clusterCount != testCase.expectedClusters[slot] ||
+          membership != testCase.expectedMembership[slot]) {
+        std::printf(
+          "supercluster parity failed: radius=%.0f extent=%d minPoints=%d zoom=%d "
+          "-> nodes %d (want %d), clusters %d (want %d), membership %u (want %u)\n",
+          testCase.radius, testCase.extent, testCase.minPoints, z,
+          static_cast<int>(nodes.size()), testCase.expectedNodes[slot],
+          clusterCount, testCase.expectedClusters[slot],
+          membership, testCase.expectedMembership[slot]);
+        assert(false && "clustering diverged from supercluster");
+      }
+    }
+  }
+}
+
 int main() {
   testGetLeavesReturnsAllPointsInCluster();
   testGetLeavesPagination();
@@ -388,6 +530,7 @@ int main() {
   testInvalidBufferRejected();
   testMemorySizeReflectsNativeAllocations();
   testMinLeafIdIsTheSmallestLeafAtEveryZoom();
+  testSuperclusterParity();
   std::printf("ClusterEngineCore tests passed.\n");
   return 0;
 }
