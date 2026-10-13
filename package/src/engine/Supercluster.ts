@@ -178,6 +178,10 @@ export class Supercluster<P extends AnyProps = AnyProps> {
   /**
    * Returns clusters visible in a geographic {@linkcode BBox} at the given zoom.
    *
+   * As in supercluster, a bbox across the antimeridian can be unwrapped
+   * (`[170, s, 190, n]`) or wrapped (`[170, s, -170, n]`), and one spanning 360°
+   * or more returns the whole world.
+   *
    * @throws When {@linkcode Supercluster.load load} has not completed.
    */
   getClusters(

@@ -51,7 +51,8 @@ export interface ClusterEngine extends HybridObject<{
   buildAsync(): Promise<void>
 
   /**
-   * Return clusters visible in the viewport at the given zoom.
+   * Return clusters visible in the viewport at the given zoom. See
+   * {@linkcode Viewport} for how bounds across the antimeridian are read.
    *
    * @throws When {@linkcode ClusterEngine.isBuilt isBuilt} is `false` — call `build()` first.
    */

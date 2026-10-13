@@ -372,14 +372,20 @@ public:
     std::vector<ClusterNode> result;
     if (!_built || _points.empty()) return result;
 
+    // Accepts the bbox a map region produces as-is, e.g. west 170, east 190
+    // around the antimeridian. The ranges are disjoint, so no node is
+    // collected twice.
+    const NormalizedViewport bounds = normalizeViewport(viewport);
+
     if (!_options.clusteringEnabled) {
       result.reserve(_points.size());
       for (size_t i = 0; i < _points.size(); i++) {
         const PointData& p = _points[i];
-        if (p.latitude > viewport.north || p.latitude < viewport.south) continue;
-        const bool inLng = viewport.west <= viewport.east
-          ? (p.longitude >= viewport.west && p.longitude <= viewport.east)
-          : (p.longitude >= viewport.west || p.longitude <= viewport.east);
+        if (p.latitude > bounds.north || p.latitude < bounds.south) continue;
+        bool inLng = false;
+        for (int r = 0; r < bounds.rangeCount; r++) {
+          inLng = inLng || (p.longitude >= bounds.ranges[r].west && p.longitude <= bounds.ranges[r].east);
+        }
         if (!inLng) continue;
 
         ClusterNode node;
@@ -414,8 +420,8 @@ public:
 
     // Y grows southward (latToY is monotonically decreasing in latitude), so
     // north maps to the smaller Y and south to the larger Y.
-    const double minY = latToY(viewport.north, _options.extent);
-    const double maxY = latToY(viewport.south, _options.extent);
+    const double minY = latToY(bounds.north, _options.extent);
+    const double maxY = latToY(bounds.south, _options.extent);
 
     std::vector<int32_t> idxBuf;
     auto collect = [&](double minX, double maxX) {
@@ -426,14 +432,8 @@ public:
       }
     };
 
-    if (viewport.west <= viewport.east) {
-      collect(lngToX(viewport.west, _options.extent), lngToX(viewport.east, _options.extent));
-    } else {
-      // Antimeridian crossing: the viewport wraps past 180°, so split into
-      // [west, 180°] and [-180°, east]. The two X ranges are disjoint, so no
-      // node is collected twice.
-      collect(lngToX(viewport.west, _options.extent), lngToX(180.0, _options.extent));
-      collect(lngToX(-180.0, _options.extent), lngToX(viewport.east, _options.extent));
+    for (int r = 0; r < bounds.rangeCount; r++) {
+      collect(lngToX(bounds.ranges[r].west, _options.extent), lngToX(bounds.ranges[r].east, _options.extent));
     }
 
     return result;
