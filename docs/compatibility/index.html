@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="generator" content="Docusaurus v3.9.2">
 <title data-rh="true">Compatibility | React Native Better Clustering</title><meta data-rh="true" name="viewport" content="width=device-width,initial-scale=1"><meta data-rh="true" name="twitter:card" content="summary_large_image"><meta data-rh="true" property="og:url" content="https://gmi-software.github.io/react-native-better-clustering/docs/compatibility"><meta data-rh="true" property="og:locale" content="en"><meta data-rh="true" name="docusaurus_locale" content="en"><meta data-rh="true" name="docsearch:language" content="en"><meta data-rh="true" name="docusaurus_version" content="current"><meta data-rh="true" name="docusaurus_tag" content="docs-default-current"><meta data-rh="true" name="docsearch:version" content="current"><meta data-rh="true" name="docsearch:docusaurus_tag" content="docs-default-current"><meta data-rh="true" property="og:title" content="Compatibility | React Native Better Clustering"><meta data-rh="true" name="description" content="| Requirement | Supported |"><meta data-rh="true" property="og:description" content="| Requirement | Supported |"><link data-rh="true" rel="icon" href="/react-native-better-clustering/img/favicon.svg"><link data-rh="true" rel="canonical" href="https://gmi-software.github.io/react-native-better-clustering/docs/compatibility"><link data-rh="true" rel="alternate" href="https://gmi-software.github.io/react-native-better-clustering/docs/compatibility" hreflang="en"><link data-rh="true" rel="alternate" href="https://gmi-software.github.io/react-native-better-clustering/docs/compatibility" hreflang="x-default"><script data-rh="true" type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Compatibility","item":"https://gmi-software.github.io/react-native-better-clustering/docs/compatibility"}]}</script><link rel="stylesheet" href="/react-native-better-clustering/assets/css/styles.e4ef878d.css">
-<script src="/react-native-better-clustering/assets/js/runtime~main.171203f4.js" defer="defer"></script>
+<script src="/react-native-better-clustering/assets/js/runtime~main.b6eb9fe9.js" defer="defer"></script>
 <script src="/react-native-better-clustering/assets/js/main.c41d2e0f.js" defer="defer"></script>
 </head>
 <body class="navigation-with-keyboard">
@@ -42,7 +42,9 @@ fixture in <code>package/cpp/ClusterEngineCore.test.cpp</code>, generated from
 supercluster 8.0.1 and verified in CI, pins this for five seeded datasets of
 3,000–8,000 points (<code>extent</code> 256, 512 and 1024, <code>minPoints: 2</code>): at every zoom
 the engine must return the same number of features and of clusters, group the
-same points into each cluster, and give each cluster the same expansion zoom.</p>
+same points into each cluster, and give each cluster the same expansion zoom. A
+second table pins viewport queries around the antimeridian, with the bbox
+written unwrapped, wrapped, far outside ±180° and 360° or wider.</p>
 <p>Two deliberate differences remain, neither of which changes cluster membership
 in practice:</p>
 <ul>
