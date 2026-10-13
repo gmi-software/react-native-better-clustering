@@ -1,0 +1,14 @@
+appId: com.nitromapcluster.example
+name: Custom renderCluster
+---
+- runFlow:
+    file: subflows/open-scenario.yaml
+    env:
+      SCENARIO: custom-cluster
+- extendedWaitUntil:
+    visible:
+      id: hud-engine-builds
+      text: 'Engine builds: 1'
+    timeout: 30000
+- assertVisible:
+    id: custom-cluster

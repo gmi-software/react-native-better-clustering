@@ -14,6 +14,12 @@ import type { Viewport } from './Viewport'
  *    {@linkcode ClusterEngine.getChildren getChildren},
  *    {@linkcode ClusterEngine.getLeaves getLeaves},
  *    {@linkcode ClusterEngine.getClusterExpansionZoom getClusterExpansionZoom}.
+ * 5. {@linkcode ClusterEngine.dispose dispose} — free the native index now
+ *    rather than at garbage collection; a pending `buildAsync` frees it when it
+ *    finishes. Any later call throws.
+ *
+ * After a build resolves, `NitroModules.updateMemorySize(engine)` reports the
+ * index's native size to the JS garbage collector.
  *
  * Calling {@linkcode ClusterEngine.setOptions setOptions} or
  * {@linkcode ClusterEngine.setPoints setPoints} after a successful build clears

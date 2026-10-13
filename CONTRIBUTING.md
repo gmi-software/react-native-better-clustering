@@ -71,6 +71,18 @@ bunx expo prebuild
 bunx expo run:android
 ```
 
+The app opens on a menu of scenarios, defined in `example/src/scenarios.tsx`. Add one when a bug needs a real map to reproduce.
+
+### End-to-end flows
+
+`example/.maestro/` holds a [Maestro](https://maestro.mobile.dev) flow for each scenario. The flows assert on the dev HUD and on each scenario's status text, not on map annotations. Run them against a Release build: it embeds the JS bundle, while a Debug build opens the dev client launcher first.
+
+```bash
+cd example
+bunx expo run:ios --configuration Release   # or: bunx expo run:android --variant release
+bun run e2e
+```
+
 ## Project Structure
 
 ```
@@ -159,6 +171,11 @@ The pod scheme only exists after Xcode has loaded the workspace once (`xcodebuil
   cd package/cpp
   c++ -std=c++20 -I. -fsanitize=undefined,float-cast-overflow -fno-sanitize-recover=all ClusterEngineCore.test.cpp -o cluster_test
   ./cluster_test
+  ```
+- `HybridClusterEngine` (the Nitro object around the core) has a lifetime test that links Nitro's C++ runtime and React Native's JSI from `node_modules`, so it needs `bun install` first. It runs under ASan and UBSan; pass `thread` for TSan. CI does not run it yet:
+  ```bash
+  cd package
+  bun run test:native          # or: bun run test:native thread
   ```
 
 ## Nitro Modules

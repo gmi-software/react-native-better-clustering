@@ -22,13 +22,18 @@ public:
   double getPointCount() override;
   bool getIsBuilt() override;
 
+  // Frees the index now, not at GC; a pending buildAsync frees it when done.
+  void dispose() override;
+
 protected:
   size_t getExternalMemorySize() noexcept override {
-    return _engine.snapshot()->memorySize();
+    return _engine != nullptr ? _engine->snapshot()->memorySize() : 0;
   }
 
 private:
-  ThreadSafeClusterEngine _engine;
+  // Shared so a pending buildAsync can publish into it without capturing `this`.
+  std::shared_ptr<ThreadSafeClusterEngine> _engine = std::make_shared<ThreadSafeClusterEngine>();
+  ThreadSafeClusterEngine& engine();
 };
 
 } // namespace margelo::nitro::nitromapcluster

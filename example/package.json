@@ -7,7 +7,8 @@
     "start": "expo start --dev-client",
     "android": "expo run:android",
     "ios": "expo run:ios",
-    "prebuild": "expo prebuild --clean"
+    "prebuild": "expo prebuild --clean",
+    "e2e": "maestro test .maestro"
   },
   "dependencies": {
     "react-native-better-clustering": "workspace:*",
@@ -19,6 +20,7 @@
     "react-native-maps": "^1.26.0",
     "react-native-nitro-modules": "0.35.9",
     "react-native-reanimated": "^4.5.0",
+    "react-native-safe-area-context": "~5.7.0",
     "react-native-worklets": "^0.10.0"
   },
   "devDependencies": {

@@ -38,6 +38,8 @@ Call methods in this order:
 2. **`setPoints`** — binary buffer from `packPoints()` (`/utils` export; must match options).
 3. **`build()`** or **`buildAsync()`** — build the spatial index.
 4. **Query** — `getClusters`, `getChildren`, `getLeaves`, `getClusterExpansionZoom`.
+5. **`dispose()`** — free the native index when you are done (see
+   [Native memory](#native-memory)).
 
 `setOptions` or `setPoints` clears the index. After either call, `isBuilt` is
 `false` until you run `build()` again.
@@ -110,7 +112,8 @@ pending:
   `buildAsync()` is pending) each settle on their own. The first to finish
   publishes the index; a later one of the same points and options is dropped.
 - **`dispose()`**, or dropping the last reference to the engine, is safe
-  mid-build: the build keeps the native engine alive until it finishes.
+  mid-build: the pending build frees its index when it finishes (see
+  [Native memory](#native-memory)).
 
 ```tsx
 const pending = engine.buildAsync()
@@ -118,6 +121,34 @@ engine.setPoints(nextBuffer) // the pending build is now stale
 await pending
 engine.isBuilt // false: build again for nextBuffer
 ```
+
+## Native memory
+
+The index lives in native memory, which grows with the number of points (a
+desktop measurement put 100k spread-out points at about 176 MB). The JS garbage
+collector does not see that memory, so an engine you drop is freed only when the
+collector happens to run, and engines discarded on every data refresh can pile
+up.
+
+Call `dispose()` when you are done with an engine. It frees the index right
+away; if a `buildAsync()` is still running, the index is freed as soon as that
+build finishes. Any later call on the engine throws, including a second
+`dispose()`.
+
+The garbage collector learns an engine's native size only when the engine is
+handed to JS, which happens while it is still empty. After a build resolves,
+report the real size so the collector counts it:
+
+```tsx
+import { NitroModules } from 'react-native-nitro-modules'
+
+await engine.buildAsync()
+NitroModules.updateMemorySize(engine)
+```
+
+Call it after the build resolves, not while one is pending. `Supercluster`,
+`useClusterer` and `MapView` do both for you: `Supercluster.destroy()` disposes
+its engine.
 
 ## Errors
 
@@ -131,6 +162,7 @@ results:
 | `getClusters`, `getChildren`, `getLeaves`, `getClusterExpansionZoom` | `isBuilt === false` | throws |
 | `getChildren`, `getLeaves`, `getClusterExpansionZoom` | `clusterId` is not a 32-bit integer (`NaN`, `Infinity`, `1.5`) | throws |
 | `getLeaves` | fractional `limit` or `offset`, or `NaN` `offset` | throws |
+| any method or property | after `dispose()` | throws |
 
 Invalid buffers, invalid numbers and missing `build()` throw with messages
 prefixed `ClusterEngine:`. Use `packPoints()` for buffers and check `isBuilt`
