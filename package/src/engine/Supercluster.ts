@@ -101,12 +101,7 @@ export class Supercluster<P extends AnyProps = AnyProps> {
     }
 
     const engine = this.prepareEngine(points)
-    try {
-      engine.build()
-    } catch (error) {
-      engine.dispose()
-      throw error
-    }
+    engine.build()
     this.engine = engine
     reportNativeMemory(engine)
     return this

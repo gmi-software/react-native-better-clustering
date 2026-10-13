@@ -249,18 +249,6 @@ describe('Supercluster native memory', () => {
     expect(mockEngine.dispose).toHaveBeenCalledTimes(1)
   })
 
-  it('disposes the engine when the synchronous build throws', () => {
-    mockEngine.build.mockImplementationOnce(() => {
-      throw new Error('build failed')
-    })
-    const clusterer = new Supercluster()
-
-    expect(() => clusterer.load([SAMPLE_POINT])).toThrow('build failed')
-    clusterer.destroy()
-
-    expect(mockEngine.dispose).toHaveBeenCalledTimes(1)
-  })
-
   it('reports the index size to the JS GC after a synchronous build', () => {
     new Supercluster().load([SAMPLE_POINT])
 

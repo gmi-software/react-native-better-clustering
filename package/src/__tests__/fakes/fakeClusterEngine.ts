@@ -273,8 +273,6 @@ export function createFakeClusterEngine(): FakeClusterEngine {
       requireAlive('dispose')
       fakeClusterEngineStats.disposed++
       disposed = true
-      index = null
-      points = []
     },
     get isBuilt() {
       requireAlive('isBuilt')

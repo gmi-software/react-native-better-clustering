@@ -22,8 +22,7 @@ public:
   double getPointCount() override;
   bool getIsBuilt() override;
 
-  // Releases the index now instead of when the JS GC finalizes this object.
-  // A build in flight holds its own reference and frees the index when done.
+  // Frees the index now, not at GC; a pending buildAsync frees it when done.
   void dispose() override;
 
 protected:
@@ -32,9 +31,10 @@ protected:
   }
 
 private:
-  // Shared so buildAsync can keep the index alive without capturing `this`.
+  // Shared so a pending buildAsync keeps the index alive without capturing `this`.
   std::shared_ptr<ClusterEngineCore> _engine = std::make_shared<ClusterEngineCore>();
   ClusterEngineCore& engine();
+  EngineClusterNode toFeature(const ClusterNode& node) const;
 };
 
 } // namespace margelo::nitro::nitromapcluster
