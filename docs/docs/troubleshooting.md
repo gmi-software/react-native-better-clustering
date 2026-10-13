@@ -16,6 +16,29 @@ Configure a **Google Maps API key** for `react-native-maps` (Expo plugin or
 This library is a Nitro module and requires React Native's New Architecture.
 Confirm it is enabled and rebuild the native app.
 
+## `NitroModules cannot be found!` {#nitro-version}
+
+The native build stops with one or both of:
+
+```
+react-native-better-clustering needs react-native-nitro-modules 0.32.0 or newer.
+Upgrade it, then reinstall pods (iOS) or rebuild (Android).
+```
+
+```
+NitroModules cannot be found! Are you sure you installed NitroModules properly?
+```
+
+The library's generated Nitro bindings need `react-native-nitro-modules` 0.32.0
+or newer. Against an older Nitro they fail with the second message even though
+Nitro is installed; the first one, from the library's own code, names the cause.
+
+- **Nitro is older than 0.32.0:** upgrade it, then rebuild (`cd ios && pod
+  install` in bare React Native, `npx expo prebuild --clean` with Expo).
+- **Nitro is not in your `package.json`:** install it. It is a peer dependency
+  that package managers do not install for you, so the app decides which Nitro
+  version it runs.
+
 ## The native ClusterEngine module is not available
 
 ```

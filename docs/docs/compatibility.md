@@ -11,15 +11,26 @@ sidebar_position: 4
 | React Native | 0.78+ (New Architecture required) |
 | Map rendering | `react-native-maps` |
 | Expo | Development build (not Expo Go) |
-| `react-native-nitro-modules` | Required peer dependency |
-| `react-native-maps` | Required peer dependency |
 
 ## Peer dependencies
 
-| Package | Required |
-|---------|----------|
-| `react-native-nitro-modules` | Yes |
-| `react-native-maps` | Yes (for the main `MapView` export) |
+| Package | Version | Required |
+|---------|---------|----------|
+| `react-native-maps` | `>=1.20.1` | Yes |
+| `react-native-nitro-modules` | `>=0.32.0` | Yes (declared optional, see below) |
+| `react-native-reanimated` | `^4.1.0` | No: only fades the default cluster bubbles |
+
+- **`react-native-maps`**: 1.20.1 is the version Expo SDK 54 installs. It runs
+  on the New Architecture through React Native's interop layer; 1.21.0 is the
+  first release with native Fabric components.
+- **`react-native-nitro-modules`**: the generated bindings need 0.32.0 or newer
+  and fail to compile against older versions. The package declares it as an
+  optional `*` peer, as Nitro recommends for libraries, so the app chooses the
+  Nitro version and a pre-release Nitro never gets a second, stable copy
+  installed next to it. Install it yourself.
+- **`react-native-reanimated`**: when it is missing, cluster bubbles render
+  without the fade. `react-native-worklets` is Reanimated's own dependency, not
+  this library's; install the version your Reanimated asks for.
 
 ## Migrate from react-native-map-clustering
 

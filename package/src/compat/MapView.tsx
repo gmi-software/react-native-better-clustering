@@ -47,6 +47,7 @@ import {
   markerElementOf,
   markerToGeoJSONFeature,
 } from './helpers'
+import { reanimated, warnFadeUnavailable } from './reanimated'
 import { renderSpiderClusterMarkers } from './renderSpiderClusterMarkers'
 import { useFadePresence } from './useFadePresence'
 import {
@@ -225,6 +226,9 @@ export interface ClusteredMapViewProps extends Omit<
    * on both iOS and Android to the default cluster markers; ignored when
    * {@linkcode animationEnabled} is `false` or a custom {@linkcode renderCluster}
    * is provided. Set to `0` to disable.
+   *
+   * Needs `react-native-reanimated`, an optional peer dependency: without it
+   * the bubbles do not fade, and development builds warn once.
    *
    * @default `250`
    */
@@ -513,7 +517,17 @@ const CompatMapView = forwardRef(function CompatMapView(
     [spiralEnabled, spiderfyMaxLeaves, supercluster, maxZoom]
   )
 
-  const clusterFadeIn = animationEnabled ? clusterFadeInDuration : 0
+  // Without Reanimated the bubbles cannot fade, so drop both durations: an exit
+  // ghost that cannot fade out would sit on top of its replacements instead.
+  const fadeRequested =
+    animationEnabled && clusterFadeInDuration > 0 && renderCluster == null
+  const clusterFadeIn = fadeRequested && reanimated ? clusterFadeInDuration : 0
+
+  useEffect(() => {
+    if (fadeRequested && !reanimated) {
+      warnFadeUnavailable()
+    }
+  }, [fadeRequested])
 
   // Cross-fade exit ghosts are only kept around once the gesture settles. While
   // the map is actively moving we drop removed bubbles immediately (duration 0):

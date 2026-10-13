@@ -1,8 +1,8 @@
 // Verifies the published entry points resolve from the packed tarball the way
 // consumers resolve them: every `exports` subpath under Node's `require` and
 // `import` conditions must land on a file in lib/module, and every `types`
-// target must exist. Resolution only — the root export imports react-native,
-// react-native-maps and Reanimated, which cannot run under Node — except for
+// target must exist. Resolution only — the root export imports react-native
+// and react-native-maps, which cannot run under Node — except for
 // the subpaths with no React Native dependency, which are actually imported.
 //
 // Expects lib/ to be built already (`bun run build`).
