@@ -1,0 +1,6 @@
+# Waits about two seconds. The HUD redraws twice a second, so the screen is
+# never still and this always runs to its timeout.
+appId: com.nitromapcluster.example
+---
+- waitForAnimationToEnd:
+    timeout: 2000
