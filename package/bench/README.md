@@ -91,7 +91,7 @@ For every operation of every case with **at least 10,000 points**:
 
 The absolute floors keep a handful of instructions on a query that returns nothing from failing a pull request. Some viewport queries do return nothing, because the data is too sparse for a phone's view at that zoom (`uniform` at zooms 12 and 16, `antimeridian` at 16, `blobs` at 16 up to 50k points), so those stay below the floors and are never gated. Smaller cases are listed but never fail. Wall time and peak RSS are reported and never gated, since shared runners make them noisy.
 
-The results are posted as one comment on the pull request, updated on every push, and written to the job summary. Long lists are cut to fit GitHub's comment size limit. Pull requests from forks get a read-only token, so for them only the job summary has the results. The `bench-core` artifact holds `base.json`, `head.json` and `summary.md`.
+The results are written to the job summary and posted as one comment on the pull request, updated on every push. Long lists are cut to fit GitHub's comment size limit. The comment comes from a separate job, `comment`, which checks out nothing and runs no code from the pull request: the job that does, `core`, only has a read-only token. Pull requests from forks get a read-only token in both, so for them only the job summary has the results. The `bench-core` artifact holds `base.json`, `head.json` and `summary.md`.
 
 The workflow is not a required status check: a required check that a `paths:` filter skips stays pending and blocks the pull request (the same reason as for `native.yml`).
 

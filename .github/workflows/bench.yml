@@ -7,6 +7,10 @@ name: Bench
 # On main and on demand it records the head results as the `bench-core`
 # artifact, which is what package/bench/baseline.json is refreshed from.
 #
+# Two jobs, so the pull request's code never runs next to a token that can
+# write: `core` builds and runs it with a read-only token, and `comment` posts
+# the summary it leaves behind without checking anything out.
+#
 # Not a required status check: a required check that a `paths:` filter skips
 # stays pending forever and blocks the pull request (see native.yml).
 #
@@ -43,9 +47,8 @@ jobs:
     timeout-minutes: 45
     permissions:
       contents: read
-      # The sticky results comment. Pull requests from forks get a read-only
-      # token; the comment step then only warns.
-      pull-requests: write
+    outputs:
+      summary: ${{ steps.compare.outputs.summary }}
     steps:
       # On a pull request this is the test merge commit. Its parents come
       # along so the base below is exactly the commit it was merged onto.
@@ -117,35 +120,28 @@ jobs:
       - name: Compare with base
         id: compare
         if: github.event_name == 'pull_request'
-        # Exit 1 with a summary is a regression; without one, compare.mjs crashed.
+        # Exit 1 with a summary is a regression; without one, compare.mjs
+        # crashed. Only a regular file counts as a summary.
         run: |
           set +e
           node head/package/bench/compare.mjs base.json head.json --out summary.md
           status=$?
           set -e
-          if [ ! -f summary.md ]; then
+          if [ -L summary.md ] || [ ! -f summary.md ]; then
             echo "::error::compare.mjs failed before writing its summary (exit $status)."
             exit 1
           fi
           cat summary.md >> "$GITHUB_STEP_SUMMARY"
           echo "status=$status" >> "$GITHUB_OUTPUT"
+          echo "summary=true" >> "$GITHUB_OUTPUT"
 
-      - name: Comment on the pull request
+      # The only thing the comment job receives from this one.
+      - name: Upload the summary
         if: steps.compare.outcome == 'success'
-        continue-on-error: true
-        env:
-          GH_TOKEN: ${{ github.token }}
-          PR_NUMBER: ${{ github.event.pull_request.number }}
-          REPOSITORY: ${{ github.repository }}
-        run: |
-          comment_id=$(gh api "repos/$REPOSITORY/issues/$PR_NUMBER/comments" --paginate \
-            --jq '.[] | select(.user.login == "github-actions[bot]" and (.body | startswith("<!-- cluster-bench-core -->"))) | .id' \
-            | head -n 1)
-          if [ -n "$comment_id" ]; then
-            gh api --method PATCH "repos/$REPOSITORY/issues/comments/$comment_id" -F body=@summary.md > /dev/null
-          else
-            gh api --method POST "repos/$REPOSITORY/issues/$PR_NUMBER/comments" -F body=@summary.md > /dev/null
-          fi
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: bench-summary
+          path: summary.md
 
       - name: Upload results
         if: ${{ !cancelled() }}
@@ -163,3 +159,51 @@ jobs:
         run: |
           echo "::error::The core benchmark regressed past the gate. The job summary lists each regression."
           exit 1
+
+  # Posts the summary as one comment on the pull request, updated on every
+  # push. It checks out nothing and runs no code from the pull request; the
+  # summary is the only input. Pull requests from forks get a read-only token,
+  # so for them the post fails and only the job summary has the results.
+  comment:
+    needs: core
+    if: ${{ !cancelled() && github.event_name == 'pull_request' && needs.core.outputs.summary == 'true' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      pull-requests: write
+    steps:
+      - name: Download the summary
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: bench-summary
+          path: bench-summary
+
+      # Written by the pull request's code, so it must at least be the regular
+      # file compare.mjs writes, starting with its marker.
+      - name: Check the summary
+        run: |
+          summary=bench-summary/summary.md
+          if [ -L "$summary" ] || [ ! -f "$summary" ]; then
+            echo "::error::The benchmark summary is not a regular file."
+            exit 1
+          fi
+          if [ "$(head -n 1 "$summary")" != '<!-- cluster-bench-core -->' ]; then
+            echo "::error::The benchmark summary does not start with the compare.mjs marker."
+            exit 1
+          fi
+
+      - name: Comment on the pull request
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          REPOSITORY: ${{ github.repository }}
+        run: |
+          comment_id=$(gh api "repos/$REPOSITORY/issues/$PR_NUMBER/comments" --paginate \
+            --jq '.[] | select(.user.login == "github-actions[bot]" and (.body | startswith("<!-- cluster-bench-core -->"))) | .id' \
+            | head -n 1)
+          if [ -n "$comment_id" ]; then
+            gh api --method PATCH "repos/$REPOSITORY/issues/comments/$comment_id" -F body=@bench-summary/summary.md > /dev/null
+          else
+            gh api --method POST "repos/$REPOSITORY/issues/$PR_NUMBER/comments" -F body=@bench-summary/summary.md > /dev/null
+          fi

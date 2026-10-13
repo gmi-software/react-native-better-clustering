@@ -63,6 +63,9 @@ function parseArgs(argv) {
       if (i + 1 >= argv.length) fail(`missing value for ${arg}`)
       return argv[++i]
     }
+    // `bun run bench -- …` drops the separator; `node bench/run.mjs -- …` and
+    // other package managers pass it through.
+    if (arg === '--') continue
     if (arg === '--mode') options.mode = value()
     else if (arg === '--datasets') options.datasets = value().split(',')
     else if (arg === '--sizes') options.sizes = value().split(',').map(Number)
