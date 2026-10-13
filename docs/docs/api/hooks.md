@@ -59,7 +59,8 @@ The index is rebuilt only when the points' coordinates, their order, or a
   one the hook returns.
 
 If a build fails — most often because the native module is missing from the
-app binary — the hook throws the error during render, so the nearest error
+app binary, or because an option is outside its
+[valid values](./types.md#valid-values) — the hook throws the error during render, so the nearest error
 boundary (and LogBox in development) shows it. Pass `onError` to handle it
 yourself instead: the hook then keeps returning the clusters from the last
 successful build (`[]` before the first). Builds superseded by newer data or

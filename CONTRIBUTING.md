@@ -168,10 +168,10 @@ The pod scheme only exists after Xcode has loaded the workspace once (`xcodebuil
 - Tests import from `bun:test`. A DOM is provided by happy-dom (`package/test/setup.ts`, preloaded via `package/bunfig.toml`) for hooks and components rendered with `@testing-library/react`.
 - Mock external modules with `mock.module()` **before** importing the module under test, then import it with `await import()`: static imports are evaluated first. Module mocks are process-wide, so mock native/external boundaries (e.g. `react-native-nitro-modules`), not the library's own modules.
 - Test files are typechecked with the rest of the package (`bun run typecheck`).
-- The C++ clustering core has a standalone test:
+- The C++ clustering core has a standalone test. CI runs it under UBSan, so undefined behaviour (such as casting `NaN` to an integer) fails it:
   ```bash
   cd package/cpp
-  c++ -std=c++20 -I. ClusterEngineCore.test.cpp -o cluster_test
+  c++ -std=c++20 -I. -fsanitize=undefined,float-cast-overflow -fno-sanitize-recover=all ClusterEngineCore.test.cpp -o cluster_test
   ./cluster_test
   ```
 

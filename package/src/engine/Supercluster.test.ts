@@ -412,6 +412,63 @@ describe('Supercluster.getAllLeaves', () => {
   })
 })
 
+describe('Supercluster numeric input validation', () => {
+  beforeEach(() => {
+    jest.clearAllMocks()
+    mockEngine.isBuilt = false
+  })
+
+  it('passes Infinity, supercluster-style, to the native engine as unlimited', () => {
+    const clusterer = new Supercluster().load([SAMPLE_POINT])
+
+    clusterer.getLeaves(42, Infinity)
+    clusterer.getLeaves(42, NaN, 3)
+
+    expect(mockEngine.getLeaves.mock.calls as unknown[]).toEqual([
+      [42, 0, 0],
+      [42, 0, 3],
+    ])
+  })
+
+  it('rejects a cluster id that is not a 32-bit integer before reaching native', () => {
+    const clusterer = new Supercluster().load([SAMPLE_POINT])
+
+    for (const query of [
+      () => clusterer.getChildren(1.5),
+      () => clusterer.getLeaves(Infinity),
+      () => clusterer.getAllLeaves(NaN),
+      () => clusterer.getClusterExpansionZoom(1e12),
+      () => clusterer.getClusterExpansionRegion(0.5),
+    ]) {
+      expect(query).toThrow(
+        'react-native-better-clustering: clusterId must be a 32-bit integer'
+      )
+    }
+    expect(mockEngine.getChildren).not.toHaveBeenCalled()
+    expect(mockEngine.getLeaves).not.toHaveBeenCalled()
+    expect(mockEngine.getClusterExpansionZoom).not.toHaveBeenCalled()
+  })
+
+  it('rejects invalid options on load, naming the option, without creating an engine', () => {
+    const clusterer = new Supercluster({ maxZoom: 100 })
+
+    expect(() => clusterer.load([SAMPLE_POINT])).toThrow(
+      'react-native-better-clustering: maxZoom must be an integer from 0 to 30, got 100.'
+    )
+    expect(mockEngine.setOptions).not.toHaveBeenCalled()
+    expect(clusterer.isLoaded).toBe(false)
+  })
+
+  it('rejects invalid options from loadAsync as a rejection', async () => {
+    const clusterer = new Supercluster({ minZoom: 12, maxZoom: 10 })
+
+    await expect(clusterer.loadAsync([SAMPLE_POINT])).rejects.toThrow(
+      'minZoom (12) must not be greater than maxZoom (10)'
+    )
+    expect(mockEngine.buildAsync).not.toHaveBeenCalled()
+  })
+})
+
 describe('Supercluster.loadAsync', () => {
   beforeEach(() => {
     jest.clearAllMocks()

@@ -184,7 +184,7 @@ Everything from `react-native-maps` `MapView`, plus:
 | `clusterTextColor`             | `#FFFFFF`             | Default cluster label color       |
 | `animationEnabled`             | `true`                | Animate cluster changes (iOS)     |
 | `onClusterPress`               | —                     | `(cluster, markers) => void`      |
-| `onError`                      | throws during render  | `(error) => void` — native index build failed |
+| `onError`                      | throws during render  | `(error) => void` — native index build failed or an option is invalid |
 | `renderCluster`                | —                     | Custom cluster renderer           |
 | `preserveClusterPressBehavior` | `false`               | Skip auto `fitToCoordinates`      |
 | `superClusterRef`              | —                     | Access the underlying engine      |
