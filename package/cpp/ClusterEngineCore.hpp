@@ -285,7 +285,7 @@ public:
     std::vector<int32_t> processedAt(pointCount, _options.maxZoom + 1);
 
     // maxZoom+1 is the clustering input. getClusters answers it from the
-    // maxZoom tree (see appendPointsInBounds), so its own tree is only kept if
+    // maxZoom tree (see pointsInBounds), so its own tree is only kept if
     // maxZoom turns out to hold the very same nodes.
     KDTree inputTree = buildTree(current);
 
@@ -448,23 +448,27 @@ public:
       static_cast<double>(_options.maxZoom) + 1.0
     ));
 
+    // maxZoom + 1 has no tree of its own: it is read from maxZoom's (see
+    // pointsInBounds).
+    const bool pointsOnly = z > _options.maxZoom;
+    const size_t slot = static_cast<size_t>((pointsOnly ? _options.maxZoom : z) - _options.minZoom);
+    if (slot >= _treeByZoom.size()) return result;
+    const KDTree& tree = _trees[_treeByZoom[slot]];
+
     // Y grows southward (latToY is monotonically decreasing in latitude), so
     // north maps to the smaller Y and south to the larger Y.
     const double minY = latToY(bounds.north, _options.extent);
     const double maxY = latToY(bounds.south, _options.extent);
 
-    if (z > _options.maxZoom) {
-      appendPointsInBounds(bounds, minY, maxY, result);
-      return result;
-    }
-
-    const size_t slot = static_cast<size_t>(z - _options.minZoom);
-    if (slot >= _treeByZoom.size()) return result;
-    const KDTree& tree = _trees[_treeByZoom[slot]];
-
     std::vector<int32_t> idxBuf;
+    // appendAtLevel is called from this loop only: with a second call site
+    // GCC 13 stops inlining it, and every returned node pays for a call.
     auto collect = [&](double minX, double maxX) {
-      tree.range(minX, minY, maxX, maxY, idxBuf);
+      if (pointsOnly) {
+        pointsInBounds(tree, minX, minY, maxX, maxY, idxBuf);
+      } else {
+        tree.range(minX, minY, maxX, maxY, idxBuf);
+      }
       result.reserve(result.size() + idxBuf.size());
       for (int32_t idx : idxBuf) {
         appendAtLevel(result, _nodes[idx], z);
@@ -786,17 +790,16 @@ private:
     }
   }
 
-  // Appends every point inside `bounds`, at level maxZoom + 1. That level is
-  // the maxZoom one with each cluster replaced by its children, all of them
-  // points (a cluster formed at maxZoom folds input points only), so it is
-  // read from the maxZoom tree rather than kept as a tree of its own. A child
-  // lies within r of the point its cluster grew from, and so does the
-  // centroid, so within 2r of the centroid: the tree is queried with the
-  // bounds widened by that, then each point is tested against the bounds.
-  void appendPointsInBounds(const NormalizedViewport& bounds, double minY, double maxY,
-                            std::vector<ClusterNode>& result) const {
-    const int32_t zoom = _options.maxZoom + 1;
-    const KDTree& tree = _trees[_treeByZoom.back()];
+  // The points inside the bounds at level maxZoom + 1, as node indices, given
+  // the maxZoom tree. That level is the maxZoom one with each cluster replaced
+  // by its children, all of them points (a cluster formed at maxZoom folds
+  // input points only), so it is read from the maxZoom tree rather than kept as
+  // a tree of its own. A child lies within r of the point its cluster grew
+  // from, and so does the centroid, so within 2r of the centroid: the tree is
+  // queried with the bounds widened by that, then each point is tested against
+  // the bounds.
+  void pointsInBounds(const KDTree& maxZoomTree, double minX, double minY, double maxX, double maxY,
+                      std::vector<int32_t>& points) const {
     const double r = clusterRadiusAtZoom(_options.radius, static_cast<double>(_options.maxZoom));
     // The slack covers rounding: relative in the radius test, and up to an
     // ulp of `extent` per point summed into a centroid.
@@ -804,27 +807,23 @@ private:
       static_cast<double>(_options.extent) * static_cast<double>(_points.size()) *
         std::numeric_limits<double>::epsilon();
 
-    std::vector<int32_t> idxBuf;
-    for (int i = 0; i < bounds.rangeCount; i++) {
-      const double minX = lngToX(bounds.ranges[i].west, _options.extent);
-      const double maxX = lngToX(bounds.ranges[i].east, _options.extent);
-      auto appendIfInside = [&](const ClusterNode& point) {
-        if (point.x >= minX && point.x <= maxX && point.y >= minY && point.y <= maxY) {
-          appendAtLevel(result, point, zoom);
-        }
-      };
-
-      tree.range(minX - margin, minY - margin, maxX + margin, maxY + margin, idxBuf);
-      for (const int32_t index : idxBuf) {
-        const ClusterNode& node = _nodes[index];
-        if (!node.isCluster) {
-          appendIfInside(node);
-          continue;
-        }
-        const size_t cluster = static_cast<size_t>(index) - _points.size();
-        for (int32_t c = _childOffsets[cluster]; c < _childOffsets[cluster + 1]; c++) {
-          appendIfInside(_nodes[_childNodes[c]]);
-        }
+    std::vector<int32_t> nodes;
+    maxZoomTree.range(minX - margin, minY - margin, maxX + margin, maxY + margin, nodes);
+    points.clear();
+    auto addIfInside = [&](int32_t index) {
+      const ClusterNode& point = _nodes[index];
+      if (point.x >= minX && point.x <= maxX && point.y >= minY && point.y <= maxY) {
+        points.push_back(index);
+      }
+    };
+    for (const int32_t index : nodes) {
+      if (!_nodes[index].isCluster) {
+        addIfInside(index);
+        continue;
+      }
+      const size_t cluster = static_cast<size_t>(index) - _points.size();
+      for (int32_t c = _childOffsets[cluster]; c < _childOffsets[cluster + 1]; c++) {
+        addIfInside(_childNodes[c]);
       }
     }
   }
