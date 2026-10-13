@@ -62,12 +62,13 @@ For custom map stacks, use advanced subpaths:
 
 The C++ engine reproduces [supercluster](https://github.com/mapbox/supercluster)
 feature-for-feature: with the same points, `radius`, `extent`, `minPoints` and
-zoom range, `getClusters` returns the same clusters with the same members. A
-checked-in fixture in `package/cpp/ClusterEngineCore.test.cpp`, generated from
+zoom range, `getClusters` returns the same clusters with the same members, and
+`getClusterExpansionZoom` returns the same zoom for each of them. A checked-in
+fixture in `package/cpp/ClusterEngineCore.test.cpp`, generated from
 supercluster 8.0.1 and verified in CI, pins this for five seeded datasets of
 3,000–8,000 points (`extent` 256, 512 and 1024, `minPoints: 2`): at every zoom
-the engine must return the same number of features and of clusters, and group
-the same points into each cluster.
+the engine must return the same number of features and of clusters, group the
+same points into each cluster, and give each cluster the same expansion zoom.
 
 Two deliberate differences remain, neither of which changes cluster membership
 in practice:

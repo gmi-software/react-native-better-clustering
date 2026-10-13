@@ -8,6 +8,7 @@
 #include <cstdio>
 #include <cstring>
 #include <limits>
+#include <utility>
 #include <vector>
 
 using namespace margelo::nitro::nitromapcluster;
@@ -378,10 +379,11 @@ static void testMinLeafIdIsTheSmallestLeafAtEveryZoom() {
 }
 
 // Output of the reference supercluster implementation (supercluster@8.0.1) for
-// the same points, options and viewport: node and cluster counts, plus a hash
-// of which points share a cluster. Clustering must match feature-for-feature at
-// every zoom, members included, otherwise `radius`, `extent` and `minPoints` do
-// not mean what a migrating user expects.
+// the same points, options and viewport: node and cluster counts, a hash of
+// which points share a cluster, and a hash of each cluster's expansion zoom.
+// Clustering must match feature-for-feature at every zoom, members included,
+// otherwise `radius`, `extent` and `minPoints` do not mean what a migrating
+// user expects, and zooming to the expansion zoom must split the same clusters.
 //
 // Regenerate from `package/` with:
 //   node scripts/generate-supercluster-parity-fixture.mjs
@@ -396,6 +398,7 @@ struct SuperclusterParityCase {
   std::vector<int> expectedNodes;           // features returned per zoom, minZoom first
   std::vector<int> expectedClusters;        // of which are clusters
   std::vector<uint32_t> expectedMembership; // parityMembershipHash per zoom
+  std::vector<uint32_t> expectedExpansion;  // parityExpansionHash per zoom
 };
 
 // xorshift32, bit-identical to the JS generator in the fixture script.
@@ -433,6 +436,29 @@ static uint32_t parityMembershipHash(const ClusterEngineCore& engine,
   return hash;
 }
 
+// Hashes each cluster's expansion zoom, keyed by the smallest id among its
+// leaves: `(minLeafId, getClusterExpansionZoom)` pairs sorted by `minLeafId`,
+// both folded with 32-bit FNV-1a. Bit-identical to expansionHash in the
+// fixture script.
+static uint32_t parityExpansionHash(const ClusterEngineCore& engine,
+                                    const std::vector<ClusterNode>& nodes) {
+  std::vector<std::pair<int32_t, int32_t>> pairs;
+  for (const auto& node : nodes) {
+    if (!node.isCluster) continue;
+    pairs.emplace_back(node.minLeafId, engine.getClusterExpansionZoom(node.id));
+  }
+  std::sort(pairs.begin(), pairs.end());
+
+  uint32_t hash = 2166136261u;
+  for (const auto& [minLeafId, expansionZoom] : pairs) {
+    hash ^= static_cast<uint32_t>(minLeafId);
+    hash *= 16777619u;
+    hash ^= static_cast<uint32_t>(expansionZoom);
+    hash *= 16777619u;
+  }
+  return hash;
+}
+
 static void testSuperclusterParity() {
   // Note the one-zoom shift between the 256/512/1024 rows: doubling `extent`
   // halves the radius in supercluster's [0,1] projection, which is exactly one
@@ -442,27 +468,32 @@ static void testSuperclusterParity() {
   {5000, 12345u, 40.0, 512, 0, 16, 2,
    {37, 154, 561, 1673, 3369, 4470, 4847, 4967, 4992, 4997, 4998, 4999, 5000, 5000, 5000, 5000, 5000},
    {37, 149, 517, 1210, 1184, 491, 152, 33, 8, 3, 2, 1, 0, 0, 0, 0, 0},
-   {1805767755u, 606907344u, 251924099u, 3592547414u, 220092997u, 4170046084u, 2925551006u, 3474631211u, 1333171577u, 2017577864u, 2480066375u, 1314005163u, 2356979101u, 2356979101u, 2356979101u, 2356979101u, 2356979101u}},
+   {1805767755u, 606907344u, 251924099u, 3592547414u, 220092997u, 4170046084u, 2925551006u, 3474631211u, 1333171577u, 2017577864u, 2480066375u, 1314005163u, 2356979101u, 2356979101u, 2356979101u, 2356979101u, 2356979101u},
+   {908295453u, 1735606782u, 3222375310u, 3309277285u, 2388417153u, 203899112u, 3887135902u, 649398139u, 2678596316u, 2291465887u, 3885708800u, 4185239937u, 2166136261u, 2166136261u, 2166136261u, 2166136261u, 2166136261u}},
   // n=5000 seed=12345 radius=40 extent=256 zoom 0..16 minPoints=2
   {5000, 12345u, 40.0, 256, 0, 16, 2,
    {11, 37, 154, 561, 1673, 3369, 4470, 4847, 4967, 4992, 4997, 4998, 4999, 5000, 5000, 5000, 5000},
    {11, 37, 149, 517, 1210, 1184, 491, 152, 33, 8, 3, 2, 1, 0, 0, 0, 0},
-   {2501411492u, 1805767755u, 606907344u, 251924099u, 3592547414u, 220092997u, 4170046084u, 2925551006u, 3474631211u, 1333171577u, 2017577864u, 2480066375u, 1314005163u, 2356979101u, 2356979101u, 2356979101u, 2356979101u}},
+   {2501411492u, 1805767755u, 606907344u, 251924099u, 3592547414u, 220092997u, 4170046084u, 2925551006u, 3474631211u, 1333171577u, 2017577864u, 2480066375u, 1314005163u, 2356979101u, 2356979101u, 2356979101u, 2356979101u},
+   {2901069191u, 446459210u, 1109370185u, 2470694807u, 1559555949u, 2215230431u, 2090804177u, 2143146402u, 698438652u, 3793120724u, 3800605278u, 3074938394u, 4168462318u, 2166136261u, 2166136261u, 2166136261u, 2166136261u}},
   // n=5000 seed=12345 radius=40 extent=1024 zoom 0..16 minPoints=2
   {5000, 12345u, 40.0, 1024, 0, 16, 2,
    {154, 561, 1673, 3369, 4470, 4847, 4967, 4992, 4997, 4998, 4999, 5000, 5000, 5000, 5000, 5000, 5000},
    {149, 517, 1210, 1184, 491, 152, 33, 8, 3, 2, 1, 0, 0, 0, 0, 0, 0},
-   {606907344u, 251924099u, 3592547414u, 220092997u, 4170046084u, 2925551006u, 3474631211u, 1333171577u, 2017577864u, 2480066375u, 1314005163u, 2356979101u, 2356979101u, 2356979101u, 2356979101u, 2356979101u, 2356979101u}},
+   {606907344u, 251924099u, 3592547414u, 220092997u, 4170046084u, 2925551006u, 3474631211u, 1333171577u, 2017577864u, 2480066375u, 1314005163u, 2356979101u, 2356979101u, 2356979101u, 2356979101u, 2356979101u, 2356979101u},
+   {2008030271u, 2096192001u, 86362713u, 719690823u, 4183232535u, 3830296254u, 3938549614u, 3787935432u, 2530141240u, 998378074u, 4202017556u, 2166136261u, 2166136261u, 2166136261u, 2166136261u, 2166136261u, 2166136261u}},
   // n=3000 seed=777 radius=80 extent=512 zoom 1..14 minPoints=2
   {3000, 777u, 80.0, 512, 1, 14, 2,
    {39, 148, 510, 1382, 2342, 2779, 2947, 2984, 2996, 2999, 3000, 3000, 3000, 3000},
    {38, 143, 447, 832, 539, 212, 52, 16, 4, 1, 0, 0, 0, 0},
-   {993833477u, 2141167518u, 3161340709u, 3918890464u, 1036665440u, 3212688082u, 492023470u, 4180803411u, 921193384u, 4107195081u, 3305376653u, 3305376653u, 3305376653u, 3305376653u}},
+   {993833477u, 2141167518u, 3161340709u, 3918890464u, 1036665440u, 3212688082u, 492023470u, 4180803411u, 921193384u, 4107195081u, 3305376653u, 3305376653u, 3305376653u, 3305376653u},
+   {2013879702u, 2123372854u, 3188312041u, 1403982669u, 2167766900u, 1877615968u, 3665749095u, 2929400263u, 1421908612u, 723098213u, 2166136261u, 2166136261u, 2166136261u, 2166136261u}},
   // n=8000 seed=424242 radius=25 extent=512 zoom 0..12 minPoints=2
   {8000, 424242u, 25.0, 512, 0, 12, 2,
    {94, 372, 1341, 3613, 6142, 7474, 7864, 7969, 7991, 7998, 7999, 8000, 8000},
    {93, 360, 1200, 2210, 1526, 511, 134, 30, 9, 2, 1, 0, 0},
-   {2473319454u, 999143822u, 3072884681u, 2567654997u, 3013614691u, 3374615311u, 3762316709u, 909188336u, 3632899351u, 26060799u, 1832098647u, 2459957253u, 2459957253u}},
+   {2473319454u, 999143822u, 3072884681u, 2567654997u, 3013614691u, 3374615311u, 3762316709u, 909188336u, 3632899351u, 26060799u, 1832098647u, 2459957253u, 2459957253u},
+   {193477675u, 364685338u, 1078684228u, 1842364820u, 2604891972u, 3412529013u, 202904108u, 3785568585u, 843412277u, 1752323339u, 831472737u, 2166136261u, 2166136261u}},
   };
 
   for (const auto& testCase : cases) {
@@ -500,17 +531,21 @@ static void testSuperclusterParity() {
       }
 
       const uint32_t membership = parityMembershipHash(engine, nodes, testCase.pointCount);
+      const uint32_t expansion = parityExpansionHash(engine, nodes);
 
       if (static_cast<int>(nodes.size()) != testCase.expectedNodes[slot] ||
           clusterCount != testCase.expectedClusters[slot] ||
-          membership != testCase.expectedMembership[slot]) {
+          membership != testCase.expectedMembership[slot] ||
+          expansion != testCase.expectedExpansion[slot]) {
         std::printf(
           "supercluster parity failed: radius=%.0f extent=%d minPoints=%d zoom=%d "
-          "-> nodes %d (want %d), clusters %d (want %d), membership %u (want %u)\n",
+          "-> nodes %d (want %d), clusters %d (want %d), membership %u (want %u), "
+          "expansion %u (want %u)\n",
           testCase.radius, testCase.extent, testCase.minPoints, z,
           static_cast<int>(nodes.size()), testCase.expectedNodes[slot],
           clusterCount, testCase.expectedClusters[slot],
-          membership, testCase.expectedMembership[slot]);
+          membership, testCase.expectedMembership[slot],
+          expansion, testCase.expectedExpansion[slot]);
         assert(false && "clustering diverged from supercluster");
       }
     }
