@@ -38,6 +38,7 @@ mock.module('react-native-nitro-modules', () => ({
         getClusters: () => [],
         getChildren: () => [],
         getLeaves: () => [],
+        getClusterBounds: () => undefined,
         getClusterExpansionZoom: () => 0,
         dispose: () => {},
       }

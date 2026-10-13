@@ -139,6 +139,14 @@ struct ViewportBounds {
   double zoom;
 };
 
+// The box a node's leaves span, in the coordinates the points were loaded with.
+struct LeafBounds {
+  double north;
+  double south;
+  double east;
+  double west;
+};
+
 /** Longitude wrapped into [-180, 180), with supercluster's arithmetic. */
 inline double wrapLongitude(double lng) {
   return std::fmod(std::fmod(lng + 180.0, 360.0) + 360.0, 360.0) - 180.0;

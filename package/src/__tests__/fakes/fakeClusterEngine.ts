@@ -17,6 +17,7 @@
  */
 import Supercluster from 'supercluster'
 
+import type { ClusterBounds } from '../../specs/ClusterBounds'
 import type { ClusterEngineOptions } from '../../specs/ClusterEngineOptions'
 import type { EngineClusterNode } from '../../specs/EngineClusterNode'
 import type { ReducerKind } from '../../specs/ReducerKind'
@@ -35,6 +36,7 @@ export interface FakeClusterEngine {
     limit: number,
     offset: number
   ): EngineClusterNode[]
+  getClusterBounds(clusterId: number): ClusterBounds | undefined
   getClusterExpansionZoom(clusterId: number): number
   dispose(): void
   readonly isBuilt: boolean
@@ -48,6 +50,7 @@ export interface FakeClusterEngineStats {
   getClusters: number
   getLeaves: number
   getChildren: number
+  getClusterBounds: number
   getClusterExpansionZoom: number
   disposed: number
 }
@@ -58,6 +61,7 @@ export const fakeClusterEngineStats: FakeClusterEngineStats = {
   getClusters: 0,
   getLeaves: 0,
   getChildren: 0,
+  getClusterBounds: 0,
   getClusterExpansionZoom: 0,
   disposed: 0,
 }
@@ -263,6 +267,40 @@ export function createFakeClusterEngine(): FakeClusterEngine {
       return requireIndex()
         .getLeaves(clusterId, limit <= 0 ? Infinity : limit, offset)
         .map(toNode)
+    },
+    getClusterBounds(clusterId) {
+      requireAlive('getClusterBounds')
+      fakeClusterEngineStats.getClusterBounds++
+      const supercluster = requireIndex()
+      // supercluster's getLeaves throws for any id but a cluster's; the native
+      // engine spans a point id's own point and has no box for other ids.
+      let leaves: Feature[]
+      try {
+        leaves = supercluster.getLeaves(clusterId, Infinity) as Feature[]
+      } catch {
+        const point = points.find((p) => p.properties.index === clusterId)
+        if (point == null) {
+          return undefined
+        }
+        leaves = [point]
+      }
+      const bounds = {
+        north: -Infinity,
+        south: Infinity,
+        east: -Infinity,
+        west: Infinity,
+      }
+      for (const leaf of leaves) {
+        const [longitude, latitude] = leaf.geometry.coordinates as [
+          number,
+          number,
+        ]
+        bounds.north = Math.max(bounds.north, latitude)
+        bounds.south = Math.min(bounds.south, latitude)
+        bounds.east = Math.max(bounds.east, longitude)
+        bounds.west = Math.min(bounds.west, longitude)
+      }
+      return bounds
     },
     getClusterExpansionZoom(clusterId) {
       requireAlive('getClusterExpansionZoom')

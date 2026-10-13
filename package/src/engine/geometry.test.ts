@@ -5,9 +5,11 @@ import type { MapRegion } from '../types'
 
 import { DEFAULT_VIEWPORT_TILE_SIZE, GEO_VIEWPORT_TILE_SIZE } from './defaults'
 import {
+  bboxToRegion,
   bboxToZoom,
   cameraZoomFromRegion,
   clusterZoomFromRegion,
+  coordinatesToRegion,
   isValidRegion,
   regionToBBox,
   type MapDimensions,
@@ -265,5 +267,28 @@ describe('bboxToZoom', () => {
     assertFiniteZoom(wideZoom)
     assertFiniteZoom(tallZoom)
     expect(tallZoom).toBeGreaterThan(wideZoom)
+  })
+})
+
+describe('bboxToRegion', () => {
+  const coordinates = [
+    { latitude: 52.2297, longitude: 21.0122 },
+    { latitude: 52.4064, longitude: 16.9252 },
+    { latitude: 50.0647, longitude: 19.945 },
+  ]
+
+  it('returns the region coordinatesToRegion fits to the coordinates it spans', () => {
+    expect(bboxToRegion([16.9252, 50.0647, 21.0122, 52.4064])).toEqual(
+      coordinatesToRegion(coordinates)
+    )
+  })
+
+  it('keeps the minimum delta for a single point', () => {
+    expect(bboxToRegion([21.0122, 52.2297, 21.0122, 52.2297])).toEqual({
+      latitude: 52.2297,
+      longitude: 21.0122,
+      latitudeDelta: 0.001,
+      longitudeDelta: 0.001,
+    })
   })
 })

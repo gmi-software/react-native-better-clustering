@@ -154,6 +154,15 @@ std::vector<EngineClusterNode> HybridClusterEngine::getLeaves(double clusterId, 
   return result;
 }
 
+std::optional<ClusterBounds> HybridClusterEngine::getClusterBounds(double clusterId) {
+  const auto core = requireBuilt(engine());
+  const auto bounds = core->getClusterBounds(toClusterId(clusterId));
+  if (!bounds.has_value()) {
+    return std::nullopt;
+  }
+  return ClusterBounds(bounds->north, bounds->south, bounds->east, bounds->west);
+}
+
 double HybridClusterEngine::getClusterExpansionZoom(double clusterId) {
   const auto core = requireBuilt(engine());
   return static_cast<double>(core->getClusterExpansionZoom(toClusterId(clusterId)));
