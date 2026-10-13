@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-10-13T15:31:20.663Z",
+  "generatedAt": "2026-10-13T16:08:42.793Z",
   "label": "baseline",
   "mode": "time",
   "environment": {
@@ -12,12 +12,11 @@
     "flags": [
       "-std=c++20",
       "-O2",
-      "-DNDEBUG",
-      "-ffp-contract=off"
+      "-DNDEBUG"
     ],
     "valgrind": null,
     "node": "v24.19.0",
-    "engineRevision": "897f110f55ce5be31de519840b0d5e4b4a79e449"
+    "engineRevision": "a8a26b0e58317cad6e4f53b67bd9938e1ac2d252"
   },
   "config": {
     "radius": 23.4,
@@ -30,7 +29,13 @@
       "width": 390,
       "height": 844,
       "tileSize": 256
-    }
+    },
+    "queryZooms": [
+      4,
+      8,
+      12,
+      16
+    ]
   },
   "cases": [
     {
@@ -47,10 +52,10 @@
           "time": {
             "samples": 1000,
             "iterations": 1,
-            "medianNs": 99687.5,
-            "p95Ns": 154959,
-            "madNs": 10854,
-            "minNs": 85875
+            "medianNs": 89792,
+            "p95Ns": 129125,
+            "madNs": 1625,
+            "minNs": 81417
           }
         },
         "clusters_z4": {
@@ -60,10 +65,10 @@
           "time": {
             "samples": 1000,
             "iterations": 512,
-            "medianNs": 120,
-            "p95Ns": 131.5,
-            "madNs": 1.5,
-            "minNs": 110.9
+            "medianNs": 128.6,
+            "p95Ns": 145.7,
+            "madNs": 2.8,
+            "minNs": 117.1
           }
         },
         "clusters_z8": {
@@ -73,10 +78,10 @@
           "time": {
             "samples": 1000,
             "iterations": 1024,
-            "medianNs": 51.8,
-            "p95Ns": 54.9,
-            "madNs": 0.4,
-            "minNs": 48.5
+            "medianNs": 58.6,
+            "p95Ns": 65.7,
+            "madNs": 0.5,
+            "minNs": 54.4
           }
         },
         "clusters_z12": {
@@ -86,10 +91,10 @@
           "time": {
             "samples": 1000,
             "iterations": 1024,
-            "medianNs": 51.8,
-            "p95Ns": 58.4,
-            "madNs": 1.2,
-            "minNs": 48.1
+            "medianNs": 58.1,
+            "p95Ns": 62.1,
+            "madNs": 0.3,
+            "minNs": 54.3
           }
         },
         "clusters_z16": {
@@ -99,10 +104,10 @@
           "time": {
             "samples": 1000,
             "iterations": 1024,
-            "medianNs": 51.7,
-            "p95Ns": 57.8,
-            "madNs": 0.6,
-            "minNs": 48.1
+            "medianNs": 58.1,
+            "p95Ns": 62.7,
+            "madNs": 0.2,
+            "minNs": 54.4
           }
         },
         "leaves_top": {
@@ -112,10 +117,10 @@
           "time": {
             "samples": 1000,
             "iterations": 512,
-            "medianNs": 114.2,
-            "p95Ns": 127.4,
-            "madNs": 3.7,
-            "minNs": 101.2
+            "medianNs": 115.6,
+            "p95Ns": 126.7,
+            "madNs": 2.8,
+            "minNs": 102.1
           }
         },
         "expansion_top": {
@@ -124,11 +129,11 @@
           "allocationBytes": 216,
           "time": {
             "samples": 1000,
-            "iterations": 2048,
-            "medianNs": 23.8,
-            "p95Ns": 26.6,
-            "madNs": 0.7,
-            "minNs": 20.7
+            "iterations": 4096,
+            "medianNs": 23.1,
+            "p95Ns": 25.1,
+            "madNs": 0.4,
+            "minNs": 20.8
           }
         },
         "zoom_sweep": {
@@ -138,10 +143,10 @@
           "time": {
             "samples": 1000,
             "iterations": 32,
-            "medianNs": 2070.3,
-            "p95Ns": 2355.5,
-            "madNs": 35.8,
-            "minNs": 1878.9
+            "medianNs": 2194,
+            "p95Ns": 2246.1,
+            "madNs": 13,
+            "minNs": 2131.5
           }
         }
       }
@@ -158,12 +163,12 @@
           "allocationCount": 3406,
           "allocationBytes": 3140424,
           "time": {
-            "samples": 204,
+            "samples": 172,
             "iterations": 1,
-            "medianNs": 1396375,
-            "p95Ns": 1655792,
-            "madNs": 23333,
-            "minNs": 1303750
+            "medianNs": 1490417,
+            "p95Ns": 2746208,
+            "madNs": 55563,
+            "minNs": 1364167
           }
         },
         "clusters_z4": {
@@ -172,11 +177,11 @@
           "allocationBytes": 4684,
           "time": {
             "samples": 1000,
-            "iterations": 64,
-            "medianNs": 793,
-            "p95Ns": 2076.2,
-            "madNs": 206.4,
-            "minNs": 572.3
+            "iterations": 1,
+            "medianNs": 834,
+            "p95Ns": 1125,
+            "madNs": 43,
+            "minNs": 542
           }
         },
         "clusters_z8": {
@@ -185,11 +190,11 @@
           "allocationBytes": 76,
           "time": {
             "samples": 1000,
-            "iterations": 1024,
-            "medianNs": 93.7,
-            "p95Ns": 115.1,
-            "madNs": 1.7,
-            "minNs": 84.2
+            "iterations": 512,
+            "medianNs": 99.9,
+            "p95Ns": 222.4,
+            "madNs": 2.2,
+            "minNs": 90.7
           }
         },
         "clusters_z12": {
@@ -199,10 +204,10 @@
           "time": {
             "samples": 1000,
             "iterations": 1024,
-            "medianNs": 63,
-            "p95Ns": 99.2,
-            "madNs": 0.8,
-            "minNs": 59.7
+            "medianNs": 68.2,
+            "p95Ns": 75.6,
+            "madNs": 0.4,
+            "minNs": 63.5
           }
         },
         "clusters_z16": {
@@ -212,10 +217,10 @@
           "time": {
             "samples": 1000,
             "iterations": 1024,
-            "medianNs": 62.3,
-            "p95Ns": 78.2,
-            "madNs": 0.7,
-            "minNs": 57.7
+            "medianNs": 69.4,
+            "p95Ns": 106.7,
+            "madNs": 0.9,
+            "minNs": 64
           }
         },
         "leaves_top": {
@@ -225,10 +230,10 @@
           "time": {
             "samples": 1000,
             "iterations": 256,
-            "medianNs": 266.9,
-            "p95Ns": 315.3,
-            "madNs": 6.7,
-            "minNs": 242.3
+            "medianNs": 282.6,
+            "p95Ns": 418.1,
+            "madNs": 7.5,
+            "minNs": 251.8
           }
         },
         "expansion_top": {
@@ -238,10 +243,10 @@
           "time": {
             "samples": 1000,
             "iterations": 2048,
-            "medianNs": 32.1,
-            "p95Ns": 36.9,
-            "madNs": 0.8,
-            "minNs": 29
+            "medianNs": 30.4,
+            "p95Ns": 44.9,
+            "madNs": 1.7,
+            "minNs": 25.9
           }
         },
         "zoom_sweep": {
@@ -251,10 +256,10 @@
           "time": {
             "samples": 1000,
             "iterations": 8,
-            "medianNs": 6958.2,
-            "p95Ns": 8770.8,
-            "madNs": 57.2,
-            "minNs": 6781.2
+            "medianNs": 7062.5,
+            "p95Ns": 7770.9,
+            "madNs": 72.9,
+            "minNs": 6552
           }
         }
       }
@@ -264,7 +269,7 @@
       "size": 5000,
       "datasetHash": "60a1940f",
       "memorySize": 9556240,
-      "peakRssBytes": 16416768,
+      "peakRssBytes": 13778944,
       "ops": {
         "build": {
           "result": 5000,
@@ -273,10 +278,10 @@
           "time": {
             "samples": 21,
             "iterations": 1,
-            "medianNs": 14392417,
-            "p95Ns": 16967333,
-            "madNs": 577917,
-            "minNs": 13113250
+            "medianNs": 14511292,
+            "p95Ns": 15397667,
+            "madNs": 632999,
+            "minNs": 12634000
           }
         },
         "clusters_z4": {
@@ -286,10 +291,10 @@
           "time": {
             "samples": 1000,
             "iterations": 32,
-            "medianNs": 1578.1,
-            "p95Ns": 1623.7,
-            "madNs": 10.4,
-            "minNs": 1454.4
+            "medianNs": 1589.8,
+            "p95Ns": 1809.9,
+            "madNs": 23.4,
+            "minNs": 1455.7
           }
         },
         "clusters_z8": {
@@ -299,10 +304,10 @@
           "time": {
             "samples": 1000,
             "iterations": 512,
-            "medianNs": 114.8,
-            "p95Ns": 119.2,
-            "madNs": 0.9,
-            "minNs": 111.9
+            "medianNs": 118.7,
+            "p95Ns": 136.6,
+            "madNs": 1.5,
+            "minNs": 109.5
           }
         },
         "clusters_z12": {
@@ -312,10 +317,10 @@
           "time": {
             "samples": 1000,
             "iterations": 1024,
-            "medianNs": 54.2,
-            "p95Ns": 56.9,
-            "madNs": 0.2,
-            "minNs": 53.8
+            "medianNs": 61.2,
+            "p95Ns": 70.5,
+            "madNs": 0.9,
+            "minNs": 56.6
           }
         },
         "clusters_z16": {
@@ -325,10 +330,10 @@
           "time": {
             "samples": 1000,
             "iterations": 1024,
-            "medianNs": 54.1,
-            "p95Ns": 55.9,
-            "madNs": 0.1,
-            "minNs": 53.8
+            "medianNs": 81.4,
+            "p95Ns": 174.6,
+            "madNs": 19.4,
+            "minNs": 59
           }
         },
         "leaves_top": {
@@ -338,10 +343,10 @@
           "time": {
             "samples": 1000,
             "iterations": 128,
-            "medianNs": 468.8,
-            "p95Ns": 761.1,
-            "madNs": 8.5,
-            "minNs": 446.9
+            "medianNs": 618.7,
+            "p95Ns": 1235.7,
+            "madNs": 127.6,
+            "minNs": 469.7
           }
         },
         "expansion_top": {
@@ -350,11 +355,11 @@
           "allocationBytes": 504,
           "time": {
             "samples": 1000,
-            "iterations": 2048,
-            "medianNs": 31.2,
-            "p95Ns": 34,
-            "madNs": 0.7,
-            "minNs": 29.5
+            "iterations": 1024,
+            "medianNs": 31.7,
+            "p95Ns": 82.6,
+            "madNs": 2.9,
+            "minNs": 28
           }
         },
         "zoom_sweep": {
@@ -364,10 +369,10 @@
           "time": {
             "samples": 1000,
             "iterations": 4,
-            "medianNs": 13093.8,
-            "p95Ns": 15041.8,
-            "madNs": 146,
-            "minNs": 12593.8
+            "medianNs": 13114.8,
+            "p95Ns": 17333.2,
+            "madNs": 198,
+            "minNs": 12083.2
           }
         }
       }
@@ -377,7 +382,7 @@
       "size": 10000,
       "datasetHash": "82ffc0a2",
       "memorySize": 18717384,
-      "peakRssBytes": 34340864,
+      "peakRssBytes": 38125568,
       "ops": {
         "build": {
           "result": 10000,
@@ -386,10 +391,10 @@
           "time": {
             "samples": 10,
             "iterations": 1,
-            "medianNs": 46032062.5,
-            "p95Ns": 55075000,
-            "madNs": 2748520.5,
-            "minNs": 37505042
+            "medianNs": 41754854,
+            "p95Ns": 53107959,
+            "madNs": 1977562.5,
+            "minNs": 39043958
           }
         },
         "clusters_z4": {
@@ -398,11 +403,11 @@
           "allocationBytes": 34260,
           "time": {
             "samples": 1000,
-            "iterations": 4,
-            "medianNs": 2812.5,
-            "p95Ns": 3343.8,
-            "madNs": 62.5,
-            "minNs": 2604.2
+            "iterations": 32,
+            "medianNs": 2735.7,
+            "p95Ns": 5031.2,
+            "madNs": 35.2,
+            "minNs": 2507.8
           }
         },
         "clusters_z8": {
@@ -411,11 +416,11 @@
           "allocationBytes": 76,
           "time": {
             "samples": 1000,
-            "iterations": 256,
-            "medianNs": 237.9,
-            "p95Ns": 453,
-            "madNs": 51.8,
-            "minNs": 176.4
+            "iterations": 512,
+            "medianNs": 189.8,
+            "p95Ns": 367.7,
+            "madNs": 7,
+            "minNs": 179.8
           }
         },
         "clusters_z12": {
@@ -425,10 +430,10 @@
           "time": {
             "samples": 1000,
             "iterations": 1024,
-            "medianNs": 57.4,
-            "p95Ns": 99.7,
-            "madNs": 1.1,
-            "minNs": 55.5
+            "medianNs": 64.9,
+            "p95Ns": 153.8,
+            "madNs": 1.5,
+            "minNs": 62.7
           }
         },
         "clusters_z16": {
@@ -438,10 +443,10 @@
           "time": {
             "samples": 1000,
             "iterations": 1024,
-            "medianNs": 57.5,
-            "p95Ns": 103.1,
-            "madNs": 1.1,
-            "minNs": 55.6
+            "medianNs": 64.5,
+            "p95Ns": 141.6,
+            "madNs": 1,
+            "minNs": 62.6
           }
         },
         "leaves_top": {
@@ -450,11 +455,11 @@
           "allocationBytes": 18484,
           "time": {
             "samples": 1000,
-            "iterations": 64,
-            "medianNs": 1100.2,
-            "p95Ns": 2442.7,
-            "madNs": 304,
-            "minNs": 761.7
+            "iterations": 128,
+            "medianNs": 759.8,
+            "p95Ns": 1825.8,
+            "madNs": 20.8,
+            "minNs": 721.7
           }
         },
         "expansion_top": {
@@ -464,10 +469,10 @@
           "time": {
             "samples": 1000,
             "iterations": 2048,
-            "medianNs": 33,
-            "p95Ns": 47.6,
-            "madNs": 2.1,
-            "minNs": 29.7
+            "medianNs": 33.7,
+            "p95Ns": 41.9,
+            "madNs": 0.6,
+            "minNs": 31.1
           }
         },
         "zoom_sweep": {
@@ -477,10 +482,10 @@
           "time": {
             "samples": 1000,
             "iterations": 4,
-            "medianNs": 17270.8,
-            "p95Ns": 30302,
-            "madNs": 239.5,
-            "minNs": 16645.8
+            "medianNs": 17104,
+            "p95Ns": 20604.2,
+            "madNs": 187.2,
+            "minNs": 15812.5
           }
         }
       }
@@ -490,7 +495,7 @@
       "size": 50000,
       "datasetHash": "7b3d84d6",
       "memorySize": 88332596,
-      "peakRssBytes": 109379584,
+      "peakRssBytes": 103219200,
       "ops": {
         "build": {
           "result": 50000,
@@ -499,10 +504,10 @@
           "time": {
             "samples": 10,
             "iterations": 1,
-            "medianNs": 248735666.5,
-            "p95Ns": 273856292,
-            "madNs": 8377291.5,
-            "minNs": 237859083
+            "medianNs": 270585604.5,
+            "p95Ns": 283813334,
+            "madNs": 6104708.5,
+            "minNs": 248151000
           }
         },
         "clusters_z4": {
@@ -511,11 +516,11 @@
           "allocationBytes": 75076,
           "time": {
             "samples": 1000,
-            "iterations": 16,
-            "medianNs": 7003.9,
-            "p95Ns": 12533.8,
-            "madNs": 1006.5,
-            "minNs": 5580.8
+            "iterations": 8,
+            "medianNs": 5796.9,
+            "p95Ns": 6156.2,
+            "madNs": 156.2,
+            "minNs": 5333.2
           }
         },
         "clusters_z8": {
@@ -525,10 +530,10 @@
           "time": {
             "samples": 1000,
             "iterations": 256,
-            "medianNs": 301.9,
-            "p95Ns": 442.1,
-            "madNs": 4.4,
-            "minNs": 277
+            "medianNs": 304.2,
+            "p95Ns": 326.5,
+            "madNs": 4.6,
+            "minNs": 278.6
           }
         },
         "clusters_z12": {
@@ -538,10 +543,10 @@
           "time": {
             "samples": 1000,
             "iterations": 1024,
-            "medianNs": 67.9,
-            "p95Ns": 72.8,
-            "madNs": 1.3,
-            "minNs": 62.6
+            "medianNs": 74.3,
+            "p95Ns": 78.7,
+            "madNs": 0.6,
+            "minNs": 69.4
           }
         },
         "clusters_z16": {
@@ -551,10 +556,10 @@
           "time": {
             "samples": 1000,
             "iterations": 1024,
-            "medianNs": 66.3,
-            "p95Ns": 72.6,
+            "medianNs": 73.5,
+            "p95Ns": 78.9,
             "madNs": 0.4,
-            "minNs": 62.2
+            "minNs": 68.7
           }
         },
         "leaves_top": {
@@ -564,10 +569,10 @@
           "time": {
             "samples": 1000,
             "iterations": 16,
-            "medianNs": 4033.8,
-            "p95Ns": 4351.6,
-            "madNs": 59.9,
-            "minNs": 3721.3
+            "medianNs": 4153.7,
+            "p95Ns": 4705.7,
+            "madNs": 164.1,
+            "minNs": 3687.5
           }
         },
         "expansion_top": {
@@ -577,10 +582,10 @@
           "time": {
             "samples": 1000,
             "iterations": 2048,
-            "medianNs": 34.8,
-            "p95Ns": 38.2,
-            "madNs": 0.8,
-            "minNs": 29.6
+            "medianNs": 32.8,
+            "p95Ns": 49.3,
+            "madNs": 1.3,
+            "minNs": 29
           }
         },
         "zoom_sweep": {
@@ -590,10 +595,10 @@
           "time": {
             "samples": 1000,
             "iterations": 2,
-            "medianNs": 25771,
-            "p95Ns": 28458,
-            "madNs": 583.5,
-            "minNs": 23812.5
+            "medianNs": 26250,
+            "p95Ns": 31333.5,
+            "madNs": 541.5,
+            "minNs": 23875
           }
         }
       }
@@ -603,19 +608,19 @@
       "size": 100000,
       "datasetHash": "4a0686f1",
       "memorySize": 172096572,
-      "peakRssBytes": 199491584,
+      "peakRssBytes": 202522624,
       "ops": {
         "build": {
           "result": 100000,
           "allocationCount": 368086,
           "allocationBytes": 273854420,
           "time": {
-            "samples": 10,
+            "samples": 8,
             "iterations": 1,
-            "medianNs": 538771729,
-            "p95Ns": 568954458,
-            "madNs": 3620000,
-            "minNs": 531773667
+            "medianNs": 627669021,
+            "p95Ns": 838673417,
+            "madNs": 20102562.5,
+            "minNs": 601610250
           }
         },
         "clusters_z4": {
@@ -625,10 +630,10 @@
           "time": {
             "samples": 1000,
             "iterations": 8,
-            "medianNs": 7005.2,
-            "p95Ns": 7281.2,
-            "madNs": 187.6,
-            "minNs": 6437.5
+            "medianNs": 7361.9,
+            "p95Ns": 11526,
+            "madNs": 231.7,
+            "minNs": 6890.6
           }
         },
         "clusters_z8": {
@@ -638,10 +643,10 @@
           "time": {
             "samples": 1000,
             "iterations": 256,
-            "medianNs": 366.4,
-            "p95Ns": 377.3,
-            "madNs": 4.6,
-            "minNs": 329.3
+            "medianNs": 373.2,
+            "p95Ns": 641.4,
+            "madNs": 6.5,
+            "minNs": 355.3
           }
         },
         "clusters_z12": {
@@ -651,10 +656,10 @@
           "time": {
             "samples": 1000,
             "iterations": 512,
-            "medianNs": 107.9,
-            "p95Ns": 109.2,
-            "madNs": 0.2,
-            "minNs": 101
+            "medianNs": 118.8,
+            "p95Ns": 183.2,
+            "madNs": 0.5,
+            "minNs": 116.5
           }
         },
         "clusters_z16": {
@@ -664,10 +669,10 @@
           "time": {
             "samples": 1000,
             "iterations": 512,
-            "medianNs": 107.7,
-            "p95Ns": 108.7,
-            "madNs": 0.2,
-            "minNs": 101.1
+            "medianNs": 118.8,
+            "p95Ns": 185.4,
+            "madNs": 1,
+            "minNs": 116.7
           }
         },
         "leaves_top": {
@@ -677,10 +682,10 @@
           "time": {
             "samples": 1000,
             "iterations": 8,
-            "medianNs": 9270.9,
-            "p95Ns": 9567.8,
-            "madNs": 161.4,
-            "minNs": 8630.2
+            "medianNs": 10026,
+            "p95Ns": 17171.9,
+            "madNs": 169.2,
+            "minNs": 9526
           }
         },
         "expansion_top": {
@@ -690,10 +695,10 @@
           "time": {
             "samples": 1000,
             "iterations": 2048,
-            "medianNs": 29.8,
-            "p95Ns": 34.1,
-            "madNs": 0.5,
-            "minNs": 27.6
+            "medianNs": 31.1,
+            "p95Ns": 39.2,
+            "madNs": 1.5,
+            "minNs": 28.9
           }
         },
         "zoom_sweep": {
@@ -703,10 +708,10 @@
           "time": {
             "samples": 1000,
             "iterations": 2,
-            "medianNs": 30521,
-            "p95Ns": 32354,
-            "madNs": 500.2,
-            "minNs": 28271
+            "medianNs": 31437.5,
+            "p95Ns": 40916.5,
+            "madNs": 333.5,
+            "minNs": 30333
           }
         }
       }
@@ -725,10 +730,10 @@
           "time": {
             "samples": 1000,
             "iterations": 1,
-            "medianNs": 61917,
-            "p95Ns": 65709,
-            "madNs": 499,
-            "minNs": 57541
+            "medianNs": 64333,
+            "p95Ns": 88750,
+            "madNs": 896,
+            "minNs": 62208
           }
         },
         "clusters_z4": {
@@ -738,10 +743,10 @@
           "time": {
             "samples": 1000,
             "iterations": 1024,
-            "medianNs": 50.8,
-            "p95Ns": 52.2,
-            "madNs": 0.2,
-            "minNs": 47.5
+            "medianNs": 60.5,
+            "p95Ns": 68.8,
+            "madNs": 0.7,
+            "minNs": 58.7
           }
         },
         "clusters_z8": {
@@ -751,10 +756,10 @@
           "time": {
             "samples": 1000,
             "iterations": 256,
-            "medianNs": 283.9,
-            "p95Ns": 303.5,
-            "madNs": 6,
-            "minNs": 253.7
+            "medianNs": 295.5,
+            "p95Ns": 360.8,
+            "madNs": 9.2,
+            "minNs": 269.2
           }
         },
         "clusters_z12": {
@@ -764,10 +769,10 @@
           "time": {
             "samples": 1000,
             "iterations": 256,
-            "medianNs": 237.1,
-            "p95Ns": 249.8,
-            "madNs": 3.8,
-            "minNs": 216.1
+            "medianNs": 241.9,
+            "p95Ns": 264.3,
+            "madNs": 2.9,
+            "minNs": 233.6
           }
         },
         "clusters_z16": {
@@ -777,10 +782,10 @@
           "time": {
             "samples": 1000,
             "iterations": 512,
-            "medianNs": 109.1,
-            "p95Ns": 114.2,
-            "madNs": 0.7,
-            "minNs": 106.5
+            "medianNs": 115.5,
+            "p95Ns": 123,
+            "madNs": 0.6,
+            "minNs": 113.9
           }
         },
         "leaves_top": {
@@ -790,10 +795,10 @@
           "time": {
             "samples": 1000,
             "iterations": 64,
-            "medianNs": 916,
-            "p95Ns": 961.6,
-            "madNs": 7.2,
-            "minNs": 851.6
+            "medianNs": 932.3,
+            "p95Ns": 990.9,
+            "madNs": 19.2,
+            "minNs": 887.4
           }
         },
         "expansion_top": {
@@ -803,10 +808,10 @@
           "time": {
             "samples": 1000,
             "iterations": 2048,
-            "medianNs": 28.2,
-            "p95Ns": 30.8,
-            "madNs": 1.8,
-            "minNs": 24.8
+            "medianNs": 29.7,
+            "p95Ns": 34.4,
+            "madNs": 1.2,
+            "minNs": 26.6
           }
         },
         "zoom_sweep": {
@@ -816,10 +821,10 @@
           "time": {
             "samples": 1000,
             "iterations": 16,
-            "medianNs": 3434.9,
-            "p95Ns": 3536.4,
-            "madNs": 23.4,
-            "minNs": 3205.8
+            "medianNs": 3638,
+            "p95Ns": 3848.9,
+            "madNs": 33.8,
+            "minNs": 3549.5
           }
         }
       }
@@ -836,12 +841,12 @@
           "allocationCount": 4019,
           "allocationBytes": 2010296,
           "time": {
-            "samples": 330,
+            "samples": 291,
             "iterations": 1,
-            "medianNs": 869479,
-            "p95Ns": 972500,
-            "madNs": 9646,
-            "minNs": 817709
+            "medianNs": 949625,
+            "p95Ns": 1277541,
+            "madNs": 42209,
+            "minNs": 887666
           }
         },
         "clusters_z4": {
@@ -851,10 +856,10 @@
           "time": {
             "samples": 1000,
             "iterations": 1024,
-            "medianNs": 52.6,
-            "p95Ns": 55.7,
-            "madNs": 1,
-            "minNs": 48.3
+            "medianNs": 60.7,
+            "p95Ns": 82.9,
+            "madNs": 0.4,
+            "minNs": 59.3
           }
         },
         "clusters_z8": {
@@ -864,10 +869,10 @@
           "time": {
             "samples": 1000,
             "iterations": 128,
-            "medianNs": 478.8,
-            "p95Ns": 513.7,
-            "madNs": 5.2,
-            "minNs": 432.3
+            "medianNs": 521.5,
+            "p95Ns": 868.2,
+            "madNs": 10.1,
+            "minNs": 488.3
           }
         },
         "clusters_z12": {
@@ -877,10 +882,10 @@
           "time": {
             "samples": 1000,
             "iterations": 64,
-            "medianNs": 1131.8,
-            "p95Ns": 1211.6,
-            "madNs": 21.8,
-            "minNs": 1051.4
+            "medianNs": 1166,
+            "p95Ns": 1606.8,
+            "madNs": 11.7,
+            "minNs": 1132.2
           }
         },
         "clusters_z16": {
@@ -890,10 +895,10 @@
           "time": {
             "samples": 1000,
             "iterations": 256,
-            "medianNs": 204.6,
-            "p95Ns": 212.1,
-            "madNs": 2,
-            "minNs": 189.1
+            "medianNs": 211.6,
+            "p95Ns": 304.4,
+            "madNs": 2.1,
+            "minNs": 205.9
           }
         },
         "leaves_top": {
@@ -903,10 +908,10 @@
           "time": {
             "samples": 1000,
             "iterations": 8,
-            "medianNs": 9828.1,
-            "p95Ns": 10541.6,
-            "madNs": 218.8,
-            "minNs": 8796.9
+            "medianNs": 10661.5,
+            "p95Ns": 15604.1,
+            "madNs": 145.8,
+            "minNs": 10000
           }
         },
         "expansion_top": {
@@ -916,10 +921,10 @@
           "time": {
             "samples": 1000,
             "iterations": 4096,
-            "medianNs": 21.5,
-            "p95Ns": 23,
-            "madNs": 0.5,
-            "minNs": 19.2
+            "medianNs": 21,
+            "p95Ns": 27.5,
+            "madNs": 0.7,
+            "minNs": 19.7
           }
         },
         "zoom_sweep": {
@@ -929,10 +934,10 @@
           "time": {
             "samples": 1000,
             "iterations": 8,
-            "medianNs": 10375,
-            "p95Ns": 11026,
-            "madNs": 88.5,
-            "minNs": 9645.9
+            "medianNs": 10750,
+            "p95Ns": 12510.5,
+            "madNs": 99,
+            "minNs": 10515.6
           }
         }
       }
@@ -942,19 +947,19 @@
       "size": 5000,
       "datasetHash": "4d982125",
       "memorySize": 5687628,
-      "peakRssBytes": 9240576,
+      "peakRssBytes": 10108928,
       "ops": {
         "build": {
           "result": 5000,
           "allocationCount": 18834,
           "allocationBytes": 9132892,
           "time": {
-            "samples": 35,
+            "samples": 33,
             "iterations": 1,
-            "medianNs": 8593916,
-            "p95Ns": 9483584,
-            "madNs": 180291,
-            "minNs": 8293959
+            "medianNs": 9047250,
+            "p95Ns": 9988958,
+            "madNs": 153667,
+            "minNs": 8388542
           }
         },
         "clusters_z4": {
@@ -964,10 +969,10 @@
           "time": {
             "samples": 1000,
             "iterations": 1024,
-            "medianNs": 51.4,
-            "p95Ns": 54.9,
-            "madNs": 0.4,
-            "minNs": 47.7
+            "medianNs": 59.8,
+            "p95Ns": 61.6,
+            "madNs": 0.2,
+            "minNs": 59.3
           }
         },
         "clusters_z8": {
@@ -977,10 +982,10 @@
           "time": {
             "samples": 1000,
             "iterations": 128,
-            "medianNs": 578.8,
-            "p95Ns": 653.3,
-            "madNs": 9.8,
-            "minNs": 530
+            "medianNs": 586.9,
+            "p95Ns": 607.8,
+            "madNs": 5.9,
+            "minNs": 559.9
           }
         },
         "clusters_z12": {
@@ -990,10 +995,10 @@
           "time": {
             "samples": 1000,
             "iterations": 16,
-            "medianNs": 3841.1,
-            "p95Ns": 4463.6,
-            "madNs": 79.4,
-            "minNs": 3476.6
+            "medianNs": 3911.4,
+            "p95Ns": 7494.8,
+            "madNs": 98.9,
+            "minNs": 3687.5
           }
         },
         "clusters_z16": {
@@ -1002,11 +1007,11 @@
           "allocationBytes": 492,
           "time": {
             "samples": 1000,
-            "iterations": 256,
-            "medianNs": 227.1,
-            "p95Ns": 259,
-            "madNs": 3.1,
-            "minNs": 211.3
+            "iterations": 64,
+            "medianNs": 343.8,
+            "p95Ns": 579.4,
+            "madNs": 37.8,
+            "minNs": 230.5
           }
         },
         "leaves_top": {
@@ -1016,10 +1021,10 @@
           "time": {
             "samples": 1000,
             "iterations": 1,
-            "medianNs": 77979.5,
-            "p95Ns": 94833,
-            "madNs": 2354.5,
-            "minNs": 68542
+            "medianNs": 86125,
+            "p95Ns": 209625,
+            "madNs": 7104,
+            "minNs": 76458
           }
         },
         "expansion_top": {
@@ -1029,10 +1034,10 @@
           "time": {
             "samples": 1000,
             "iterations": 4096,
-            "medianNs": 20.5,
-            "p95Ns": 22.8,
-            "madNs": 0.5,
-            "minNs": 19
+            "medianNs": 21.7,
+            "p95Ns": 26.6,
+            "madNs": 0.8,
+            "minNs": 20
           }
         },
         "zoom_sweep": {
@@ -1042,10 +1047,10 @@
           "time": {
             "samples": 1000,
             "iterations": 4,
-            "medianNs": 21583.5,
-            "p95Ns": 25489.5,
-            "madNs": 364.5,
-            "minNs": 19573
+            "medianNs": 21880.1,
+            "p95Ns": 33104.2,
+            "madNs": 244.6,
+            "minNs": 21125
           }
         }
       }
@@ -1055,7 +1060,7 @@
       "size": 10000,
       "datasetHash": "ffe78e29",
       "memorySize": 10929768,
-      "peakRssBytes": 16498688,
+      "peakRssBytes": 15302656,
       "ops": {
         "build": {
           "result": 10000,
@@ -1064,10 +1069,10 @@
           "time": {
             "samples": 14,
             "iterations": 1,
-            "medianNs": 21387250,
-            "p95Ns": 26736833,
-            "madNs": 692979,
-            "minNs": 20483167
+            "medianNs": 21405062.5,
+            "p95Ns": 22544167,
+            "madNs": 274645.5,
+            "minNs": 20635584
           }
         },
         "clusters_z4": {
@@ -1077,10 +1082,10 @@
           "time": {
             "samples": 1000,
             "iterations": 1024,
-            "medianNs": 51.3,
-            "p95Ns": 55,
+            "medianNs": 60.5,
+            "p95Ns": 64.3,
             "madNs": 0.4,
-            "minNs": 47.8
+            "minNs": 59.6
           }
         },
         "clusters_z8": {
@@ -1090,10 +1095,10 @@
           "time": {
             "samples": 1000,
             "iterations": 128,
-            "medianNs": 609,
-            "p95Ns": 666.7,
-            "madNs": 12.2,
-            "minNs": 553.7
+            "medianNs": 617.7,
+            "p95Ns": 824.5,
+            "madNs": 8.3,
+            "minNs": 583.7
           }
         },
         "clusters_z12": {
@@ -1102,11 +1107,11 @@
           "allocationBytes": 67948,
           "time": {
             "samples": 1000,
-            "iterations": 8,
-            "medianNs": 5739.5,
-            "p95Ns": 6437.5,
-            "madNs": 164.1,
-            "minNs": 5223.9
+            "iterations": 16,
+            "medianNs": 5838.5,
+            "p95Ns": 8018.2,
+            "madNs": 101.5,
+            "minNs": 5583.3
           }
         },
         "clusters_z16": {
@@ -1116,10 +1121,10 @@
           "time": {
             "samples": 1000,
             "iterations": 256,
-            "medianNs": 278.5,
-            "p95Ns": 311.7,
-            "madNs": 3.3,
-            "minNs": 257.2
+            "medianNs": 292.6,
+            "p95Ns": 320,
+            "madNs": 4.7,
+            "minNs": 282.6
           }
         },
         "leaves_top": {
@@ -1129,10 +1134,10 @@
           "time": {
             "samples": 1000,
             "iterations": 1,
-            "medianNs": 173270.5,
-            "p95Ns": 204083,
-            "madNs": 6354.5,
-            "minNs": 152542
+            "medianNs": 187500,
+            "p95Ns": 320125,
+            "madNs": 3959,
+            "minNs": 178667
           }
         },
         "expansion_top": {
@@ -1142,10 +1147,10 @@
           "time": {
             "samples": 1000,
             "iterations": 4096,
-            "medianNs": 21.1,
-            "p95Ns": 22.5,
-            "madNs": 0.5,
-            "minNs": 18.4
+            "medianNs": 21.9,
+            "p95Ns": 32.3,
+            "madNs": 0.9,
+            "minNs": 19.8
           }
         },
         "zoom_sweep": {
@@ -1155,10 +1160,10 @@
           "time": {
             "samples": 1000,
             "iterations": 2,
-            "medianNs": 26812.5,
-            "p95Ns": 28791.5,
-            "madNs": 500,
-            "minNs": 24645.5
+            "medianNs": 27645.8,
+            "p95Ns": 50500,
+            "madNs": 354.2,
+            "minNs": 26500
           }
         }
       }
@@ -1168,7 +1173,7 @@
       "size": 50000,
       "datasetHash": "86eb5713",
       "memorySize": 49310584,
-      "peakRssBytes": 63815680,
+      "peakRssBytes": 65896448,
       "ops": {
         "build": {
           "result": 50000,
@@ -1177,10 +1182,10 @@
           "time": {
             "samples": 10,
             "iterations": 1,
-            "medianNs": 143499062.5,
-            "p95Ns": 177445666,
-            "madNs": 5941604.5,
-            "minNs": 130457583
+            "medianNs": 137924313,
+            "p95Ns": 149531625,
+            "madNs": 4440896,
+            "minNs": 132437542
           }
         },
         "clusters_z4": {
@@ -1190,10 +1195,10 @@
           "time": {
             "samples": 1000,
             "iterations": 1024,
-            "medianNs": 51.2,
-            "p95Ns": 55.4,
+            "medianNs": 60.4,
+            "p95Ns": 63.5,
             "madNs": 0.3,
-            "minNs": 47.8
+            "minNs": 59.6
           }
         },
         "clusters_z8": {
@@ -1203,10 +1208,10 @@
           "time": {
             "samples": 1000,
             "iterations": 128,
-            "medianNs": 639.3,
-            "p95Ns": 712.6,
-            "madNs": 14.3,
-            "minNs": 569.7
+            "medianNs": 642.2,
+            "p95Ns": 669.3,
+            "madNs": 8.5,
+            "minNs": 615.6
           }
         },
         "clusters_z12": {
@@ -1216,10 +1221,10 @@
           "time": {
             "samples": 1000,
             "iterations": 8,
-            "medianNs": 7546.9,
-            "p95Ns": 8333.2,
-            "madNs": 213.5,
-            "minNs": 6843.8
+            "medianNs": 7729.2,
+            "p95Ns": 8088.5,
+            "madNs": 67.6,
+            "minNs": 7453.1
           }
         },
         "clusters_z16": {
@@ -1229,10 +1234,10 @@
           "time": {
             "samples": 1000,
             "iterations": 128,
-            "medianNs": 514.3,
-            "p95Ns": 542.3,
-            "madNs": 9.1,
-            "minNs": 465.5
+            "medianNs": 522.1,
+            "p95Ns": 558.6,
+            "madNs": 5.2,
+            "minNs": 504.9
           }
         },
         "leaves_top": {
@@ -1240,12 +1245,12 @@
           "allocationCount": 24,
           "allocationBytes": 9437620,
           "time": {
-            "samples": 201,
+            "samples": 91,
             "iterations": 1,
-            "medianNs": 1373958,
-            "p95Ns": 2099208,
-            "madNs": 103999,
-            "minNs": 1170000
+            "medianNs": 2589041,
+            "p95Ns": 7262416,
+            "madNs": 882499,
+            "minNs": 1375541
           }
         },
         "expansion_top": {
@@ -1254,11 +1259,11 @@
           "allocationBytes": 216,
           "time": {
             "samples": 1000,
-            "iterations": 512,
-            "medianNs": 22.3,
-            "p95Ns": 24.3,
-            "madNs": 0.3,
-            "minNs": 20.8
+            "iterations": 4096,
+            "medianNs": 23,
+            "p95Ns": 29.2,
+            "madNs": 0.8,
+            "minNs": 21.2
           }
         },
         "zoom_sweep": {
@@ -1268,10 +1273,10 @@
           "time": {
             "samples": 1000,
             "iterations": 1,
-            "medianNs": 39042,
-            "p95Ns": 57750,
-            "madNs": 583,
-            "minNs": 35500
+            "medianNs": 38875,
+            "p95Ns": 46292,
+            "madNs": 500,
+            "minNs": 37375
           }
         }
       }
@@ -1281,7 +1286,7 @@
       "size": 100000,
       "datasetHash": "afd962b4",
       "memorySize": 94006200,
-      "peakRssBytes": 121667584,
+      "peakRssBytes": 116998144,
       "ops": {
         "build": {
           "result": 100000,
@@ -1290,10 +1295,10 @@
           "time": {
             "samples": 10,
             "iterations": 1,
-            "medianNs": 297253500,
-            "p95Ns": 451454417,
-            "madNs": 10281708,
-            "minNs": 280703291
+            "medianNs": 284027312.5,
+            "p95Ns": 299142542,
+            "madNs": 2752145.5,
+            "minNs": 278828750
           }
         },
         "clusters_z4": {
@@ -1303,10 +1308,10 @@
           "time": {
             "samples": 1000,
             "iterations": 1024,
-            "medianNs": 51.6,
-            "p95Ns": 57.9,
-            "madNs": 0.4,
-            "minNs": 48.1
+            "medianNs": 60.3,
+            "p95Ns": 62,
+            "madNs": 0.3,
+            "minNs": 59.6
           }
         },
         "clusters_z8": {
@@ -1316,10 +1321,10 @@
           "time": {
             "samples": 1000,
             "iterations": 128,
-            "medianNs": 635.4,
-            "p95Ns": 720,
-            "madNs": 9.4,
-            "minNs": 576.2
+            "medianNs": 655.9,
+            "p95Ns": 897.5,
+            "madNs": 9.1,
+            "minNs": 624.7
           }
         },
         "clusters_z12": {
@@ -1329,10 +1334,10 @@
           "time": {
             "samples": 1000,
             "iterations": 8,
-            "medianNs": 8208.4,
-            "p95Ns": 9322.9,
-            "madNs": 140.5,
-            "minNs": 7458.4
+            "medianNs": 8348.9,
+            "p95Ns": 10296.9,
+            "madNs": 104.2,
+            "minNs": 7989.6
           }
         },
         "clusters_z16": {
@@ -1341,11 +1346,11 @@
           "allocationBytes": 7428,
           "time": {
             "samples": 1000,
-            "iterations": 64,
-            "medianNs": 699.2,
-            "p95Ns": 832.7,
-            "madNs": 10.1,
-            "minNs": 647.8
+            "iterations": 128,
+            "medianNs": 722.3,
+            "p95Ns": 829.1,
+            "madNs": 8.8,
+            "minNs": 694
           }
         },
         "leaves_top": {
@@ -1353,12 +1358,12 @@
           "allocationCount": 25,
           "allocationBytes": 18874804,
           "time": {
-            "samples": 53,
+            "samples": 32,
             "iterations": 1,
-            "medianNs": 5449000,
-            "p95Ns": 7502541,
-            "madNs": 376125,
-            "minNs": 4171417
+            "medianNs": 8881687.5,
+            "p95Ns": 16559500,
+            "madNs": 1237020.5,
+            "minNs": 6310625
           }
         },
         "expansion_top": {
@@ -1369,9 +1374,9 @@
             "samples": 1000,
             "iterations": 4096,
             "medianNs": 22.4,
-            "p95Ns": 24.7,
-            "madNs": 0.6,
-            "minNs": 20.3
+            "p95Ns": 39.6,
+            "madNs": 0.4,
+            "minNs": 21.3
           }
         },
         "zoom_sweep": {
@@ -1381,10 +1386,10 @@
           "time": {
             "samples": 1000,
             "iterations": 1,
-            "medianNs": 44083,
-            "p95Ns": 67417,
-            "madNs": 875,
-            "minNs": 39708
+            "medianNs": 47292,
+            "p95Ns": 132000,
+            "madNs": 3083,
+            "minNs": 42833
           }
         }
       }
@@ -1403,10 +1408,10 @@
           "time": {
             "samples": 1000,
             "iterations": 1,
-            "medianNs": 78041,
-            "p95Ns": 88542,
-            "madNs": 791,
-            "minNs": 73875
+            "medianNs": 109291,
+            "p95Ns": 172916,
+            "madNs": 3146,
+            "minNs": 80042
           }
         },
         "clusters_z4": {
@@ -1415,11 +1420,11 @@
           "allocationBytes": 76,
           "time": {
             "samples": 1000,
-            "iterations": 1024,
-            "medianNs": 78.5,
-            "p95Ns": 117.2,
-            "madNs": 0.9,
-            "minNs": 76.4
+            "iterations": 512,
+            "medianNs": 121,
+            "p95Ns": 138.8,
+            "madNs": 1.8,
+            "minNs": 85.4
           }
         },
         "clusters_z8": {
@@ -1429,10 +1434,10 @@
           "time": {
             "samples": 1000,
             "iterations": 512,
-            "medianNs": 120,
-            "p95Ns": 129.2,
-            "madNs": 1.9,
-            "minNs": 111.4
+            "medianNs": 164.9,
+            "p95Ns": 182.5,
+            "madNs": 1.6,
+            "minNs": 126.1
           }
         },
         "clusters_z12": {
@@ -1442,10 +1447,10 @@
           "time": {
             "samples": 1000,
             "iterations": 1024,
-            "medianNs": 57.4,
-            "p95Ns": 74.1,
-            "madNs": 0.3,
-            "minNs": 56.6
+            "medianNs": 87,
+            "p95Ns": 145.3,
+            "madNs": 1.3,
+            "minNs": 63
           }
         },
         "clusters_z16": {
@@ -1455,10 +1460,10 @@
           "time": {
             "samples": 1000,
             "iterations": 1024,
-            "medianNs": 57.2,
-            "p95Ns": 77.7,
-            "madNs": 0.7,
-            "minNs": 56.1
+            "medianNs": 86.7,
+            "p95Ns": 161.8,
+            "madNs": 2.8,
+            "minNs": 63.7
           }
         },
         "leaves_top": {
@@ -1468,10 +1473,10 @@
           "time": {
             "samples": 1000,
             "iterations": 256,
-            "medianNs": 258.7,
-            "p95Ns": 317.4,
-            "madNs": 5.3,
-            "minNs": 239.9
+            "medianNs": 361,
+            "p95Ns": 644.4,
+            "madNs": 19.5,
+            "minNs": 271.3
           }
         },
         "expansion_top": {
@@ -1481,10 +1486,10 @@
           "time": {
             "samples": 1000,
             "iterations": 2048,
-            "medianNs": 25.2,
-            "p95Ns": 34.3,
-            "madNs": 1.6,
-            "minNs": 22
+            "medianNs": 30.7,
+            "p95Ns": 32.7,
+            "madNs": 0.3,
+            "minNs": 23.2
           }
         },
         "zoom_sweep": {
@@ -1494,10 +1499,10 @@
           "time": {
             "samples": 1000,
             "iterations": 32,
-            "medianNs": 1921.9,
-            "p95Ns": 2660.2,
-            "madNs": 70.3,
-            "minNs": 1740.9
+            "medianNs": 2782.6,
+            "p95Ns": 3579.4,
+            "madNs": 30,
+            "minNs": 1997.4
           }
         }
       }
@@ -1514,12 +1519,12 @@
           "allocationCount": 3983,
           "allocationBytes": 2509728,
           "time": {
-            "samples": 229,
+            "samples": 156,
             "iterations": 1,
-            "medianNs": 1235666,
-            "p95Ns": 1522042,
-            "madNs": 78374,
-            "minNs": 1114583
+            "medianNs": 1791104.5,
+            "p95Ns": 2544667,
+            "madNs": 81958.5,
+            "minNs": 1233750
           }
         },
         "clusters_z4": {
@@ -1528,11 +1533,11 @@
           "allocationBytes": 156,
           "time": {
             "samples": 1000,
-            "iterations": 1024,
-            "medianNs": 97.5,
-            "p95Ns": 117.3,
-            "madNs": 1.8,
-            "minNs": 91.5
+            "iterations": 512,
+            "medianNs": 141.4,
+            "p95Ns": 203.5,
+            "madNs": 6.5,
+            "minNs": 99.5
           }
         },
         "clusters_z8": {
@@ -1541,11 +1546,11 @@
           "allocationBytes": 3100,
           "time": {
             "samples": 1000,
-            "iterations": 256,
-            "medianNs": 298.5,
-            "p95Ns": 368.2,
-            "madNs": 6.8,
-            "minNs": 270.3
+            "iterations": 128,
+            "medianNs": 406.2,
+            "p95Ns": 758.8,
+            "madNs": 7.2,
+            "minNs": 301.8
           }
         },
         "clusters_z12": {
@@ -1554,11 +1559,11 @@
           "allocationBytes": 156,
           "time": {
             "samples": 1000,
-            "iterations": 512,
-            "medianNs": 112.4,
-            "p95Ns": 122,
-            "madNs": 1.4,
-            "minNs": 103.4
+            "iterations": 256,
+            "medianNs": 163.4,
+            "p95Ns": 302.9,
+            "madNs": 2,
+            "minNs": 118.8
           }
         },
         "clusters_z16": {
@@ -1567,11 +1572,11 @@
           "allocationBytes": 0,
           "time": {
             "samples": 1000,
-            "iterations": 1024,
-            "medianNs": 67,
-            "p95Ns": 72.8,
-            "madNs": 0.4,
-            "minNs": 62.8
+            "iterations": 512,
+            "medianNs": 104.1,
+            "p95Ns": 182.8,
+            "madNs": 15.3,
+            "minNs": 74.1
           }
         },
         "leaves_top": {
@@ -1581,10 +1586,10 @@
           "time": {
             "samples": 1000,
             "iterations": 64,
-            "medianNs": 802.7,
-            "p95Ns": 886.7,
-            "madNs": 10.4,
-            "minNs": 742.8
+            "medianNs": 1207,
+            "p95Ns": 2733.1,
+            "madNs": 40.4,
+            "minNs": 818.4
           }
         },
         "expansion_top": {
@@ -1594,10 +1599,10 @@
           "time": {
             "samples": 1000,
             "iterations": 2048,
-            "medianNs": 23.6,
-            "p95Ns": 26.9,
+            "medianNs": 27.6,
+            "p95Ns": 64,
             "madNs": 0.5,
-            "minNs": 22.5
+            "minNs": 22.4
           }
         },
         "zoom_sweep": {
@@ -1606,11 +1611,11 @@
           "allocationBytes": 14736,
           "time": {
             "samples": 1000,
-            "iterations": 32,
-            "medianNs": 3067,
-            "p95Ns": 3543,
-            "madNs": 42.3,
-            "minNs": 2826.8
+            "iterations": 16,
+            "medianNs": 4463.5,
+            "p95Ns": 5632.8,
+            "madNs": 959.6,
+            "minNs": 3169.3
           }
         }
       }
@@ -1620,19 +1625,19 @@
       "size": 5000,
       "datasetHash": "a693f15e",
       "memorySize": 7387500,
-      "peakRssBytes": 11747328,
+      "peakRssBytes": 21430272,
       "ops": {
         "build": {
           "result": 5000,
           "allocationCount": 18731,
           "allocationBytes": 11792652,
           "time": {
-            "samples": 28,
+            "samples": 23,
             "iterations": 1,
-            "medianNs": 10550729,
-            "p95Ns": 11915917,
-            "madNs": 250417.5,
-            "minNs": 9942167
+            "medianNs": 12719958,
+            "p95Ns": 15600709,
+            "madNs": 1502792,
+            "minNs": 10255167
           }
         },
         "clusters_z4": {
@@ -1642,10 +1647,10 @@
           "time": {
             "samples": 1000,
             "iterations": 512,
-            "medianNs": 110.8,
-            "p95Ns": 123.6,
-            "madNs": 2.1,
-            "minNs": 101.4
+            "medianNs": 114.7,
+            "p95Ns": 125.9,
+            "madNs": 1.1,
+            "minNs": 112.1
           }
         },
         "clusters_z8": {
@@ -1655,10 +1660,10 @@
           "time": {
             "samples": 1000,
             "iterations": 64,
-            "medianNs": 898.4,
-            "p95Ns": 1003.9,
-            "madNs": 13.7,
-            "minNs": 819
+            "medianNs": 906.2,
+            "p95Ns": 947.3,
+            "madNs": 9.1,
+            "minNs": 864.6
           }
         },
         "clusters_z12": {
@@ -1668,10 +1673,10 @@
           "time": {
             "samples": 1000,
             "iterations": 512,
-            "medianNs": 185,
-            "p95Ns": 202.7,
+            "medianNs": 192.4,
+            "p95Ns": 268.1,
             "madNs": 2.9,
-            "minNs": 169.7
+            "minNs": 186
           }
         },
         "clusters_z16": {
@@ -1681,10 +1686,10 @@
           "time": {
             "samples": 1000,
             "iterations": 1024,
-            "medianNs": 58.9,
-            "p95Ns": 66.6,
-            "madNs": 0.2,
-            "minNs": 55.3
+            "medianNs": 65.7,
+            "p95Ns": 75.2,
+            "madNs": 0.5,
+            "minNs": 64.9
           }
         },
         "leaves_top": {
@@ -1694,10 +1699,10 @@
           "time": {
             "samples": 1000,
             "iterations": 16,
-            "medianNs": 4437.5,
-            "p95Ns": 4875,
-            "madNs": 122.4,
-            "minNs": 3976.6
+            "medianNs": 4536.5,
+            "p95Ns": 5059.9,
+            "madNs": 88.6,
+            "minNs": 4309.9
           }
         },
         "expansion_top": {
@@ -1707,10 +1712,10 @@
           "time": {
             "samples": 1000,
             "iterations": 2048,
-            "medianNs": 23.8,
-            "p95Ns": 26,
-            "madNs": 0.5,
-            "minNs": 21.1
+            "medianNs": 23.4,
+            "p95Ns": 28.3,
+            "madNs": 0.9,
+            "minNs": 22.3
           }
         },
         "zoom_sweep": {
@@ -1720,10 +1725,10 @@
           "time": {
             "samples": 1000,
             "iterations": 8,
-            "medianNs": 5614.6,
-            "p95Ns": 6010.4,
-            "madNs": 72.9,
-            "minNs": 5156.2
+            "medianNs": 5723.9,
+            "p95Ns": 6151,
+            "madNs": 88.6,
+            "minNs": 5526
           }
         }
       }
@@ -1733,7 +1738,7 @@
       "size": 10000,
       "datasetHash": "7423e23f",
       "memorySize": 14322692,
-      "peakRssBytes": 19939328,
+      "peakRssBytes": 19988480,
       "ops": {
         "build": {
           "result": 10000,
@@ -1742,10 +1747,10 @@
           "time": {
             "samples": 11,
             "iterations": 1,
-            "medianNs": 27494667,
-            "p95Ns": 35215708,
-            "madNs": 452333,
-            "minNs": 26155708
+            "medianNs": 27490875,
+            "p95Ns": 29045709,
+            "madNs": 171583,
+            "minNs": 25970291
           }
         },
         "clusters_z4": {
@@ -1754,11 +1759,11 @@
           "allocationBytes": 156,
           "time": {
             "samples": 1000,
-            "iterations": 1024,
-            "medianNs": 101.4,
-            "p95Ns": 109.7,
-            "madNs": 1.7,
-            "minNs": 93.7
+            "iterations": 512,
+            "medianNs": 107.8,
+            "p95Ns": 112.2,
+            "madNs": 0.9,
+            "minNs": 105
           }
         },
         "clusters_z8": {
@@ -1768,10 +1773,10 @@
           "time": {
             "samples": 1000,
             "iterations": 64,
-            "medianNs": 1233.7,
-            "p95Ns": 1955.7,
-            "madNs": 22.8,
-            "minNs": 1121.1
+            "medianNs": 1220.7,
+            "p95Ns": 1264.3,
+            "madNs": 11.1,
+            "minNs": 1189.5
           }
         },
         "clusters_z12": {
@@ -1781,10 +1786,10 @@
           "time": {
             "samples": 1000,
             "iterations": 256,
-            "medianNs": 241.9,
-            "p95Ns": 323.6,
-            "madNs": 3.6,
-            "minNs": 229.8
+            "medianNs": 245.6,
+            "p95Ns": 262.7,
+            "madNs": 3.9,
+            "minNs": 237.8
           }
         },
         "clusters_z16": {
@@ -1794,10 +1799,10 @@
           "time": {
             "samples": 1000,
             "iterations": 1024,
-            "medianNs": 61.1,
-            "p95Ns": 68.4,
-            "madNs": 0.7,
-            "minNs": 60.1
+            "medianNs": 69.1,
+            "p95Ns": 70.6,
+            "madNs": 0.3,
+            "minNs": 68.3
           }
         },
         "leaves_top": {
@@ -1807,10 +1812,10 @@
           "time": {
             "samples": 1000,
             "iterations": 8,
-            "medianNs": 9536.5,
-            "p95Ns": 10187.5,
-            "madNs": 145.9,
-            "minNs": 8609.4
+            "medianNs": 9698,
+            "p95Ns": 10260.5,
+            "madNs": 114.6,
+            "minNs": 9317.6
           }
         },
         "expansion_top": {
@@ -1819,11 +1824,11 @@
           "allocationBytes": 216,
           "time": {
             "samples": 1000,
-            "iterations": 2048,
-            "medianNs": 23.5,
-            "p95Ns": 26.9,
-            "madNs": 0.5,
-            "minNs": 22.7
+            "iterations": 1024,
+            "medianNs": 24.3,
+            "p95Ns": 27.5,
+            "madNs": 1.2,
+            "minNs": 21.8
           }
         },
         "zoom_sweep": {
@@ -1833,10 +1838,10 @@
           "time": {
             "samples": 1000,
             "iterations": 8,
-            "medianNs": 7617.2,
-            "p95Ns": 8083.4,
-            "madNs": 85.9,
-            "minNs": 7020.9
+            "medianNs": 7781.2,
+            "p95Ns": 9406.2,
+            "madNs": 99,
+            "minNs": 7520.9
           }
         }
       }
@@ -1846,7 +1851,7 @@
       "size": 50000,
       "datasetHash": "88e6cc5c",
       "memorySize": 66222864,
-      "peakRssBytes": 84033536,
+      "peakRssBytes": 85000192,
       "ops": {
         "build": {
           "result": 50000,
@@ -1855,10 +1860,10 @@
           "time": {
             "samples": 10,
             "iterations": 1,
-            "medianNs": 185544958.5,
-            "p95Ns": 246545334,
-            "madNs": 7128458,
-            "minNs": 173569292
+            "medianNs": 187172042,
+            "p95Ns": 207255792,
+            "madNs": 3279125.5,
+            "minNs": 182577791
           }
         },
         "clusters_z4": {
@@ -1868,10 +1873,10 @@
           "time": {
             "samples": 1000,
             "iterations": 512,
-            "medianNs": 116.9,
-            "p95Ns": 120,
-            "madNs": 0.7,
-            "minNs": 108.2
+            "medianNs": 127.9,
+            "p95Ns": 177.7,
+            "madNs": 2.4,
+            "minNs": 122.1
           }
         },
         "clusters_z8": {
@@ -1881,10 +1886,10 @@
           "time": {
             "samples": 1000,
             "iterations": 32,
-            "medianNs": 2290.4,
-            "p95Ns": 2407.6,
-            "madNs": 27.3,
-            "minNs": 2105.5
+            "medianNs": 2360.7,
+            "p95Ns": 3113.3,
+            "madNs": 26.1,
+            "minNs": 2266.9
           }
         },
         "clusters_z12": {
@@ -1893,11 +1898,11 @@
           "allocationBytes": 7356,
           "time": {
             "samples": 1000,
-            "iterations": 128,
-            "medianNs": 681.6,
-            "p95Ns": 730.5,
-            "madNs": 8.8,
-            "minNs": 624.4
+            "iterations": 32,
+            "medianNs": 683.6,
+            "p95Ns": 723.9,
+            "madNs": 6.5,
+            "minNs": 660.2
           }
         },
         "clusters_z16": {
@@ -1907,10 +1912,10 @@
           "time": {
             "samples": 1000,
             "iterations": 512,
-            "medianNs": 103.3,
-            "p95Ns": 114.7,
+            "medianNs": 109.5,
+            "p95Ns": 121.7,
             "madNs": 0.5,
-            "minNs": 96.8
+            "minNs": 108.3
           }
         },
         "leaves_top": {
@@ -1920,10 +1925,10 @@
           "time": {
             "samples": 1000,
             "iterations": 1,
-            "medianNs": 90834,
-            "p95Ns": 113917,
-            "madNs": 3041.5,
-            "minNs": 79875
+            "medianNs": 89125,
+            "p95Ns": 111042,
+            "madNs": 1250,
+            "minNs": 86209
           }
         },
         "expansion_top": {
@@ -1933,10 +1938,10 @@
           "time": {
             "samples": 1000,
             "iterations": 2048,
-            "medianNs": 26,
-            "p95Ns": 29.5,
-            "madNs": 0.7,
-            "minNs": 22.4
+            "medianNs": 27.4,
+            "p95Ns": 31.1,
+            "madNs": 1.6,
+            "minNs": 24.1
           }
         },
         "zoom_sweep": {
@@ -1946,10 +1951,10 @@
           "time": {
             "samples": 1000,
             "iterations": 4,
-            "medianNs": 16083.2,
-            "p95Ns": 17427,
-            "madNs": 166.8,
-            "minNs": 14885.5
+            "medianNs": 16448,
+            "p95Ns": 17260.5,
+            "madNs": 135.5,
+            "minNs": 16031.2
           }
         }
       }
@@ -1959,7 +1964,7 @@
       "size": 100000,
       "datasetHash": "a29e8399",
       "memorySize": 127928820,
-      "peakRssBytes": 151339008,
+      "peakRssBytes": 153387008,
       "ops": {
         "build": {
           "result": 100000,
@@ -1968,10 +1973,10 @@
           "time": {
             "samples": 10,
             "iterations": 1,
-            "medianNs": 374120833,
-            "p95Ns": 388007375,
-            "madNs": 3037354,
-            "minNs": 368881875
+            "medianNs": 409941125,
+            "p95Ns": 453975500,
+            "madNs": 8507208.5,
+            "minNs": 396103917
           }
         },
         "clusters_z4": {
@@ -1981,10 +1986,10 @@
           "time": {
             "samples": 1000,
             "iterations": 512,
-            "medianNs": 103.1,
-            "p95Ns": 116.5,
-            "madNs": 2.8,
-            "minNs": 97.7
+            "medianNs": 109.4,
+            "p95Ns": 198.9,
+            "madNs": 1.7,
+            "minNs": 105.2
           }
         },
         "clusters_z8": {
@@ -1994,10 +1999,10 @@
           "time": {
             "samples": 1000,
             "iterations": 32,
-            "medianNs": 2548.2,
-            "p95Ns": 2871.1,
-            "madNs": 33.8,
-            "minNs": 2341.2
+            "medianNs": 2559.2,
+            "p95Ns": 4294.3,
+            "madNs": 38.4,
+            "minNs": 2453.1
           }
         },
         "clusters_z12": {
@@ -2007,10 +2012,10 @@
           "time": {
             "samples": 1000,
             "iterations": 64,
-            "medianNs": 1127.6,
-            "p95Ns": 1233.7,
-            "madNs": 12,
-            "minNs": 1037.1
+            "medianNs": 1120.4,
+            "p95Ns": 1416,
+            "madNs": 9.8,
+            "minNs": 1089.2
           }
         },
         "clusters_z16": {
@@ -2019,11 +2024,11 @@
           "allocationBytes": 76,
           "time": {
             "samples": 1000,
-            "iterations": 512,
-            "medianNs": 139,
-            "p95Ns": 161,
-            "madNs": 2.2,
-            "minNs": 127.6
+            "iterations": 256,
+            "medianNs": 141.9,
+            "p95Ns": 158.4,
+            "madNs": 1.5,
+            "minNs": 137.9
           }
         },
         "leaves_top": {
@@ -2033,10 +2038,10 @@
           "time": {
             "samples": 1000,
             "iterations": 1,
-            "medianNs": 194375,
-            "p95Ns": 347125,
-            "madNs": 9666.5,
-            "minNs": 172750
+            "medianNs": 220854,
+            "p95Ns": 534459,
+            "madNs": 22895.5,
+            "minNs": 187000
           }
         },
         "expansion_top": {
@@ -2045,11 +2050,11 @@
           "allocationBytes": 216,
           "time": {
             "samples": 1000,
-            "iterations": 4096,
-            "medianNs": 25.1,
-            "p95Ns": 26.6,
+            "iterations": 2048,
+            "medianNs": 24.6,
+            "p95Ns": 38.6,
             "madNs": 1,
-            "minNs": 22.3
+            "minNs": 22.7
           }
         },
         "zoom_sweep": {
@@ -2059,10 +2064,10 @@
           "time": {
             "samples": 1000,
             "iterations": 4,
-            "medianNs": 21291.8,
-            "p95Ns": 22208.5,
-            "madNs": 166.8,
-            "minNs": 19760.5
+            "medianNs": 21729.1,
+            "p95Ns": 45468.8,
+            "madNs": 583.4,
+            "minNs": 20531.2
           }
         }
       }
@@ -2082,9 +2087,9 @@
             "samples": 1000,
             "iterations": 1,
             "medianNs": 7917,
-            "p95Ns": 8292,
-            "madNs": 125,
-            "minNs": 7542
+            "p95Ns": 9250,
+            "madNs": 124,
+            "minNs": 7584
           }
         },
         "clusters_z4": {
@@ -2094,10 +2099,10 @@
           "time": {
             "samples": 1000,
             "iterations": 1024,
-            "medianNs": 51.7,
-            "p95Ns": 54.5,
-            "madNs": 0.3,
-            "minNs": 48
+            "medianNs": 60.2,
+            "p95Ns": 67.1,
+            "madNs": 0.8,
+            "minNs": 58.8
           }
         },
         "clusters_z8": {
@@ -2107,10 +2112,10 @@
           "time": {
             "samples": 1000,
             "iterations": 1024,
-            "medianNs": 54.7,
-            "p95Ns": 57.7,
-            "madNs": 0.2,
-            "minNs": 50.9
+            "medianNs": 61.7,
+            "p95Ns": 77.3,
+            "madNs": 0.7,
+            "minNs": 60.1
           }
         },
         "clusters_z12": {
@@ -2120,10 +2125,10 @@
           "time": {
             "samples": 1000,
             "iterations": 1024,
-            "medianNs": 54.7,
-            "p95Ns": 55.4,
-            "madNs": 0.3,
-            "minNs": 50.7
+            "medianNs": 61.4,
+            "p95Ns": 86.8,
+            "madNs": 0.6,
+            "minNs": 60.1
           }
         },
         "clusters_z16": {
@@ -2133,10 +2138,10 @@
           "time": {
             "samples": 1000,
             "iterations": 1024,
-            "medianNs": 53.8,
-            "p95Ns": 54.4,
-            "madNs": 0.2,
-            "minNs": 50.3
+            "medianNs": 60.8,
+            "p95Ns": 86.5,
+            "madNs": 0.5,
+            "minNs": 59.7
           }
         },
         "leaves_top": {
@@ -2146,10 +2151,10 @@
           "time": {
             "samples": 1000,
             "iterations": 64,
-            "medianNs": 796.9,
-            "p95Ns": 819.7,
-            "madNs": 6.5,
-            "minNs": 743.5
+            "medianNs": 807.9,
+            "p95Ns": 1362,
+            "madNs": 14.3,
+            "minNs": 780
           }
         },
         "expansion_top": {
@@ -2159,10 +2164,10 @@
           "time": {
             "samples": 1000,
             "iterations": 256,
-            "medianNs": 210.1,
-            "p95Ns": 213.2,
-            "madNs": 1,
-            "minNs": 197.3
+            "medianNs": 211.8,
+            "p95Ns": 398.1,
+            "madNs": 2.4,
+            "minNs": 207.4
           }
         },
         "zoom_sweep": {
@@ -2172,10 +2177,10 @@
           "time": {
             "samples": 1000,
             "iterations": 64,
-            "medianNs": 1126.3,
-            "p95Ns": 1157.6,
-            "madNs": 13,
-            "minNs": 1039.1
+            "medianNs": 1294.9,
+            "p95Ns": 2115.2,
+            "madNs": 26.7,
+            "minNs": 1236.3
           }
         }
       }
@@ -2194,10 +2199,10 @@
           "time": {
             "samples": 1000,
             "iterations": 1,
-            "medianNs": 40917,
-            "p95Ns": 42000,
-            "madNs": 334,
-            "minNs": 38042
+            "medianNs": 42291,
+            "p95Ns": 78209,
+            "madNs": 749,
+            "minNs": 40208
           }
         },
         "clusters_z4": {
@@ -2207,10 +2212,10 @@
           "time": {
             "samples": 1000,
             "iterations": 1024,
-            "medianNs": 51.8,
-            "p95Ns": 54.9,
-            "madNs": 0.5,
-            "minNs": 47.9
+            "medianNs": 63.2,
+            "p95Ns": 97.1,
+            "madNs": 1.1,
+            "minNs": 61.2
           }
         },
         "clusters_z8": {
@@ -2220,10 +2225,10 @@
           "time": {
             "samples": 1000,
             "iterations": 1024,
-            "medianNs": 54.3,
-            "p95Ns": 57,
-            "madNs": 0.3,
-            "minNs": 50.7
+            "medianNs": 64.4,
+            "p95Ns": 120.6,
+            "madNs": 1.5,
+            "minNs": 61.7
           }
         },
         "clusters_z12": {
@@ -2233,10 +2238,10 @@
           "time": {
             "samples": 1000,
             "iterations": 1024,
-            "medianNs": 54.4,
-            "p95Ns": 57.3,
-            "madNs": 0.2,
-            "minNs": 50.9
+            "medianNs": 64.5,
+            "p95Ns": 119.8,
+            "madNs": 1.2,
+            "minNs": 61.8
           }
         },
         "clusters_z16": {
@@ -2246,10 +2251,10 @@
           "time": {
             "samples": 1000,
             "iterations": 1024,
-            "medianNs": 53.6,
-            "p95Ns": 56.2,
-            "madNs": 0.2,
-            "minNs": 50.3
+            "medianNs": 62.9,
+            "p95Ns": 86.4,
+            "madNs": 0.7,
+            "minNs": 60.7
           }
         },
         "leaves_top": {
@@ -2259,10 +2264,10 @@
           "time": {
             "samples": 1000,
             "iterations": 16,
-            "medianNs": 5395.8,
-            "p95Ns": 5585.9,
-            "madNs": 26.1,
-            "minNs": 4958.4
+            "medianNs": 5558.6,
+            "p95Ns": 9455.8,
+            "madNs": 66.4,
+            "minNs": 5406.2
           }
         },
         "expansion_top": {
@@ -2272,10 +2277,10 @@
           "time": {
             "samples": 1000,
             "iterations": 32,
-            "medianNs": 2216.2,
-            "p95Ns": 2307.3,
-            "madNs": 7.8,
-            "minNs": 2066.4
+            "medianNs": 2369.8,
+            "p95Ns": 3399.8,
+            "madNs": 36.5,
+            "minNs": 2281.2
           }
         },
         "zoom_sweep": {
@@ -2285,10 +2290,10 @@
           "time": {
             "samples": 1000,
             "iterations": 64,
-            "medianNs": 1103.5,
-            "p95Ns": 1159.5,
-            "madNs": 9.8,
-            "minNs": 1016.3
+            "medianNs": 1304.7,
+            "p95Ns": 1748.7,
+            "madNs": 23.4,
+            "minNs": 1256.5
           }
         }
       }
@@ -2307,10 +2312,10 @@
           "time": {
             "samples": 1000,
             "iterations": 1,
-            "medianNs": 197917,
-            "p95Ns": 205250,
-            "madNs": 1583,
-            "minNs": 186292
+            "medianNs": 217792,
+            "p95Ns": 390625,
+            "madNs": 15854.5,
+            "minNs": 197375
           }
         },
         "clusters_z4": {
@@ -2320,10 +2325,10 @@
           "time": {
             "samples": 1000,
             "iterations": 1024,
-            "medianNs": 51.3,
-            "p95Ns": 54,
-            "madNs": 0.8,
-            "minNs": 47.3
+            "medianNs": 88,
+            "p95Ns": 134.8,
+            "madNs": 23.1,
+            "minNs": 60.6
           }
         },
         "clusters_z8": {
@@ -2333,10 +2338,10 @@
           "time": {
             "samples": 1000,
             "iterations": 1024,
-            "medianNs": 54.4,
-            "p95Ns": 57.3,
-            "madNs": 0.3,
-            "minNs": 50.4
+            "medianNs": 65.3,
+            "p95Ns": 116.7,
+            "madNs": 2.6,
+            "minNs": 62.2
           }
         },
         "clusters_z12": {
@@ -2346,10 +2351,10 @@
           "time": {
             "samples": 1000,
             "iterations": 1024,
-            "medianNs": 55,
-            "p95Ns": 60.3,
-            "madNs": 0.6,
-            "minNs": 50.8
+            "medianNs": 64.6,
+            "p95Ns": 78.5,
+            "madNs": 1.2,
+            "minNs": 62.1
           }
         },
         "clusters_z16": {
@@ -2359,10 +2364,10 @@
           "time": {
             "samples": 1000,
             "iterations": 1024,
-            "medianNs": 53.5,
-            "p95Ns": 56.9,
-            "madNs": 0.4,
-            "minNs": 49.8
+            "medianNs": 63.7,
+            "p95Ns": 74.5,
+            "madNs": 1,
+            "minNs": 61.3
           }
         },
         "leaves_top": {
@@ -2372,10 +2377,10 @@
           "time": {
             "samples": 1000,
             "iterations": 2,
-            "medianNs": 35833.5,
-            "p95Ns": 36583,
-            "madNs": 145.5,
-            "minNs": 33500
+            "medianNs": 36937.5,
+            "p95Ns": 57875,
+            "madNs": 604,
+            "minNs": 35791.5
           }
         },
         "expansion_top": {
@@ -2384,11 +2389,11 @@
           "allocationBytes": 360000,
           "time": {
             "samples": 1000,
-            "iterations": 8,
-            "medianNs": 12354.1,
-            "p95Ns": 12880.2,
-            "madNs": 46.9,
-            "minNs": 11578.1
+            "iterations": 4,
+            "medianNs": 13218.8,
+            "p95Ns": 20198,
+            "madNs": 177,
+            "minNs": 12760.2
           }
         },
         "zoom_sweep": {
@@ -2398,10 +2403,10 @@
           "time": {
             "samples": 1000,
             "iterations": 64,
-            "medianNs": 1115.2,
-            "p95Ns": 1181.6,
-            "madNs": 14.3,
-            "minNs": 1037.8
+            "medianNs": 1332.7,
+            "p95Ns": 1712.2,
+            "madNs": 23.4,
+            "minNs": 1271.5
           }
         }
       }
@@ -2411,19 +2416,19 @@
       "size": 10000,
       "datasetHash": "f3f5ae65",
       "memorySize": 2250584,
-      "peakRssBytes": 8667136,
+      "peakRssBytes": 10715136,
       "ops": {
         "build": {
           "result": 10000,
           "allocationCount": 10337,
           "allocationBytes": 3874296,
           "time": {
-            "samples": 626,
+            "samples": 484,
             "iterations": 1,
-            "medianNs": 405125,
-            "p95Ns": 424292,
-            "madNs": 4437.5,
-            "minNs": 384750
+            "medianNs": 480813,
+            "p95Ns": 798041,
+            "madNs": 63167.5,
+            "minNs": 405417
           }
         },
         "clusters_z4": {
@@ -2433,10 +2438,10 @@
           "time": {
             "samples": 1000,
             "iterations": 1024,
-            "medianNs": 51.9,
-            "p95Ns": 52.9,
-            "madNs": 0.2,
-            "minNs": 51.4
+            "medianNs": 61.3,
+            "p95Ns": 116,
+            "madNs": 0.9,
+            "minNs": 59.3
           }
         },
         "clusters_z8": {
@@ -2446,10 +2451,10 @@
           "time": {
             "samples": 1000,
             "iterations": 1024,
-            "medianNs": 54.6,
-            "p95Ns": 55.5,
-            "madNs": 0.2,
-            "minNs": 54.2
+            "medianNs": 62.9,
+            "p95Ns": 127.8,
+            "madNs": 1.5,
+            "minNs": 60.9
           }
         },
         "clusters_z12": {
@@ -2459,10 +2464,10 @@
           "time": {
             "samples": 1000,
             "iterations": 1024,
-            "medianNs": 54.9,
-            "p95Ns": 56.8,
-            "madNs": 0.2,
-            "minNs": 54.4
+            "medianNs": 70.6,
+            "p95Ns": 126.8,
+            "madNs": 9.2,
+            "minNs": 60.6
           }
         },
         "clusters_z16": {
@@ -2472,10 +2477,10 @@
           "time": {
             "samples": 1000,
             "iterations": 1024,
-            "medianNs": 53.9,
-            "p95Ns": 58.1,
-            "madNs": 0.3,
-            "minNs": 50.2
+            "medianNs": 86.6,
+            "p95Ns": 102,
+            "madNs": 8.5,
+            "minNs": 61
           }
         },
         "leaves_top": {
@@ -2485,10 +2490,10 @@
           "time": {
             "samples": 1000,
             "iterations": 1,
-            "medianNs": 73334,
-            "p95Ns": 77833,
-            "madNs": 541,
-            "minNs": 68250
+            "medianNs": 87229,
+            "p95Ns": 137250,
+            "madNs": 6104,
+            "minNs": 77917
           }
         },
         "expansion_top": {
@@ -2498,10 +2503,10 @@
           "time": {
             "samples": 1000,
             "iterations": 2,
-            "medianNs": 26604.5,
-            "p95Ns": 28354.5,
-            "madNs": 188,
-            "minNs": 24604
+            "medianNs": 27833.5,
+            "p95Ns": 43791.5,
+            "madNs": 625.5,
+            "minNs": 26625
           }
         },
         "zoom_sweep": {
@@ -2511,10 +2516,10 @@
           "time": {
             "samples": 1000,
             "iterations": 64,
-            "medianNs": 1116.5,
-            "p95Ns": 1164.1,
-            "madNs": 11.7,
-            "minNs": 1091.8
+            "medianNs": 1260.4,
+            "p95Ns": 1961.6,
+            "madNs": 22.1,
+            "minNs": 1219.4
           }
         }
       }
@@ -2524,19 +2529,19 @@
       "size": 50000,
       "datasetHash": "9bc2bde5",
       "memorySize": 11075864,
-      "peakRssBytes": 23642112,
+      "peakRssBytes": 23592960,
       "ops": {
         "build": {
           "result": 50000,
           "allocationCount": 50343,
           "allocationBytes": 18877960,
           "time": {
-            "samples": 115,
+            "samples": 114,
             "iterations": 1,
-            "medianNs": 2127584,
-            "p95Ns": 2839208,
-            "madNs": 37749,
-            "minNs": 2044167
+            "medianNs": 2191187.5,
+            "p95Ns": 2658000,
+            "madNs": 71958.5,
+            "minNs": 2057000
           }
         },
         "clusters_z4": {
@@ -2546,10 +2551,10 @@
           "time": {
             "samples": 1000,
             "iterations": 1024,
-            "medianNs": 51.3,
-            "p95Ns": 54.1,
-            "madNs": 0.2,
-            "minNs": 47.8
+            "medianNs": 63.6,
+            "p95Ns": 68.9,
+            "madNs": 0.7,
+            "minNs": 61.8
           }
         },
         "clusters_z8": {
@@ -2559,10 +2564,10 @@
           "time": {
             "samples": 1000,
             "iterations": 1024,
-            "medianNs": 54.3,
-            "p95Ns": 57.1,
-            "madNs": 0.2,
-            "minNs": 50.7
+            "medianNs": 64.8,
+            "p95Ns": 88.7,
+            "madNs": 1.1,
+            "minNs": 62.4
           }
         },
         "clusters_z12": {
@@ -2572,10 +2577,10 @@
           "time": {
             "samples": 1000,
             "iterations": 1024,
-            "medianNs": 54.3,
-            "p95Ns": 57.3,
-            "madNs": 0.3,
-            "minNs": 50.5
+            "medianNs": 63.5,
+            "p95Ns": 67.8,
+            "madNs": 0.8,
+            "minNs": 61.3
           }
         },
         "clusters_z16": {
@@ -2585,10 +2590,10 @@
           "time": {
             "samples": 1000,
             "iterations": 1024,
-            "medianNs": 53.8,
-            "p95Ns": 57.2,
-            "madNs": 0.3,
-            "minNs": 50
+            "medianNs": 63.8,
+            "p95Ns": 69.4,
+            "madNs": 0.9,
+            "minNs": 61.6
           }
         },
         "leaves_top": {
@@ -2596,12 +2601,12 @@
           "allocationCount": 34,
           "allocationBytes": 9961396,
           "time": {
-            "samples": 900,
+            "samples": 778,
             "iterations": 1,
-            "medianNs": 332625,
-            "p95Ns": 352250,
-            "madNs": 2771,
-            "minNs": 311292
+            "medianNs": 360146,
+            "p95Ns": 549458,
+            "madNs": 11458.5,
+            "minNs": 332167
           }
         },
         "expansion_top": {
@@ -2611,10 +2616,10 @@
           "time": {
             "samples": 1000,
             "iterations": 1,
-            "medianNs": 144375,
-            "p95Ns": 231000,
-            "madNs": 8458,
-            "minNs": 127916
+            "medianNs": 177208.5,
+            "p95Ns": 330833,
+            "madNs": 31417,
+            "minNs": 135875
           }
         },
         "zoom_sweep": {
@@ -2624,10 +2629,10 @@
           "time": {
             "samples": 1000,
             "iterations": 64,
-            "medianNs": 1116.5,
-            "p95Ns": 1172.5,
-            "madNs": 13.7,
-            "minNs": 1043
+            "medianNs": 1338.5,
+            "p95Ns": 1569,
+            "madNs": 28,
+            "minNs": 1273.4
           }
         }
       }
@@ -2637,19 +2642,19 @@
       "size": 100000,
       "datasetHash": "fd293205",
       "memorySize": 22149528,
-      "peakRssBytes": 42090496,
+      "peakRssBytes": 43974656,
       "ops": {
         "build": {
           "result": 100000,
           "allocationCount": 100346,
           "allocationBytes": 37749552,
           "time": {
-            "samples": 60,
+            "samples": 55,
             "iterations": 1,
-            "medianNs": 4326020.5,
-            "p95Ns": 4558666,
-            "madNs": 82708,
-            "minNs": 4145625
+            "medianNs": 4590292,
+            "p95Ns": 5454375,
+            "madNs": 151833,
+            "minNs": 4258542
           }
         },
         "clusters_z4": {
@@ -2658,11 +2663,11 @@
           "allocationBytes": 76,
           "time": {
             "samples": 1000,
-            "iterations": 2048,
-            "medianNs": 51.5,
-            "p95Ns": 54.4,
-            "madNs": 0.3,
-            "minNs": 47.7
+            "iterations": 1024,
+            "medianNs": 60.1,
+            "p95Ns": 64.4,
+            "madNs": 0.4,
+            "minNs": 59.3
           }
         },
         "clusters_z8": {
@@ -2672,10 +2677,10 @@
           "time": {
             "samples": 1000,
             "iterations": 1024,
-            "medianNs": 54.6,
-            "p95Ns": 57.2,
-            "madNs": 0.3,
-            "minNs": 50.4
+            "medianNs": 60.7,
+            "p95Ns": 67.5,
+            "madNs": 0.4,
+            "minNs": 59.9
           }
         },
         "clusters_z12": {
@@ -2685,10 +2690,10 @@
           "time": {
             "samples": 1000,
             "iterations": 1024,
-            "medianNs": 54.2,
-            "p95Ns": 56.8,
-            "madNs": 0.4,
-            "minNs": 50.5
+            "medianNs": 60.8,
+            "p95Ns": 66,
+            "madNs": 0.3,
+            "minNs": 59.9
           }
         },
         "clusters_z16": {
@@ -2698,10 +2703,10 @@
           "time": {
             "samples": 1000,
             "iterations": 1024,
-            "medianNs": 53.5,
-            "p95Ns": 54.3,
-            "madNs": 0.4,
-            "minNs": 49.7
+            "medianNs": 60.6,
+            "p95Ns": 64.7,
+            "madNs": 0.6,
+            "minNs": 59.4
           }
         },
         "leaves_top": {
@@ -2709,12 +2714,12 @@
           "allocationCount": 36,
           "allocationBytes": 19922868,
           "time": {
-            "samples": 423,
+            "samples": 397,
             "iterations": 1,
-            "medianNs": 708167,
-            "p95Ns": 749292,
-            "madNs": 11875,
-            "minNs": 654416
+            "medianNs": 727792,
+            "p95Ns": 931167,
+            "madNs": 21626,
+            "minNs": 688958
           }
         },
         "expansion_top": {
@@ -2722,12 +2727,12 @@
           "allocationCount": 1,
           "allocationBytes": 7200000,
           "time": {
-            "samples": 1000,
+            "samples": 922,
             "iterations": 1,
-            "medianNs": 293604.5,
-            "p95Ns": 332042,
-            "madNs": 2438.5,
-            "minNs": 277583
+            "medianNs": 306875,
+            "p95Ns": 434584,
+            "madNs": 11083,
+            "minNs": 285291
           }
         },
         "zoom_sweep": {
@@ -2736,11 +2741,11 @@
           "allocationBytes": 1520,
           "time": {
             "samples": 1000,
-            "iterations": 64,
-            "medianNs": 1108.1,
-            "p95Ns": 1166.7,
-            "madNs": 14.3,
-            "minNs": 1020.2
+            "iterations": 32,
+            "medianNs": 1272.2,
+            "p95Ns": 2181,
+            "madNs": 18.2,
+            "minNs": 1229.2
           }
         }
       }
@@ -2759,10 +2764,10 @@
           "time": {
             "samples": 1000,
             "iterations": 1,
-            "medianNs": 44834,
-            "p95Ns": 47083,
-            "madNs": 292,
-            "minNs": 41625
+            "medianNs": 46000,
+            "p95Ns": 49166,
+            "madNs": 417,
+            "minNs": 44875
           }
         },
         "clusters_z4": {
@@ -2772,10 +2777,10 @@
           "time": {
             "samples": 1000,
             "iterations": 1024,
-            "medianNs": 51,
-            "p95Ns": 54.1,
-            "madNs": 0.3,
-            "minNs": 47.5
+            "medianNs": 60.4,
+            "p95Ns": 63.6,
+            "madNs": 0.4,
+            "minNs": 59.4
           }
         },
         "clusters_z8": {
@@ -2785,10 +2790,10 @@
           "time": {
             "samples": 1000,
             "iterations": 1024,
-            "medianNs": 54.4,
-            "p95Ns": 57.6,
-            "madNs": 0.4,
-            "minNs": 50.7
+            "medianNs": 61.7,
+            "p95Ns": 90.7,
+            "madNs": 0.8,
+            "minNs": 60.5
           }
         },
         "clusters_z12": {
@@ -2798,10 +2803,10 @@
           "time": {
             "samples": 1000,
             "iterations": 512,
-            "medianNs": 128.4,
-            "p95Ns": 182.9,
-            "madNs": 10.3,
-            "minNs": 115.2
+            "medianNs": 122.7,
+            "p95Ns": 145,
+            "madNs": 2.3,
+            "minNs": 119.3
           }
         },
         "clusters_z16": {
@@ -2811,10 +2816,10 @@
           "time": {
             "samples": 1000,
             "iterations": 128,
-            "medianNs": 697.1,
-            "p95Ns": 872.1,
-            "madNs": 83.2,
-            "minNs": 581.7
+            "medianNs": 585.6,
+            "p95Ns": 627.3,
+            "madNs": 5.5,
+            "minNs": 569.7
           }
         },
         "leaves_top": {
@@ -2824,10 +2829,10 @@
           "time": {
             "samples": 1000,
             "iterations": 64,
-            "medianNs": 1082,
-            "p95Ns": 1158.2,
-            "madNs": 10.4,
-            "minNs": 1029.9
+            "medianNs": 1056.6,
+            "p95Ns": 1117.2,
+            "madNs": 12.4,
+            "minNs": 1008.5
           }
         },
         "expansion_top": {
@@ -2837,10 +2842,10 @@
           "time": {
             "samples": 1000,
             "iterations": 4096,
-            "medianNs": 23.1,
-            "p95Ns": 24.5,
-            "madNs": 0.5,
-            "minNs": 20.5
+            "medianNs": 22.4,
+            "p95Ns": 33.3,
+            "madNs": 0.6,
+            "minNs": 20.7
           }
         },
         "zoom_sweep": {
@@ -2850,10 +2855,10 @@
           "time": {
             "samples": 1000,
             "iterations": 16,
-            "medianNs": 3221.3,
-            "p95Ns": 3468.8,
-            "madNs": 20.9,
-            "minNs": 2994.8
+            "medianNs": 3411.4,
+            "p95Ns": 6411.4,
+            "madNs": 52.1,
+            "minNs": 3302.1
           }
         }
       }
@@ -2870,12 +2875,12 @@
           "allocationCount": 4769,
           "allocationBytes": 1539260,
           "time": {
-            "samples": 452,
+            "samples": 401,
             "iterations": 1,
-            "medianNs": 631042,
-            "p95Ns": 672875,
-            "madNs": 5937.5,
-            "minNs": 612417
+            "medianNs": 655041,
+            "p95Ns": 1038375,
+            "madNs": 14874,
+            "minNs": 634000
           }
         },
         "clusters_z4": {
@@ -2885,10 +2890,10 @@
           "time": {
             "samples": 1000,
             "iterations": 1024,
-            "medianNs": 51.6,
-            "p95Ns": 54.6,
-            "madNs": 0.2,
-            "minNs": 48.1
+            "medianNs": 60.1,
+            "p95Ns": 76.3,
+            "madNs": 0.4,
+            "minNs": 59
           }
         },
         "clusters_z8": {
@@ -2898,10 +2903,10 @@
           "time": {
             "samples": 1000,
             "iterations": 1024,
-            "medianNs": 54.6,
-            "p95Ns": 57.8,
-            "madNs": 0.2,
-            "minNs": 50.8
+            "medianNs": 61.6,
+            "p95Ns": 90.8,
+            "madNs": 0.5,
+            "minNs": 60.8
           }
         },
         "clusters_z12": {
@@ -2910,11 +2915,11 @@
           "allocationBytes": 5916,
           "time": {
             "samples": 1000,
-            "iterations": 128,
-            "medianNs": 465.2,
-            "p95Ns": 488,
-            "madNs": 7.8,
-            "minNs": 410.5
+            "iterations": 64,
+            "medianNs": 485.4,
+            "p95Ns": 651.7,
+            "madNs": 8.8,
+            "minNs": 455.1
           }
         },
         "clusters_z16": {
@@ -2923,11 +2928,11 @@
           "allocationBytes": 8148,
           "time": {
             "samples": 1000,
-            "iterations": 128,
-            "medianNs": 661.8,
-            "p95Ns": 692.7,
-            "madNs": 7.3,
-            "minNs": 607.4
+            "iterations": 64,
+            "medianNs": 670.6,
+            "p95Ns": 1029.9,
+            "madNs": 9.1,
+            "minNs": 645.2
           }
         },
         "leaves_top": {
@@ -2937,10 +2942,10 @@
           "time": {
             "samples": 1000,
             "iterations": 8,
-            "medianNs": 9781.2,
-            "p95Ns": 10218.8,
-            "madNs": 78.1,
-            "minNs": 9125
+            "medianNs": 9968.8,
+            "p95Ns": 13000,
+            "madNs": 104.1,
+            "minNs": 9718.8
           }
         },
         "expansion_top": {
@@ -2950,10 +2955,10 @@
           "time": {
             "samples": 1000,
             "iterations": 4096,
-            "medianNs": 21.6,
-            "p95Ns": 22.9,
-            "madNs": 0.4,
-            "minNs": 19.6
+            "medianNs": 21.1,
+            "p95Ns": 23.2,
+            "madNs": 0.8,
+            "minNs": 19.7
           }
         },
         "zoom_sweep": {
@@ -2963,10 +2968,10 @@
           "time": {
             "samples": 1000,
             "iterations": 8,
-            "medianNs": 10260.4,
-            "p95Ns": 10526.1,
-            "madNs": 75.5,
-            "minNs": 9552
+            "medianNs": 10463.5,
+            "p95Ns": 10802.1,
+            "madNs": 62.5,
+            "minNs": 10140.6
           }
         }
       }
@@ -2976,19 +2981,19 @@
       "size": 5000,
       "datasetHash": "4035466d",
       "memorySize": 4682788,
-      "peakRssBytes": 8667136,
+      "peakRssBytes": 9355264,
       "ops": {
         "build": {
           "result": 5000,
           "allocationCount": 22433,
           "allocationBytes": 7601664,
           "time": {
-            "samples": 78,
+            "samples": 73,
             "iterations": 1,
-            "medianNs": 3674666.5,
-            "p95Ns": 4168958,
-            "madNs": 84687,
-            "minNs": 3513333
+            "medianNs": 3846708,
+            "p95Ns": 4671500,
+            "madNs": 139833,
+            "minNs": 3618333
           }
         },
         "clusters_z4": {
@@ -2998,10 +3003,10 @@
           "time": {
             "samples": 1000,
             "iterations": 1024,
-            "medianNs": 51.3,
-            "p95Ns": 54.2,
-            "madNs": 0.2,
-            "minNs": 47.8
+            "medianNs": 59.9,
+            "p95Ns": 63.7,
+            "madNs": 0.5,
+            "minNs": 59.1
           }
         },
         "clusters_z8": {
@@ -3011,10 +3016,10 @@
           "time": {
             "samples": 1000,
             "iterations": 1024,
-            "medianNs": 69.5,
-            "p95Ns": 73.2,
-            "madNs": 0.9,
-            "minNs": 64.4
+            "medianNs": 75.6,
+            "p95Ns": 80,
+            "madNs": 0.4,
+            "minNs": 74.4
           }
         },
         "clusters_z12": {
@@ -3024,10 +3029,10 @@
           "time": {
             "samples": 1000,
             "iterations": 32,
-            "medianNs": 2028.7,
-            "p95Ns": 2099,
-            "madNs": 15.6,
-            "minNs": 1871.1
+            "medianNs": 2056,
+            "p95Ns": 2096.4,
+            "madNs": 10.4,
+            "minNs": 2005.2
           }
         },
         "clusters_z16": {
@@ -3037,10 +3042,10 @@
           "time": {
             "samples": 1000,
             "iterations": 128,
-            "medianNs": 722,
-            "p95Ns": 758.8,
-            "madNs": 6.2,
-            "minNs": 666.7
+            "medianNs": 748.7,
+            "p95Ns": 770.8,
+            "madNs": 9.4,
+            "minNs": 716.5
           }
         },
         "leaves_top": {
@@ -3050,10 +3055,10 @@
           "time": {
             "samples": 1000,
             "iterations": 1,
-            "medianNs": 66375,
-            "p95Ns": 69542,
-            "madNs": 542,
-            "minNs": 62000
+            "medianNs": 67375,
+            "p95Ns": 69750,
+            "madNs": 500,
+            "minNs": 66083
           }
         },
         "expansion_top": {
@@ -3063,10 +3068,10 @@
           "time": {
             "samples": 1000,
             "iterations": 4096,
-            "medianNs": 21.5,
-            "p95Ns": 22.6,
-            "madNs": 0.3,
-            "minNs": 19.5
+            "medianNs": 21.9,
+            "p95Ns": 23.3,
+            "madNs": 0.9,
+            "minNs": 20.6
           }
         },
         "zoom_sweep": {
@@ -3076,10 +3081,10 @@
           "time": {
             "samples": 1000,
             "iterations": 4,
-            "medianNs": 20125,
-            "p95Ns": 20906.2,
-            "madNs": 187.5,
-            "minNs": 18604
+            "medianNs": 20395.8,
+            "p95Ns": 20979.2,
+            "madNs": 135.2,
+            "minNs": 19823
           }
         }
       }
@@ -3089,7 +3094,7 @@
       "size": 10000,
       "datasetHash": "2c272e6d",
       "memorySize": 9353936,
-      "peakRssBytes": 13746176,
+      "peakRssBytes": 13778944,
       "ops": {
         "build": {
           "result": 10000,
@@ -3098,10 +3103,10 @@
           "time": {
             "samples": 32,
             "iterations": 1,
-            "medianNs": 9414271,
-            "p95Ns": 10240000,
-            "madNs": 251187,
-            "minNs": 8475375
+            "medianNs": 9300812.5,
+            "p95Ns": 9800709,
+            "madNs": 242854.5,
+            "minNs": 8673625
           }
         },
         "clusters_z4": {
@@ -3111,10 +3116,10 @@
           "time": {
             "samples": 1000,
             "iterations": 1024,
-            "medianNs": 52.1,
-            "p95Ns": 54.8,
+            "medianNs": 60,
+            "p95Ns": 61.7,
             "madNs": 0.3,
-            "minNs": 51.4
+            "minNs": 59.2
           }
         },
         "clusters_z8": {
@@ -3124,10 +3129,10 @@
           "time": {
             "samples": 1000,
             "iterations": 1024,
-            "medianNs": 88.9,
-            "p95Ns": 93.8,
-            "madNs": 1.4,
-            "minNs": 80.7
+            "medianNs": 94,
+            "p95Ns": 99.2,
+            "madNs": 0.6,
+            "minNs": 92.5
           }
         },
         "clusters_z12": {
@@ -3137,10 +3142,10 @@
           "time": {
             "samples": 1000,
             "iterations": 16,
-            "medianNs": 3940.1,
-            "p95Ns": 4174.5,
-            "madNs": 85.9,
-            "minNs": 3596.3
+            "medianNs": 4015.6,
+            "p95Ns": 4135.4,
+            "madNs": 41.7,
+            "minNs": 3843.8
           }
         },
         "clusters_z16": {
@@ -3150,10 +3155,10 @@
           "time": {
             "samples": 1000,
             "iterations": 128,
-            "medianNs": 689.5,
-            "p95Ns": 720.7,
-            "madNs": 7.2,
-            "minNs": 633.1
+            "medianNs": 704.4,
+            "p95Ns": 723,
+            "madNs": 4.9,
+            "minNs": 685.2
           }
         },
         "leaves_top": {
@@ -3163,10 +3168,10 @@
           "time": {
             "samples": 1000,
             "iterations": 1,
-            "medianNs": 136833,
-            "p95Ns": 143000,
-            "madNs": 1624,
-            "minNs": 126625
+            "medianNs": 139250,
+            "p95Ns": 146916,
+            "madNs": 834,
+            "minNs": 136458
           }
         },
         "expansion_top": {
@@ -3175,11 +3180,11 @@
           "allocationBytes": 288,
           "time": {
             "samples": 1000,
-            "iterations": 4096,
-            "medianNs": 29.3,
-            "p95Ns": 34.6,
-            "madNs": 1.3,
-            "minNs": 21.9
+            "iterations": 2048,
+            "medianNs": 25,
+            "p95Ns": 26.3,
+            "madNs": 0.8,
+            "minNs": 24.1
           }
         },
         "zoom_sweep": {
@@ -3189,10 +3194,10 @@
           "time": {
             "samples": 1000,
             "iterations": 2,
-            "medianNs": 25583.5,
-            "p95Ns": 28708,
-            "madNs": 354,
-            "minNs": 24479
+            "medianNs": 25520.5,
+            "p95Ns": 26062.5,
+            "madNs": 187.5,
+            "minNs": 24666.5
           }
         }
       }
@@ -3202,7 +3207,7 @@
       "size": 50000,
       "datasetHash": "1a808bd5",
       "memorySize": 46445896,
-      "peakRssBytes": 71024640,
+      "peakRssBytes": 69861376,
       "ops": {
         "build": {
           "result": 50000,
@@ -3211,10 +3216,10 @@
           "time": {
             "samples": 10,
             "iterations": 1,
-            "medianNs": 68820604.5,
-            "p95Ns": 76720750,
-            "madNs": 1852563,
-            "minNs": 66657083
+            "medianNs": 70336187.5,
+            "p95Ns": 134099083,
+            "madNs": 2695687.5,
+            "minNs": 67596625
           }
         },
         "clusters_z4": {
@@ -3223,11 +3228,11 @@
           "allocationBytes": 76,
           "time": {
             "samples": 1000,
-            "iterations": 2048,
-            "medianNs": 51.2,
-            "p95Ns": 53.3,
+            "iterations": 1024,
+            "medianNs": 60.5,
+            "p95Ns": 82.4,
             "madNs": 0.5,
-            "minNs": 47.5
+            "minNs": 59.2
           }
         },
         "clusters_z8": {
@@ -3237,10 +3242,10 @@
           "time": {
             "samples": 1000,
             "iterations": 512,
-            "medianNs": 161.1,
-            "p95Ns": 169.8,
-            "madNs": 3.7,
-            "minNs": 145
+            "medianNs": 169.9,
+            "p95Ns": 179.6,
+            "madNs": 3.8,
+            "minNs": 163.2
           }
         },
         "clusters_z12": {
@@ -3250,10 +3255,10 @@
           "time": {
             "samples": 1000,
             "iterations": 8,
-            "medianNs": 9882.8,
-            "p95Ns": 10239.6,
-            "madNs": 148.4,
-            "minNs": 9072.9
+            "medianNs": 10093.8,
+            "p95Ns": 10828.1,
+            "madNs": 140.6,
+            "minNs": 9552
           }
         },
         "clusters_z16": {
@@ -3263,10 +3268,10 @@
           "time": {
             "samples": 1000,
             "iterations": 128,
-            "medianNs": 719.7,
-            "p95Ns": 746.7,
-            "madNs": 10.7,
-            "minNs": 661.8
+            "medianNs": 742.5,
+            "p95Ns": 774.1,
+            "madNs": 8.5,
+            "minNs": 710.9
           }
         },
         "leaves_top": {
@@ -3274,12 +3279,12 @@
           "allocationCount": 23,
           "allocationBytes": 9437364,
           "time": {
-            "samples": 373,
+            "samples": 252,
             "iterations": 1,
-            "medianNs": 782958,
-            "p95Ns": 916875,
-            "madNs": 42041,
-            "minNs": 682000
+            "medianNs": 1054854.5,
+            "p95Ns": 2251541,
+            "madNs": 143292,
+            "minNs": 797958
           }
         },
         "expansion_top": {
@@ -3289,10 +3294,10 @@
           "time": {
             "samples": 1000,
             "iterations": 2048,
-            "medianNs": 27.5,
-            "p95Ns": 29.8,
-            "madNs": 1.6,
-            "minNs": 22.8
+            "medianNs": 25,
+            "p95Ns": 39.9,
+            "madNs": 0.7,
+            "minNs": 23.6
           }
         },
         "zoom_sweep": {
@@ -3302,10 +3307,10 @@
           "time": {
             "samples": 1000,
             "iterations": 2,
-            "medianNs": 36708,
-            "p95Ns": 39062.5,
-            "madNs": 458,
-            "minNs": 33771
+            "medianNs": 37396,
+            "p95Ns": 49687.5,
+            "madNs": 437.5,
+            "minNs": 35437.5
           }
         }
       }
@@ -3315,7 +3320,7 @@
       "size": 100000,
       "datasetHash": "9c63bf72",
       "memorySize": 92904900,
-      "peakRssBytes": 119980032,
+      "peakRssBytes": 121143296,
       "ops": {
         "build": {
           "result": 100000,
@@ -3324,10 +3329,10 @@
           "time": {
             "samples": 10,
             "iterations": 1,
-            "medianNs": 138245771,
-            "p95Ns": 142386500,
-            "madNs": 1281604.5,
-            "minNs": 136797917
+            "medianNs": 142133687.5,
+            "p95Ns": 150926500,
+            "madNs": 3653750,
+            "minNs": 138036417
           }
         },
         "clusters_z4": {
@@ -3336,11 +3341,11 @@
           "allocationBytes": 76,
           "time": {
             "samples": 1000,
-            "iterations": 2048,
-            "medianNs": 51.1,
-            "p95Ns": 53.7,
-            "madNs": 0.5,
-            "minNs": 47.5
+            "iterations": 1024,
+            "medianNs": 59.9,
+            "p95Ns": 67.5,
+            "madNs": 0.4,
+            "minNs": 59
           }
         },
         "clusters_z8": {
@@ -3350,10 +3355,10 @@
           "time": {
             "samples": 1000,
             "iterations": 256,
-            "medianNs": 245.9,
-            "p95Ns": 262.5,
-            "madNs": 5,
-            "minNs": 219.2
+            "medianNs": 249.5,
+            "p95Ns": 260.6,
+            "madNs": 3.9,
+            "minNs": 236
           }
         },
         "clusters_z12": {
@@ -3363,10 +3368,10 @@
           "time": {
             "samples": 1000,
             "iterations": 8,
-            "medianNs": 9854.2,
-            "p95Ns": 10359.4,
-            "madNs": 140.5,
-            "minNs": 8958.4
+            "medianNs": 9963.5,
+            "p95Ns": 10281.2,
+            "madNs": 83.4,
+            "minNs": 9619.8
           }
         },
         "clusters_z16": {
@@ -3376,10 +3381,10 @@
           "time": {
             "samples": 1000,
             "iterations": 128,
-            "medianNs": 716.5,
-            "p95Ns": 747.7,
-            "madNs": 8,
-            "minNs": 663.1
+            "medianNs": 743.2,
+            "p95Ns": 767.2,
+            "madNs": 6.5,
+            "minNs": 719.1
           }
         },
         "leaves_top": {
@@ -3387,12 +3392,12 @@
           "allocationCount": 24,
           "allocationBytes": 18874548,
           "time": {
-            "samples": 155,
+            "samples": 136,
             "iterations": 1,
-            "medianNs": 1782458,
-            "p95Ns": 2759167,
-            "madNs": 84626,
-            "minNs": 1612167
+            "medianNs": 2184833,
+            "p95Ns": 2480083,
+            "madNs": 99354,
+            "minNs": 1952584
           }
         },
         "expansion_top": {
@@ -3402,10 +3407,10 @@
           "time": {
             "samples": 1000,
             "iterations": 4096,
-            "medianNs": 23.1,
-            "p95Ns": 25.5,
-            "madNs": 1,
-            "minNs": 21
+            "medianNs": 22.7,
+            "p95Ns": 24.4,
+            "madNs": 0.7,
+            "minNs": 21.7
           }
         },
         "zoom_sweep": {
@@ -3415,10 +3420,10 @@
           "time": {
             "samples": 1000,
             "iterations": 2,
-            "medianNs": 41771,
-            "p95Ns": 43229,
-            "madNs": 458.5,
-            "minNs": 38208
+            "medianNs": 42416.5,
+            "p95Ns": 44125,
+            "madNs": 375,
+            "minNs": 40729.5
           }
         }
       }
@@ -3437,10 +3442,10 @@
           "time": {
             "samples": 1000,
             "iterations": 1,
-            "medianNs": 80417,
-            "p95Ns": 86167,
-            "madNs": 708,
-            "minNs": 74167
+            "medianNs": 85229.5,
+            "p95Ns": 122958,
+            "madNs": 2396.5,
+            "minNs": 81917
           }
         },
         "clusters_z4": {
@@ -3450,10 +3455,10 @@
           "time": {
             "samples": 1000,
             "iterations": 128,
-            "medianNs": 508.5,
-            "p95Ns": 529.3,
-            "madNs": 7.8,
-            "minNs": 466.8
+            "medianNs": 534.2,
+            "p95Ns": 649.4,
+            "madNs": 9.4,
+            "minNs": 493.8
           }
         },
         "clusters_z8": {
@@ -3463,10 +3468,10 @@
           "time": {
             "samples": 1000,
             "iterations": 512,
-            "medianNs": 162.2,
-            "p95Ns": 170.8,
-            "madNs": 2.2,
-            "minNs": 150.1
+            "medianNs": 168.7,
+            "p95Ns": 182.7,
+            "madNs": 4.3,
+            "minNs": 159.8
           }
         },
         "clusters_z12": {
@@ -3476,10 +3481,10 @@
           "time": {
             "samples": 1000,
             "iterations": 1024,
-            "medianNs": 79.7,
-            "p95Ns": 83.3,
-            "madNs": 0.1,
-            "minNs": 74.8
+            "medianNs": 89.4,
+            "p95Ns": 94.8,
+            "madNs": 0.3,
+            "minNs": 88.3
           }
         },
         "clusters_z16": {
@@ -3488,11 +3493,11 @@
           "allocationBytes": 0,
           "time": {
             "samples": 1000,
-            "iterations": 512,
-            "medianNs": 79.5,
-            "p95Ns": 85,
-            "madNs": 0.2,
-            "minNs": 74.5
+            "iterations": 1024,
+            "medianNs": 89.4,
+            "p95Ns": 94.6,
+            "madNs": 0.4,
+            "minNs": 88.1
           }
         },
         "leaves_top": {
@@ -3502,10 +3507,10 @@
           "time": {
             "samples": 1000,
             "iterations": 128,
-            "medianNs": 513.2,
-            "p95Ns": 553.4,
-            "madNs": 7,
-            "minNs": 474.6
+            "medianNs": 484.1,
+            "p95Ns": 514.3,
+            "madNs": 7.2,
+            "minNs": 464.5
           }
         },
         "expansion_top": {
@@ -3515,10 +3520,10 @@
           "time": {
             "samples": 1000,
             "iterations": 2048,
-            "medianNs": 29.8,
-            "p95Ns": 31.2,
-            "madNs": 0.9,
-            "minNs": 26.6
+            "medianNs": 28.6,
+            "p95Ns": 41.1,
+            "madNs": 1.4,
+            "minNs": 25.8
           }
         },
         "zoom_sweep": {
@@ -3528,10 +3533,10 @@
           "time": {
             "samples": 1000,
             "iterations": 16,
-            "medianNs": 3450.6,
-            "p95Ns": 3653.6,
-            "madNs": 23.4,
-            "minNs": 3210.9
+            "medianNs": 3804.7,
+            "p95Ns": 6229.1,
+            "madNs": 46.9,
+            "minNs": 3669.3
           }
         }
       }
@@ -3548,12 +3553,12 @@
           "allocationCount": 4053,
           "allocationBytes": 2709972,
           "time": {
-            "samples": 244,
+            "samples": 223,
             "iterations": 1,
-            "medianNs": 1189208.5,
-            "p95Ns": 1263416,
-            "madNs": 10417,
-            "minNs": 1156875
+            "medianNs": 1272708,
+            "p95Ns": 1563459,
+            "madNs": 36208,
+            "minNs": 1204166
           }
         },
         "clusters_z4": {
@@ -3563,10 +3568,10 @@
           "time": {
             "samples": 1000,
             "iterations": 64,
-            "medianNs": 1095,
-            "p95Ns": 1128.2,
-            "madNs": 13,
-            "minNs": 1003.2
+            "medianNs": 1096.4,
+            "p95Ns": 1177.1,
+            "madNs": 14.3,
+            "minNs": 1054.7
           }
         },
         "clusters_z8": {
@@ -3576,10 +3581,10 @@
           "time": {
             "samples": 1000,
             "iterations": 256,
-            "medianNs": 353.4,
-            "p95Ns": 363.9,
-            "madNs": 3.3,
-            "minNs": 325
+            "medianNs": 370.1,
+            "p95Ns": 471.8,
+            "madNs": 6,
+            "minNs": 353.7
           }
         },
         "clusters_z12": {
@@ -3589,10 +3594,10 @@
           "time": {
             "samples": 1000,
             "iterations": 512,
-            "medianNs": 103.2,
-            "p95Ns": 108.9,
-            "madNs": 0.2,
-            "minNs": 96.9
+            "medianNs": 113.4,
+            "p95Ns": 173.7,
+            "madNs": 1.5,
+            "minNs": 111.1
           }
         },
         "clusters_z16": {
@@ -3602,10 +3607,10 @@
           "time": {
             "samples": 1000,
             "iterations": 512,
-            "medianNs": 102.6,
-            "p95Ns": 108.5,
-            "madNs": 0.2,
-            "minNs": 96.1
+            "medianNs": 112.1,
+            "p95Ns": 117.5,
+            "madNs": 0.3,
+            "minNs": 111.2
           }
         },
         "leaves_top": {
@@ -3615,10 +3620,10 @@
           "time": {
             "samples": 1000,
             "iterations": 16,
-            "medianNs": 4111.9,
-            "p95Ns": 4343.8,
-            "madNs": 83.2,
-            "minNs": 3718.8
+            "medianNs": 4148.4,
+            "p95Ns": 4635.4,
+            "madNs": 75.5,
+            "minNs": 3924.4
           }
         },
         "expansion_top": {
@@ -3628,10 +3633,10 @@
           "time": {
             "samples": 1000,
             "iterations": 2048,
-            "medianNs": 26.9,
-            "p95Ns": 28.6,
-            "madNs": 1.3,
-            "minNs": 21.4
+            "medianNs": 25,
+            "p95Ns": 39.1,
+            "madNs": 0.4,
+            "minNs": 23.6
           }
         },
         "zoom_sweep": {
@@ -3641,10 +3646,10 @@
           "time": {
             "samples": 1000,
             "iterations": 8,
-            "medianNs": 9942.8,
-            "p95Ns": 10479.2,
-            "madNs": 57.2,
-            "minNs": 9270.9
+            "medianNs": 10307.2,
+            "p95Ns": 10974,
+            "madNs": 72.9,
+            "minNs": 10041.6
           }
         }
       }
@@ -3654,19 +3659,19 @@
       "size": 5000,
       "datasetHash": "dcadabb0",
       "memorySize": 7914092,
-      "peakRssBytes": 11403264,
+      "peakRssBytes": 11681792,
       "ops": {
         "build": {
           "result": 5000,
           "allocationCount": 18884,
           "allocationBytes": 12617948,
           "time": {
-            "samples": 28,
+            "samples": 26,
             "iterations": 1,
-            "medianNs": 10651375.5,
-            "p95Ns": 11930666,
-            "madNs": 367125.5,
-            "minNs": 9420875
+            "medianNs": 11436584,
+            "p95Ns": 12355041,
+            "madNs": 259728.5,
+            "minNs": 10288417
           }
         },
         "clusters_z4": {
@@ -3676,10 +3681,10 @@
           "time": {
             "samples": 1000,
             "iterations": 64,
-            "medianNs": 1214.8,
-            "p95Ns": 1287.1,
-            "madNs": 16.9,
-            "minNs": 1112
+            "medianNs": 1247.4,
+            "p95Ns": 1315.8,
+            "madNs": 9.1,
+            "minNs": 1196.6
           }
         },
         "clusters_z8": {
@@ -3689,10 +3694,10 @@
           "time": {
             "samples": 1000,
             "iterations": 64,
-            "medianNs": 1007.2,
-            "p95Ns": 1046.9,
-            "madNs": 9.1,
-            "minNs": 932.3
+            "medianNs": 1042.3,
+            "p95Ns": 1137.4,
+            "madNs": 11.1,
+            "minNs": 1013.7
           }
         },
         "clusters_z12": {
@@ -3702,10 +3707,10 @@
           "time": {
             "samples": 1000,
             "iterations": 512,
-            "medianNs": 149.5,
-            "p95Ns": 155.8,
-            "madNs": 1,
-            "minNs": 139.2
+            "medianNs": 159.2,
+            "p95Ns": 180.1,
+            "madNs": 3.1,
+            "minNs": 153.2
           }
         },
         "clusters_z16": {
@@ -3715,10 +3720,10 @@
           "time": {
             "samples": 1000,
             "iterations": 1024,
-            "medianNs": 88,
-            "p95Ns": 90.4,
-            "madNs": 0.3,
-            "minNs": 82.5
+            "medianNs": 98.9,
+            "p95Ns": 128.3,
+            "madNs": 1.6,
+            "minNs": 96.1
           }
         },
         "leaves_top": {
@@ -3728,10 +3733,10 @@
           "time": {
             "samples": 1000,
             "iterations": 4,
-            "medianNs": 21854.2,
-            "p95Ns": 23093.8,
-            "madNs": 427.1,
-            "minNs": 19760.2
+            "medianNs": 21468.8,
+            "p95Ns": 27812.5,
+            "madNs": 458.2,
+            "minNs": 20364.5
           }
         },
         "expansion_top": {
@@ -3741,10 +3746,10 @@
           "time": {
             "samples": 1000,
             "iterations": 2048,
-            "medianNs": 28.3,
-            "p95Ns": 30.9,
-            "madNs": 0.3,
-            "minNs": 25.7
+            "medianNs": 24.2,
+            "p95Ns": 27,
+            "madNs": 0.5,
+            "minNs": 23.1
           }
         },
         "zoom_sweep": {
@@ -3754,10 +3759,10 @@
           "time": {
             "samples": 1000,
             "iterations": 4,
-            "medianNs": 18104,
-            "p95Ns": 18916.5,
-            "madNs": 145.5,
-            "minNs": 16937.5
+            "medianNs": 18593.8,
+            "p95Ns": 23020.8,
+            "madNs": 312.5,
+            "minNs": 17937.5
           }
         }
       }
@@ -3767,19 +3772,19 @@
       "size": 10000,
       "datasetHash": "c9c781c8",
       "memorySize": 15360328,
-      "peakRssBytes": 19562496,
+      "peakRssBytes": 23576576,
       "ops": {
         "build": {
           "result": 10000,
           "allocationCount": 37371,
           "allocationBytes": 24499808,
           "time": {
-            "samples": 11,
+            "samples": 10,
             "iterations": 1,
-            "medianNs": 29412708,
-            "p95Ns": 32621916,
-            "madNs": 994917,
-            "minNs": 27451459
+            "medianNs": 33363521,
+            "p95Ns": 35548875,
+            "madNs": 451833,
+            "minNs": 30542709
           }
         },
         "clusters_z4": {
@@ -3789,10 +3794,10 @@
           "time": {
             "samples": 1000,
             "iterations": 64,
-            "medianNs": 1233.7,
-            "p95Ns": 1311.2,
-            "madNs": 12.4,
-            "minNs": 1132.8
+            "medianNs": 1257.8,
+            "p95Ns": 1482.4,
+            "madNs": 20.8,
+            "minNs": 1210.3
           }
         },
         "clusters_z8": {
@@ -3802,10 +3807,10 @@
           "time": {
             "samples": 1000,
             "iterations": 32,
-            "medianNs": 1833.3,
-            "p95Ns": 1932.3,
-            "madNs": 20.8,
-            "minNs": 1682.3
+            "medianNs": 1895.8,
+            "p95Ns": 2307.3,
+            "madNs": 31.2,
+            "minNs": 1820.3
           }
         },
         "clusters_z12": {
@@ -3815,10 +3820,10 @@
           "time": {
             "samples": 1000,
             "iterations": 512,
-            "medianNs": 171.8,
-            "p95Ns": 192,
-            "madNs": 2.9,
-            "minNs": 165.9
+            "medianNs": 179.6,
+            "p95Ns": 197.9,
+            "madNs": 2.7,
+            "minNs": 174.8
           }
         },
         "clusters_z16": {
@@ -3827,11 +3832,11 @@
           "allocationBytes": 0,
           "time": {
             "samples": 1000,
-            "iterations": 1024,
-            "medianNs": 92.7,
-            "p95Ns": 101.9,
-            "madNs": 0.3,
-            "minNs": 87.1
+            "iterations": 512,
+            "medianNs": 104.9,
+            "p95Ns": 119.9,
+            "madNs": 1.5,
+            "minNs": 102.8
           }
         },
         "leaves_top": {
@@ -3841,10 +3846,10 @@
           "time": {
             "samples": 1000,
             "iterations": 1,
-            "medianNs": 56583,
-            "p95Ns": 61250,
-            "madNs": 1584,
-            "minNs": 51042
+            "medianNs": 61604.5,
+            "p95Ns": 74167,
+            "madNs": 1313.5,
+            "minNs": 58250
           }
         },
         "expansion_top": {
@@ -3853,11 +3858,11 @@
           "allocationBytes": 288,
           "time": {
             "samples": 1000,
-            "iterations": 2048,
-            "medianNs": 28.3,
-            "p95Ns": 33.4,
-            "madNs": 3.8,
-            "minNs": 23.3
+            "iterations": 4096,
+            "medianNs": 24.7,
+            "p95Ns": 30.7,
+            "madNs": 0.4,
+            "minNs": 23.5
           }
         },
         "zoom_sweep": {
@@ -3866,11 +3871,11 @@
           "allocationBytes": 303688,
           "time": {
             "samples": 1000,
-            "iterations": 1,
-            "medianNs": 23375,
-            "p95Ns": 27458,
-            "madNs": 520.5,
-            "minNs": 22250
+            "iterations": 4,
+            "medianNs": 23270.8,
+            "p95Ns": 26708.5,
+            "madNs": 374.8,
+            "minNs": 22531.2
           }
         }
       }
@@ -3880,7 +3885,7 @@
       "size": 50000,
       "datasetHash": "e87d2818",
       "memorySize": 71388436,
-      "peakRssBytes": 85409792,
+      "peakRssBytes": 89440256,
       "ops": {
         "build": {
           "result": 50000,
@@ -3889,10 +3894,10 @@
           "time": {
             "samples": 10,
             "iterations": 1,
-            "medianNs": 188459895.5,
-            "p95Ns": 213950375,
-            "madNs": 801291.5,
-            "minNs": 187502625
+            "medianNs": 217204666.5,
+            "p95Ns": 227878417,
+            "madNs": 4118354,
+            "minNs": 210214500
           }
         },
         "clusters_z4": {
@@ -3902,10 +3907,10 @@
           "time": {
             "samples": 1000,
             "iterations": 64,
-            "medianNs": 1207.7,
-            "p95Ns": 1258.5,
-            "madNs": 9.8,
-            "minNs": 1106.1
+            "medianNs": 1235,
+            "p95Ns": 1430.3,
+            "madNs": 22.1,
+            "minNs": 1162.8
           }
         },
         "clusters_z8": {
@@ -3915,10 +3920,10 @@
           "time": {
             "samples": 1000,
             "iterations": 16,
-            "medianNs": 5615.9,
-            "p95Ns": 5895.8,
-            "madNs": 61.2,
-            "minNs": 5130.2
+            "medianNs": 5708.3,
+            "p95Ns": 7013.1,
+            "madNs": 91.1,
+            "minNs": 5468.8
           }
         },
         "clusters_z12": {
@@ -3928,10 +3933,10 @@
           "time": {
             "samples": 1000,
             "iterations": 256,
-            "medianNs": 280.5,
-            "p95Ns": 300.9,
-            "madNs": 3.7,
-            "minNs": 259.9
+            "medianNs": 291.7,
+            "p95Ns": 343.1,
+            "madNs": 4.8,
+            "minNs": 280.9
           }
         },
         "clusters_z16": {
@@ -3941,10 +3946,10 @@
           "time": {
             "samples": 1000,
             "iterations": 512,
-            "medianNs": 111,
-            "p95Ns": 118.4,
-            "madNs": 1.2,
-            "minNs": 103.4
+            "medianNs": 123,
+            "p95Ns": 138.3,
+            "madNs": 2.1,
+            "minNs": 119.1
           }
         },
         "leaves_top": {
@@ -3952,12 +3957,12 @@
           "allocationCount": 23,
           "allocationBytes": 4719028,
           "time": {
-            "samples": 657,
+            "samples": 523,
             "iterations": 1,
-            "medianNs": 452000,
-            "p95Ns": 499792,
-            "madNs": 12750,
-            "minNs": 400000
+            "medianNs": 544750,
+            "p95Ns": 763208,
+            "madNs": 64000,
+            "minNs": 430584
           }
         },
         "expansion_top": {
@@ -3967,10 +3972,10 @@
           "time": {
             "samples": 1000,
             "iterations": 2048,
-            "medianNs": 27.1,
-            "p95Ns": 29.4,
-            "madNs": 1.6,
-            "minNs": 22.2
+            "medianNs": 24.7,
+            "p95Ns": 31.3,
+            "madNs": 0.8,
+            "minNs": 23.4
           }
         },
         "zoom_sweep": {
@@ -3980,10 +3985,10 @@
           "time": {
             "samples": 1000,
             "iterations": 2,
-            "medianNs": 33354.5,
-            "p95Ns": 34625,
-            "madNs": 375,
-            "minNs": 30896
+            "medianNs": 34583.5,
+            "p95Ns": 42354.5,
+            "madNs": 625,
+            "minNs": 33083
           }
         }
       }
@@ -3993,7 +3998,7 @@
       "size": 100000,
       "datasetHash": "7f8820e8",
       "memorySize": 138121996,
-      "peakRssBytes": 155877376,
+      "peakRssBytes": 170917888,
       "ops": {
         "build": {
           "result": 100000,
@@ -4002,10 +4007,10 @@
           "time": {
             "samples": 10,
             "iterations": 1,
-            "medianNs": 411694937,
-            "p95Ns": 424993667,
-            "madNs": 1945083,
-            "minNs": 408432333
+            "medianNs": 505929062.5,
+            "p95Ns": 621414500,
+            "madNs": 25594708,
+            "minNs": 471612959
           }
         },
         "clusters_z4": {
@@ -4015,10 +4020,10 @@
           "time": {
             "samples": 1000,
             "iterations": 64,
-            "medianNs": 1136.1,
-            "p95Ns": 1182.3,
-            "madNs": 13,
-            "minNs": 1044.9
+            "medianNs": 1201.2,
+            "p95Ns": 1985,
+            "madNs": 39.4,
+            "minNs": 1134.8
           }
         },
         "clusters_z8": {
@@ -4027,11 +4032,11 @@
           "allocationBytes": 110364,
           "time": {
             "samples": 1000,
-            "iterations": 4,
-            "medianNs": 7385.5,
-            "p95Ns": 7635.5,
-            "madNs": 104.2,
-            "minNs": 6771
+            "iterations": 8,
+            "medianNs": 7937.5,
+            "p95Ns": 15265.6,
+            "madNs": 223.9,
+            "minNs": 7500
           }
         },
         "clusters_z12": {
@@ -4041,10 +4046,10 @@
           "time": {
             "samples": 1000,
             "iterations": 256,
-            "medianNs": 334.1,
-            "p95Ns": 349,
-            "madNs": 4,
-            "minNs": 309.1
+            "medianNs": 342.8,
+            "p95Ns": 379.9,
+            "madNs": 4.9,
+            "minNs": 332
           }
         },
         "clusters_z16": {
@@ -4054,10 +4059,10 @@
           "time": {
             "samples": 1000,
             "iterations": 512,
-            "medianNs": 114.8,
-            "p95Ns": 121.1,
-            "madNs": 0.2,
-            "minNs": 107.6
+            "medianNs": 175.9,
+            "p95Ns": 339.2,
+            "madNs": 25.4,
+            "minNs": 126.8
           }
         },
         "leaves_top": {
@@ -4065,12 +4070,12 @@
           "allocationCount": 24,
           "allocationBytes": 9437620,
           "time": {
-            "samples": 279,
+            "samples": 78,
             "iterations": 1,
-            "medianNs": 1040084,
-            "p95Ns": 1290584,
-            "madNs": 33000,
-            "minNs": 971458
+            "medianNs": 3481166,
+            "p95Ns": 6737916,
+            "madNs": 1003583,
+            "minNs": 1944083
           }
         },
         "expansion_top": {
@@ -4080,10 +4085,10 @@
           "time": {
             "samples": 1000,
             "iterations": 2048,
-            "medianNs": 25.2,
-            "p95Ns": 26.4,
-            "madNs": 0.2,
-            "minNs": 22.1
+            "medianNs": 24,
+            "p95Ns": 41.6,
+            "madNs": 0.7,
+            "minNs": 22.5
           }
         },
         "zoom_sweep": {
@@ -4092,11 +4097,11 @@
           "allocationBytes": 543420,
           "time": {
             "samples": 1000,
-            "iterations": 2,
-            "medianNs": 38958.5,
-            "p95Ns": 41875,
-            "madNs": 354.5,
-            "minNs": 35812.5
+            "iterations": 1,
+            "medianNs": 39958,
+            "p95Ns": 79375,
+            "madNs": 458,
+            "minNs": 38458
           }
         }
       }

@@ -19,6 +19,10 @@
 //   --label <name>         recorded in the output, e.g. base or head
 //   --jobs <n>             parallel callgrind processes (default: CPU count)
 //   --quick                fewer timing samples, for a fast local check
+//
+// Exits 3 when the harness cannot be used with the given engine: it does not
+// compile against it, or it is a harness from before this runner. CI then
+// falls back to the base's own harness. Usage errors exit 2, failures 1.
 import { execFileSync, spawn, spawnSync } from 'node:child_process'
 import fs from 'node:fs'
 import os from 'node:os'
@@ -29,7 +33,17 @@ const benchDir = path.dirname(fileURLToPath(import.meta.url))
 
 const SCHEMA_VERSION = 1
 const DEFAULT_SIZES = [100, 1000, 5000, 10000, 50000, 100000]
-const CXX_FLAGS = ['-std=c++20', '-O2', '-DNDEBUG', '-ffp-contract=off']
+const CXX_FLAGS = ['-std=c++20', '-O2', '-DNDEBUG']
+const EXIT_FAILURE = 1
+const EXIT_USAGE = 2
+const EXIT_HARNESS_UNAVAILABLE = 3
+
+class BenchError extends Error {
+  constructor(message, exitCode = EXIT_FAILURE) {
+    super(message)
+    this.exitCode = exitCode
+  }
+}
 
 function parseArgs(argv) {
   const options = {
@@ -56,7 +70,7 @@ function parseArgs(argv) {
     else if (arg === '--src') options.src = path.resolve(value())
     else if (arg === '--out') options.out = value()
     else if (arg === '--label') options.label = value()
-    else if (arg === '--jobs') options.jobs = Math.max(1, Number(value()))
+    else if (arg === '--jobs') options.jobs = Number(value())
     else if (arg === '--quick') options.quick = true
     else fail(`unknown argument ${arg}`)
   }
@@ -66,12 +80,14 @@ function parseArgs(argv) {
   if (options.sizes.some((size) => !Number.isInteger(size) || size <= 0)) {
     fail('--sizes must be positive integers')
   }
+  if (!Number.isInteger(options.jobs) || options.jobs < 1) {
+    fail('--jobs must be a positive integer')
+  }
   return options
 }
 
 function fail(message) {
-  console.error(`bench: ${message}`)
-  process.exit(2)
+  throw new BenchError(message, EXIT_USAGE)
 }
 
 function firstLine(command, args) {
@@ -102,8 +118,11 @@ function compile(options) {
     stdio: ['ignore', 'inherit', 'inherit'],
   })
   if (result.status !== 0) {
-    console.error(`bench: ${cxx} ${args.join(' ')} failed`)
-    process.exit(1)
+    fs.rmSync(path.dirname(binary), { recursive: true, force: true })
+    throw new BenchError(
+      `${cxx} ${args.join(' ')} failed`,
+      EXIT_HARNESS_UNAVAILABLE
+    )
   }
   return {
     binary,
@@ -142,15 +161,50 @@ function timingArgs(options) {
     : []
 }
 
+// The harness's `--list` output: the dataset names. A harness from before
+// this runner ignores the flag and prints no JSON.
+function listDatasets(binary) {
+  const result = spawnSync(binary, ['--list'], {
+    encoding: 'utf8',
+    maxBuffer: 64 * 1024 * 1024,
+  })
+  try {
+    if (result.status !== 0) throw new Error(`exit ${result.status}`)
+    const names = JSON.parse(result.stdout)
+    if (!Array.isArray(names)) throw new Error('not a list')
+    return names
+  } catch {
+    throw new BenchError(
+      'the harness does not list its datasets as JSON, so it predates this runner',
+      EXIT_HARNESS_UNAVAILABLE
+    )
+  }
+}
+
+// Running callgrind processes, killed when a case fails so none outlives the
+// run.
+const children = new Set()
+
+function killChildren() {
+  for (const child of children) child.kill('SIGKILL')
+}
+
 function spawnAsync(command, args) {
   return new Promise((resolve, reject) => {
     const child = spawn(command, args, { stdio: ['ignore', 'pipe', 'pipe'] })
+    children.add(child)
     let stdout = ''
     let stderr = ''
     child.stdout.on('data', (chunk) => (stdout += chunk))
     child.stderr.on('data', (chunk) => (stderr += chunk))
-    child.on('error', reject)
-    child.on('close', (status) => resolve({ status, stdout, stderr }))
+    child.on('error', (error) => {
+      children.delete(child)
+      reject(error)
+    })
+    child.on('close', (status) => {
+      children.delete(child)
+      resolve({ status, stdout, stderr })
+    })
   })
 }
 
@@ -186,7 +240,6 @@ async function countCase(binary, dataset, size) {
     const args = [
       '--tool=callgrind',
       `--callgrind-out-file=${path.join(dir, 'callgrind.out')}`,
-      '--dump-line=no',
       '--compress-strings=no',
       '--compress-pos=no',
       binary,
@@ -221,18 +274,28 @@ async function countCase(binary, dataset, size) {
   }
 }
 
+// Runs `tasks` `jobs` at a time. The first failure stops new tasks and kills
+// the running ones; it is rethrown once every task has settled, so their
+// temporary directories are removed.
 async function runPool(tasks, jobs) {
   const results = new Array(tasks.length)
   let next = 0
+  let failure = null
   async function worker() {
-    while (next < tasks.length) {
+    while (failure == null && next < tasks.length) {
       const index = next++
-      results[index] = await tasks[index]()
+      try {
+        results[index] = await tasks[index]()
+      } catch (error) {
+        failure ??= error
+        killChildren()
+      }
     }
   }
   await Promise.all(
     Array.from({ length: Math.min(jobs, tasks.length) }, worker)
   )
+  if (failure != null) throw failure
   return results
 }
 
@@ -310,10 +373,16 @@ function printSummary(cases) {
 
 async function main() {
   const options = parseArgs(process.argv.slice(2))
-  const { binary, compiler, flags } = compile(options)
-  const known = JSON.parse(
-    execFileSync(binary, ['--list'], { encoding: 'utf8' })
-  )
+  const build = compile(options)
+  try {
+    await benchmark(options, build)
+  } finally {
+    fs.rmSync(path.dirname(build.binary), { recursive: true, force: true })
+  }
+}
+
+async function benchmark(options, { binary, compiler, flags }) {
+  const known = listDatasets(binary)
   const datasets = options.datasets ?? known
   for (const name of datasets) {
     if (!known.includes(name))
@@ -327,8 +396,8 @@ async function main() {
   let counted = []
   if (options.mode !== 'time') {
     if (spawnSync('valgrind', ['--version']).status !== 0) {
-      fail(
-        '--mode count needs valgrind on PATH (Linux; it does not run on Apple silicon)'
+      throw new BenchError(
+        '--mode count needs valgrind on PATH (Linux; it does not run on macOS on Apple silicon)'
       )
     }
     console.error(
@@ -386,8 +455,6 @@ async function main() {
     cases,
   }
 
-  fs.rmSync(path.dirname(binary), { recursive: true, force: true })
-
   const json = `${JSON.stringify(report, null, 2)}\n`
   if (options.out === '-') {
     process.stdout.write(json)
@@ -399,4 +466,10 @@ async function main() {
   printSummary(cases)
 }
 
-await main()
+try {
+  await main()
+} catch (error) {
+  killChildren()
+  console.error(`bench: ${error.message}`)
+  process.exitCode = error.exitCode ?? EXIT_FAILURE
+}

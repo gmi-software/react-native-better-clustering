@@ -4,7 +4,7 @@
 // collects the results. See README.md in this directory.
 //
 // From package/bench:
-//   c++ -std=c++20 -O2 -DNDEBUG -ffp-contract=off -I../cpp bench.cpp -o cluster_bench
+//   c++ -std=c++20 -O2 -DNDEBUG -I../cpp bench.cpp -o cluster_bench
 //   ./cluster_bench --dataset city --size 10000
 //
 // `--once` runs every operation a single time, between callgrind client
@@ -182,7 +182,8 @@ ClusterEngineConfig benchConfig() {
 // The bounds the compat MapView sends at cluster zoom `zoom` for a phone-sized
 // map centred on (lat, lng). Its bbox is the region ± one full delta, which at
 // the cluster zoom spans as many 256-pt tile pixels as the map has points.
-// West > east when the view crosses the antimeridian.
+// Like regionToBBox, the longitudes are not wrapped: around the antimeridian
+// the east edge goes past 180 and the engine normalizes it.
 ViewportBounds phoneViewport(double lat, double lng, int32_t zoom) {
   const double worldSize = kViewportTileSize * std::pow(2.0, zoom);
   const double sinLat = std::sin(lat * M_PI / 180.0);
@@ -198,13 +199,8 @@ ViewportBounds phoneViewport(double lat, double lng, int32_t zoom) {
   bounds.zoom = static_cast<double>(zoom);
   bounds.north = pixelToLat(std::max(0.0, centerY - kViewportHeight / 2.0));
   bounds.south = pixelToLat(std::min(worldSize, centerY + kViewportHeight / 2.0));
-  if (kViewportWidth >= worldSize) {
-    bounds.west = -180.0;
-    bounds.east = 180.0;
-  } else {
-    bounds.west = bench::wrapLongitude((centerX - kViewportWidth / 2.0) / worldSize * 360.0 - 180.0);
-    bounds.east = bench::wrapLongitude((centerX + kViewportWidth / 2.0) / worldSize * 360.0 - 180.0);
-  }
+  bounds.west = (centerX - kViewportWidth / 2.0) / worldSize * 360.0 - 180.0;
+  bounds.east = (centerX + kViewportWidth / 2.0) / worldSize * 360.0 - 180.0;
   return bounds;
 }
 
@@ -399,10 +395,16 @@ void printJson(const Options& options, const bench::Dataset& dataset, const Clus
   std::printf("  \"size\": %d,\n", options.size);
   std::printf("  \"datasetHash\": \"%s\",\n", hash);
   std::printf("  \"focus\": {\"lat\": %.10g, \"lng\": %.10g},\n", dataset.focusLat, dataset.focusLng);
+  std::string queryZooms;
+  for (int32_t zoom : kQueryZooms) {
+    queryZooms += (queryZooms.empty() ? "" : ", ") + std::to_string(zoom);
+  }
+  // Everything that shapes the measurement besides the dataset, so compare.mjs
+  // can refuse to compare reports measured differently.
   std::printf("  \"config\": {\"radius\": %.10g, \"minPoints\": %d, \"minZoom\": %d, \"maxZoom\": %d, \"extent\": %d, "
-              "\"nodeSize\": %d, \"viewport\": {\"width\": %.10g, \"height\": %.10g, \"tileSize\": %.10g}},\n",
+              "\"nodeSize\": %d, \"viewport\": {\"width\": %.10g, \"height\": %.10g, \"tileSize\": %.10g}, \"queryZooms\": [%s]},\n",
               config.radius, config.minPoints, config.minZoom, config.maxZoom, config.extent, config.nodeSize, kViewportWidth,
-              kViewportHeight, kViewportTileSize);
+              kViewportHeight, kViewportTileSize, queryZooms.c_str());
   std::printf("  \"compiler\": %s,\n", jsonString(__VERSION__).c_str());
   std::printf("  \"once\": %s,\n", options.once ? "true" : "false");
   std::printf("  \"callgrind\": %s,\n", BENCH_HAS_CALLGRIND && RUNNING_ON_VALGRIND ? "true" : "false");

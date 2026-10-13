@@ -3,7 +3,8 @@ name: Bench baseline
 # package/bench/baseline.json is the committed reference snapshot of the core
 # benchmark, refreshed from a CI run (package/bench/README.md). It may change
 # only in a pull request labelled `bench-baseline`, so a refresh is always a
-# deliberate, reviewed step and never rides along with an engine change.
+# deliberate, reviewed step. The label is not a check on what else the pull
+# request changes: keep a refresh in a pull request of its own.
 on:
   pull_request:
     branches: [main]

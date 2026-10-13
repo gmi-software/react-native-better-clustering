@@ -8,8 +8,8 @@ nitrogen/
 bun.lock
 .claude/
 .agents/
-# Benchmark reports, written by package/bench/run.mjs. The baseline is a CI
-# artifact copied verbatim.
+# Benchmark reports, written by package/bench/run.mjs. The baseline is one of
+# them, copied verbatim.
 package/bench/baseline.json
 package/bench/results/
 # Own toolchain / not yet formatted with this config.

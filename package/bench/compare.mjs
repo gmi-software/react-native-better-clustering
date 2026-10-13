@@ -9,7 +9,9 @@
 //   above +2%, per operation;
 // - ignores changes smaller than an absolute floor, so a few instructions on a
 //   query that returns nothing never fail a pull request;
-// - never gates on wall time or peak RSS, which shared runners make noisy.
+// - never gates on wall time or peak RSS, which shared runners make noisy;
+// - compares nothing when the two reports were measured with different engine
+//   configurations or viewports.
 import fs from 'node:fs'
 
 const GATE_MIN_SIZE = 10_000
@@ -47,6 +49,13 @@ const MEMORY_METRIC = {
 }
 
 const MARKER = '<!-- cluster-bench-core -->'
+
+// The summary doubles as a pull request comment, which GitHub caps at 65,536
+// characters. Long lists are cut, and past this length the per-case table is
+// left out; the full numbers are in the reports.
+const MAX_TABLE_ROWS = 50
+const MAX_LISTED_CHANGES = 20
+const MAX_MARKDOWN_LENGTH = 60_000
 
 function classify(metric, base, head) {
   if (base == null || head == null) return null
@@ -114,6 +123,7 @@ function compareReports(base, head) {
       resultChanges,
     })
   }
+  const byRatio = (a, b) => b.ratio - a.ratio
   const flagged = rows.flatMap((row) =>
     row.findings
       .filter((f) => f.level === 'fail' || f.level === 'warn')
@@ -126,9 +136,9 @@ function compareReports(base, head) {
   return {
     rows,
     skipped,
-    failures: flagged.filter((f) => f.level === 'fail'),
-    warnings: flagged.filter((f) => f.level === 'warn'),
-    ungated: flagged.filter((f) => f.level === 'info'),
+    failures: flagged.filter((f) => f.level === 'fail').sort(byRatio),
+    warnings: flagged.filter((f) => f.level === 'warn').sort(byRatio),
+    ungated: flagged.filter((f) => f.level === 'info').sort(byRatio),
   }
 }
 
@@ -194,7 +204,14 @@ function timeCell(base, head) {
   return `${ms(head)} (${formatRatio((head - base) / base)})`
 }
 
-function renderMarkdown(base, head, comparison) {
+const FULL_REPORTS =
+  'Every number is in `base.json` and `head.json` (the `bench-core` artifact in CI).'
+
+function moreRows(count) {
+  return `…and ${count} more. ${FULL_REPORTS}`
+}
+
+function renderMarkdown(base, head, comparison, { details = true } = {}) {
   const { rows, skipped, failures, warnings, ungated } = comparison
   const lines = [MARKER, '## Core benchmark: base vs head', '']
 
@@ -222,8 +239,11 @@ function renderMarkdown(base, head, comparison) {
   if (flagged.length > 0) {
     lines.push('| Case | Metric | Base | Head | Δ |')
     lines.push('|---|---|--:|--:|--:|')
-    for (const f of flagged) lines.push(findingRow(f))
+    for (const f of flagged.slice(0, MAX_TABLE_ROWS)) lines.push(findingRow(f))
     lines.push('')
+    if (flagged.length > MAX_TABLE_ROWS) {
+      lines.push(moreRows(flagged.length - MAX_TABLE_ROWS), '')
+    }
     if (ungated.length > 0) {
       lines.push(
         `ℹ️ rows are below n = ${GATE_MIN_SIZE.toLocaleString('en-US')} and never fail the check.`
@@ -240,12 +260,27 @@ function renderMarkdown(base, head, comparison) {
       '**Results changed**: these operations return something else now, so their costs are not like for like.'
     )
     lines.push('')
-    for (const change of resultChanges) {
+    for (const change of resultChanges.slice(0, MAX_LISTED_CHANGES)) {
       lines.push(
         `- ${change.key} \`${change.op}\`: ${change.base} → ${change.head}`
       )
     }
     lines.push('')
+    if (resultChanges.length > MAX_LISTED_CHANGES) {
+      lines.push(moreRows(resultChanges.length - MAX_LISTED_CHANGES), '')
+    }
+  }
+
+  if (skipped.length > 0) {
+    lines.push(`Skipped: ${skipped.join('; ')}.`, '')
+  }
+
+  if (!details) {
+    lines.push(
+      `The per-case table is left out to fit a pull request comment. ${FULL_REPORTS}`,
+      ''
+    )
+    return lines.join('\n')
   }
 
   lines.push('<details><summary>All cases</summary>', '')
@@ -263,11 +298,21 @@ function renderMarkdown(base, head, comparison) {
     )
   }
   lines.push('', '</details>', '')
-
-  if (skipped.length > 0) {
-    lines.push(`Skipped: ${skipped.join('; ')}.`, '')
-  }
   return lines.join('\n')
+}
+
+// JSON with sorted keys, so two configs compare equal whatever the key order.
+function canonical(value) {
+  if (Array.isArray(value)) return `[${value.map(canonical).join(',')}]`
+  if (value != null && typeof value === 'object') {
+    const keys = Object.keys(value).sort()
+    return `{${keys.map((key) => `${JSON.stringify(key)}:${canonical(value[key])}`).join(',')}}`
+  }
+  return JSON.stringify(value)
+}
+
+function notice(text) {
+  return [MARKER, '## Core benchmark', '', text, ''].join('\n')
 }
 
 function main() {
@@ -289,18 +334,28 @@ function main() {
 
   let markdown
   let failed = false
-  if (!fs.existsSync(basePath)) {
-    markdown = [
-      MARKER,
-      '## Core benchmark',
-      '',
-      `No base results to compare with (\`${basePath}\` is missing): the harness did not build against the base engine. The head results are in the workflow artifacts.`,
-      '',
-    ].join('\n')
+  const base = fs.existsSync(basePath)
+    ? JSON.parse(fs.readFileSync(basePath, 'utf8'))
+    : null
+  if (base == null) {
+    markdown = notice(
+      `⚠️ Not compared: there are no base results (\`${basePath}\` is missing), because no benchmark harness compiles against the base engine. The head results are in the reports.`
+    )
+  } else if (canonical(base.config) !== canonical(head.config)) {
+    markdown = notice(
+      [
+        '⚠️ Not compared: base and head were measured with different engine configurations or viewports, so their numbers are not like for like.',
+        '',
+        `- base: \`${JSON.stringify(base.config)}\``,
+        `- head: \`${JSON.stringify(head.config)}\``,
+      ].join('\n')
+    )
   } else {
-    const base = JSON.parse(fs.readFileSync(basePath, 'utf8'))
     const comparison = compareReports(base, head)
     markdown = renderMarkdown(base, head, comparison)
+    if (markdown.length > MAX_MARKDOWN_LENGTH) {
+      markdown = renderMarkdown(base, head, comparison, { details: false })
+    }
     failed = comparison.failures.length > 0
   }
 

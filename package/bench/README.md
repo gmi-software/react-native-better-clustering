@@ -24,7 +24,7 @@ bun run bench --mode count                         # instruction counts (Linux w
 bun run bench:compare base.json head.json          # the gate, as CI runs it
 ```
 
-`run.mjs` takes `--mode time|count|all`, `--datasets`, `--sizes`, `--cpp <dir>` (the engine headers to measure), `--src <dir>` (the harness to compile), `--out <file>` (`-` for stdout), `--label` and `--jobs`. It compiles with `$CXX` (default `c++`) and `-std=c++20 -O2 -DNDEBUG -ffp-contract=off`.
+`run.mjs` takes `--mode time|count|all`, `--datasets`, `--sizes`, `--cpp <dir>` (the engine headers to measure), `--src <dir>` (the harness to compile), `--out <file>` (`-` for stdout), `--label` and `--jobs`. It compiles with `$CXX` (default `c++`) and `-std=c++20 -O2 -DNDEBUG`. It exits 3 when the harness cannot be used with the engine (it does not compile against it, or it predates `run.mjs`), 2 on a usage error and 1 on any other failure.
 
 Instruction counts need valgrind, which does not run on macOS on Apple silicon. On a Mac, run them in a Linux container (an arm64 container counts different instructions from the x86-64 CI runner, so compare only runs from the same machine):
 
@@ -37,7 +37,7 @@ docker run --rm -v "$PWD":/repo -w /repo/package ubuntu:24.04 \
 
 ### Datasets
 
-Six seeded datasets, each at 100, 1k, 5k, 10k, 50k and 100k points. They are generated, not stored: the generator, the seed and the hash of the output pin the same points, without megabytes of fixtures in the repository. Every coordinate is `A + B / C` with integer `B` and `C`, so it is bit-identical on any IEEE-754 platform, and a JavaScript port of `datasets.hpp` can reproduce the same points and `datasetHash`.
+Six seeded datasets, each at 100, 1k, 5k, 10k, 50k and 100k points. They are generated, not stored: the generator, the seed and the hash of the output pin the same points, without megabytes of fixtures in the repository. Every coordinate is `A + B / C` with integer `B` and `C`: a correctly rounded division and addition, so it is bit-identical on any IEEE-754 platform, and a JavaScript port of `datasets.hpp` can reproduce the same points and `datasetHash`.
 
 | Dataset | Points | Viewports centred on |
 | --- | --- | --- |
@@ -50,7 +50,7 @@ Six seeded datasets, each at 100, 1k, 5k, 10k, 50k and 100k points. They are gen
 
 ### Engine configuration
 
-The compat `MapView` with default props on a 390 × 844 pt phone: `radius` 23.4 (window width × 0.06), `minZoom` 1, `maxZoom` 20, `extent` 512, `nodeSize` 64, `minPoints` 2. A query at cluster zoom `z` uses the bounds that `MapView` sends for that phone: 390 × 844 pixels of 256-pt tiles at zoom `z`.
+The compat `MapView` with default props on a 390 × 844 pt phone: `radius` 23.4 (window width × 0.06), `minZoom` 1, `maxZoom` 20, `extent` 512, `nodeSize` 64, `minPoints` 2. A query at cluster zoom `z` uses the bounds that `MapView` sends for that phone: 390 × 844 pixels of 256-pt tiles at zoom `z`, with longitudes left unwrapped as `regionToBBox` leaves them. Every report records this as `config`.
 
 ### Operations
 
@@ -76,7 +76,9 @@ Each operation records its `result` (points indexed, nodes returned, or the zoom
 
 ## The CI gate
 
-`.github/workflows/bench.yml` runs on pull requests that touch `package/cpp/`, `package/bench/` or the workflow. On one `ubuntu-24.04` runner it compiles the head's harness against the base engine and against the head engine, runs both with `--mode all`, and compares them with `compare.mjs`. When the head's harness does not compile against the base engine, it falls back to the base's own harness; if that fails too, the report says there is no base to compare with.
+`.github/workflows/bench.yml` runs on pull requests that touch `package/cpp/`, `package/bench/` or the workflow. On one `ubuntu-24.04` runner it compiles the head's harness against the base engine (the commit the pull request's test merge was made onto) and against the head engine, runs both with `--mode all`, and compares them with `compare.mjs`.
+
+When the head's harness cannot be used with the base engine (`run.mjs` exits 3), the base is measured with its own harness instead. If that cannot be used either, the report says there is no base to compare with and the check passes with a warning. Any other failure, a crash for example, fails the job. `compare.mjs` compares nothing, and says so, when the two reports have different `config`s: different harnesses can measure differently even on the same points.
 
 For every operation of every case with **at least 10,000 points**:
 
@@ -87,9 +89,9 @@ For every operation of every case with **at least 10,000 points**:
 | `allocationBytes` | +10% | +2% | 64 KiB |
 | `memorySize` (per case) | +10% | +2% | 64 KiB |
 
-The absolute floors keep a handful of instructions on a query that returns nothing from failing a pull request. Smaller cases are listed but never fail. Wall time and peak RSS are reported and never gated, since shared runners make them noisy.
+The absolute floors keep a handful of instructions on a query that returns nothing from failing a pull request. Some viewport queries do return nothing, because the data is too sparse for a phone's view at that zoom (`uniform` at zooms 12 and 16, `antimeridian` at 16, `blobs` at 16 up to 50k points), so those stay below the floors and are never gated. Smaller cases are listed but never fail. Wall time and peak RSS are reported and never gated, since shared runners make them noisy.
 
-The results are posted as one comment on the pull request, updated on every push, and written to the job summary. Pull requests from forks get a read-only token, so for them only the job summary has the results. The `bench-core` artifact holds `base.json`, `head.json` and `summary.md`.
+The results are posted as one comment on the pull request, updated on every push, and written to the job summary. Long lists are cut to fit GitHub's comment size limit. Pull requests from forks get a read-only token, so for them only the job summary has the results. The `bench-core` artifact holds `base.json`, `head.json` and `summary.md`.
 
 The workflow is not a required status check: a required check that a `paths:` filter skips stays pending and blocks the pull request (the same reason as for `native.yml`).
 

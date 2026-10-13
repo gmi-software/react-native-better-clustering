@@ -5,9 +5,9 @@
 // The points are generated rather than stored: a 100k-point file per dataset
 // would add megabytes to the repository, while the generator, its seed and the
 // hash of its output pin the same data. Every coordinate is `A + B / C` with
-// integer B and C, so it is correctly rounded and comes out bit-identical from
-// any IEEE-754 implementation, a JavaScript port included (compile with
-// `-ffp-contract=off` so no step fuses into an FMA). The random source is the
+// integer B and C: a correctly rounded division and addition with nothing to
+// fuse into an FMA, so it comes out bit-identical from any IEEE-754
+// implementation, a JavaScript port included. The random source is the
 // xorshift32 the supercluster parity fixture uses.
 
 #include <cstdint>

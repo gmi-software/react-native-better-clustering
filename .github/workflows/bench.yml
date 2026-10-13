@@ -47,17 +47,30 @@ jobs:
       # token; the comment step then only warns.
       pull-requests: write
     steps:
+      # On a pull request this is the test merge commit. Its parents come
+      # along so the base below is exactly the commit it was merged onto.
       - name: Checkout head
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           path: head
+          fetch-depth: 2
           persist-credentials: false
+
+      - name: Find the base commit
+        id: base
+        if: github.event_name == 'pull_request'
+        # An empty sha would make the base checkout fall back to the merge
+        # commit itself, comparing head with head; fail instead.
+        run: |
+          sha=$(git -C head rev-parse --verify HEAD^1)
+          test -n "$sha"
+          echo "sha=$sha" >> "$GITHUB_OUTPUT"
 
       - name: Checkout base
         if: github.event_name == 'pull_request'
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: ${{ github.event.pull_request.base.sha }}
+          ref: ${{ steps.base.outputs.sha }}
           path: base
           persist-credentials: false
 
@@ -76,15 +89,27 @@ jobs:
           test -f /usr/include/valgrind/callgrind.h
 
       # The head's harness against the base's engine, so both sides run the
-      # same measurement code. When the engine API changed under it, the base's
-      # own harness is tried; with neither, compare.mjs reports that there is
-      # no base to compare with.
+      # same measurement code. run.mjs exits 3 only when a harness cannot be
+      # used with the engine (it does not compile against it, or predates
+      # run.mjs); then the base's own harness is tried, and with neither,
+      # compare.mjs reports that there is no base to compare with. Any other
+      # failure fails the job.
       - name: Benchmark base
         if: github.event_name == 'pull_request'
         run: |
-          node head/package/bench/run.mjs --mode all --quick --label base --cpp base/package/cpp --out base.json \
-            || node head/package/bench/run.mjs --mode all --quick --label base --cpp base/package/cpp --src base/package/bench --out base.json \
-            || echo "::warning::The benchmark harness does not build against the base engine, so there is nothing to compare with."
+          set +e
+          node head/package/bench/run.mjs --mode all --quick --label base --cpp base/package/cpp --out base.json
+          status=$?
+          if [ "$status" -eq 3 ]; then
+            echo "::notice::The head's benchmark harness does not compile against the base engine; measuring the base with its own harness."
+            node head/package/bench/run.mjs --mode all --quick --label base --cpp base/package/cpp --src base/package/bench --out base.json
+            status=$?
+          fi
+          if [ "$status" -eq 3 ]; then
+            echo "::warning::No benchmark harness compiles against the base engine, so there is nothing to compare with."
+            exit 0
+          fi
+          exit "$status"
 
       - name: Benchmark head
         run: node head/package/bench/run.mjs --mode all --quick --label head --cpp head/package/cpp --out head.json
