@@ -33,7 +33,7 @@ import { createNativeClusterEngine } from './createNativeClusterEngine'
  * Create a standalone C++ cluster engine for headless use.
  *
  * Follow the lifecycle documented on {@linkcode ClusterEngine}: `setOptions` → `setPoints`
- * → `build` or `buildAsync` → query. Check {@linkcode ClusterEngine.isBuilt isBuilt} before
+ * → `build` or `buildAsync` → query → `dispose`. Check {@linkcode ClusterEngine.isBuilt isBuilt} before
  * querying when options or points may have changed.
  *
  * @throws When the native module is missing from the app binary: the app was not

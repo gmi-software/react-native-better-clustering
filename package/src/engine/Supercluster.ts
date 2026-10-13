@@ -1,3 +1,5 @@
+import { NitroModules } from 'react-native-nitro-modules'
+
 import type { AnyProps, BBox, ClusterFeature, PointFeature } from '../geojson'
 import type { ClusterEngine } from '../specs/ClusterEngine.nitro'
 import type { EngineClusterNode } from '../specs/EngineClusterNode'
@@ -27,6 +29,13 @@ import { partitionValidPoints, warnSkippedPoints } from './validatePoints'
 
 export type { SuperclusterOptions, ClusterPropertyConfig }
 
+// Nitro tells the JS GC how much native memory a HybridObject holds only when
+// the object crosses into JS, which happened while the engine was still empty.
+// The round trip after a build reports the index's real size.
+function reportNativeMemory(engine: ClusterEngine): void {
+  NitroModules.updateMemorySize(engine)
+}
+
 function abbreviateCount(count: number): string {
   if (count >= 1_000_000) {
     return `${Math.round(count / 100_000) / 10}m`
@@ -50,6 +59,7 @@ export class Supercluster<P extends AnyProps = AnyProps> {
   private loadedFeatures: PointFeature<P>[] = []
   private readonly minLeafIndices = new WeakMap<ClusterFeature<P>, number>()
   private destroyed = false
+  private building = false
   private readonly options: Required<SuperclusterOptions>
 
   /**
@@ -91,8 +101,14 @@ export class Supercluster<P extends AnyProps = AnyProps> {
     }
 
     const engine = this.prepareEngine(points)
-    engine.build()
+    try {
+      engine.build()
+    } catch (error) {
+      engine.dispose()
+      throw error
+    }
     this.engine = engine
+    reportNativeMemory(engine)
     return this
   }
 
@@ -117,21 +133,28 @@ export class Supercluster<P extends AnyProps = AnyProps> {
 
     const engine = this.prepareEngine(points)
     this.engine = engine
+    this.building = true
 
+    // destroy() leaves an engine that is still building to be disposed here,
+    // once the build has settled.
     try {
       await engine.buildAsync()
     } catch (error) {
       this.engine = null
+      engine.dispose()
       throw error
+    } finally {
+      this.building = false
     }
 
     if (this.destroyed) {
-      this.engine = null
+      engine.dispose()
       throw new Error(
         'react-native-better-clustering: this Supercluster instance was destroyed during load.'
       )
     }
 
+    reportNativeMemory(engine)
     return this
   }
 
@@ -163,6 +186,10 @@ export class Supercluster<P extends AnyProps = AnyProps> {
   /**
    * Releases native resources held by this instance.
    *
+   * Frees the native index right away, or as soon as a pending
+   * {@linkcode Supercluster.loadAsync loadAsync} build settles, instead of
+   * waiting for garbage collection.
+   *
    * Idempotent — safe to call multiple times. Further queries throw.
    */
   destroy(): void {
@@ -170,9 +197,14 @@ export class Supercluster<P extends AnyProps = AnyProps> {
       return
     }
 
+    const engine = this.engine
     this.destroyed = true
     this.engine = null
     this.loadedFeatures = []
+
+    if (engine != null && !this.building) {
+      engine.dispose()
+    }
   }
 
   /**

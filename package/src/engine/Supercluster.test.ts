@@ -27,12 +27,16 @@ const mockEngine = {
   getChildren: jest.fn(() => []),
   getLeaves: jest.fn(() => []),
   getClusterExpansionZoom: jest.fn(() => 10),
+  dispose: jest.fn(),
 }
+
+const updateMemorySize = jest.fn(<T>(engine: T) => engine)
 
 // Registered before ./Supercluster is imported (below).
 mock.module('react-native-nitro-modules', () => ({
   NitroModules: {
     createHybridObject: jest.fn(() => mockEngine),
+    updateMemorySize,
   },
 }))
 
@@ -170,6 +174,112 @@ describe('Supercluster.destroy', () => {
       clusterer.destroy()
       clusterer.destroy()
     }).not.toThrow()
+  })
+})
+
+describe('Supercluster native memory', () => {
+  beforeEach(() => {
+    jest.clearAllMocks()
+    mockEngine.isBuilt = false
+  })
+
+  /** Holds the next `buildAsync()` open until the test settles it. */
+  function deferNextBuild() {
+    const build = {
+      resolve: () => {},
+      reject: (_error: Error) => {},
+    }
+    mockEngine.buildAsync.mockImplementationOnce(
+      () =>
+        new Promise<void>((resolve, reject) => {
+          build.resolve = () => {
+            mockEngine.isBuilt = true
+            resolve()
+          }
+          build.reject = reject
+        })
+    )
+    return build
+  }
+
+  it('disposes the native engine on destroy', () => {
+    const clusterer = new Supercluster().load([SAMPLE_POINT])
+
+    clusterer.destroy()
+    clusterer.destroy()
+
+    expect(mockEngine.dispose).toHaveBeenCalledTimes(1)
+  })
+
+  it('disposes an engine that is still building once the build settles', async () => {
+    const build = deferNextBuild()
+    const clusterer = new Supercluster()
+    const loading = clusterer.loadAsync([SAMPLE_POINT])
+
+    clusterer.destroy()
+    expect(mockEngine.dispose).not.toHaveBeenCalled()
+
+    build.resolve()
+    await expect(loading).rejects.toThrow('destroyed during load')
+    expect(mockEngine.dispose).toHaveBeenCalledTimes(1)
+    expect(updateMemorySize).not.toHaveBeenCalled()
+  })
+
+  it('disposes an engine destroyed during a build that fails', async () => {
+    const build = deferNextBuild()
+    const clusterer = new Supercluster()
+    const loading = clusterer.loadAsync([SAMPLE_POINT])
+
+    clusterer.destroy()
+    build.reject(new Error('build failed'))
+
+    await expect(loading).rejects.toThrow('build failed')
+    expect(mockEngine.dispose).toHaveBeenCalledTimes(1)
+  })
+
+  it('disposes the engine when the async build fails', async () => {
+    const build = deferNextBuild()
+    const clusterer = new Supercluster()
+    const loading = clusterer.loadAsync([SAMPLE_POINT])
+
+    build.reject(new Error('build failed'))
+    await expect(loading).rejects.toThrow('build failed')
+    clusterer.destroy()
+
+    expect(mockEngine.dispose).toHaveBeenCalledTimes(1)
+  })
+
+  it('disposes the engine when the synchronous build throws', () => {
+    mockEngine.build.mockImplementationOnce(() => {
+      throw new Error('build failed')
+    })
+    const clusterer = new Supercluster()
+
+    expect(() => clusterer.load([SAMPLE_POINT])).toThrow('build failed')
+    clusterer.destroy()
+
+    expect(mockEngine.dispose).toHaveBeenCalledTimes(1)
+  })
+
+  it('reports the index size to the JS GC after a synchronous build', () => {
+    new Supercluster().load([SAMPLE_POINT])
+
+    expect(updateMemorySize).toHaveBeenCalledTimes(1)
+    expect(updateMemorySize).toHaveBeenCalledWith(mockEngine)
+  })
+
+  it('reports the index size to the JS GC once the async build settles', async () => {
+    const build = deferNextBuild()
+    const loading = new Supercluster().loadAsync([SAMPLE_POINT])
+
+    await Promise.resolve()
+    expect(updateMemorySize).not.toHaveBeenCalled()
+
+    build.resolve()
+    await loading
+
+    expect(updateMemorySize).toHaveBeenCalledTimes(1)
+    expect(updateMemorySize).toHaveBeenCalledWith(mockEngine)
   })
 })
 

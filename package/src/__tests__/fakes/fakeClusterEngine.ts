@@ -36,6 +36,7 @@ export interface FakeClusterEngine {
     offset: number
   ): EngineClusterNode[]
   getClusterExpansionZoom(clusterId: number): number
+  dispose(): void
   readonly isBuilt: boolean
   readonly pointCount: number
 }
@@ -48,6 +49,7 @@ export interface FakeClusterEngineStats {
   getLeaves: number
   getChildren: number
   getClusterExpansionZoom: number
+  disposed: number
 }
 
 export const fakeClusterEngineStats: FakeClusterEngineStats = {
@@ -57,6 +59,7 @@ export const fakeClusterEngineStats: FakeClusterEngineStats = {
   getLeaves: 0,
   getChildren: 0,
   getClusterExpansionZoom: 0,
+  disposed: 0,
 }
 
 export function resetFakeClusterEngineStats(): void {
@@ -160,6 +163,41 @@ export function createFakeClusterEngine(): FakeClusterEngine {
   let points: Feature[] = []
   let index: Supercluster<PointProps, ClusterProps> | null = null
   let built = false
+  let disposed = false
+
+  // Nitro detaches a disposed HybridObject from its native state, so every
+  // later call throws, dispose() included.
+  const requireAlive = (method: string): void => {
+    if (disposed) {
+      throw new Error(
+        `ClusterEngine.${method}(): \`this\` does not have a NativeState (disposed).`
+      )
+    }
+  }
+
+  const buildIndex = (): void => {
+    if (options == null) {
+      throw new Error('ClusterEngine: call setOptions() before build().')
+    }
+    const { reducers } = options
+    fakeClusterEngineStats.builds++
+    index = new Supercluster<PointProps, ClusterProps>({
+      radius: options.radius,
+      extent: options.extent,
+      minZoom: options.minZoom,
+      maxZoom: options.maxZoom,
+      minPoints: options.minPoints,
+      nodeSize: options.nodeSize,
+      map: (props) => ({ values: [...props.values], minLeafId: props.index }),
+      reduce: (acc, props) => {
+        acc.values = acc.values.map((value, k) =>
+          reduceValue(reducers[k]!, value, props.values[k] ?? 0)
+        )
+        acc.minLeafId = Math.min(acc.minLeafId, props.minLeafId)
+      },
+    }).load(points)
+    built = true
+  }
 
   const requireIndex = (): Supercluster<PointProps, ClusterProps> => {
     if (!built || index == null) {
@@ -173,10 +211,12 @@ export function createFakeClusterEngine(): FakeClusterEngine {
 
   const engine: FakeClusterEngine = {
     setOptions(next) {
+      requireAlive('setOptions')
       options = next
       built = false
     },
     setPoints(buffer) {
+      requireAlive('setPoints')
       if (buffer == null) {
         throw new Error('ClusterEngine: setPoints() requires an ArrayBuffer.')
       }
@@ -184,34 +224,17 @@ export function createFakeClusterEngine(): FakeClusterEngine {
       built = false
     },
     build() {
-      if (options == null) {
-        throw new Error('ClusterEngine: call setOptions() before build().')
-      }
-      const { reducers } = options
-      fakeClusterEngineStats.builds++
-      index = new Supercluster<PointProps, ClusterProps>({
-        radius: options.radius,
-        extent: options.extent,
-        minZoom: options.minZoom,
-        maxZoom: options.maxZoom,
-        minPoints: options.minPoints,
-        nodeSize: options.nodeSize,
-        map: (props) => ({ values: [...props.values], minLeafId: props.index }),
-        reduce: (acc, props) => {
-          acc.values = acc.values.map((value, k) =>
-            reduceValue(reducers[k]!, value, props.values[k] ?? 0)
-          )
-          acc.minLeafId = Math.min(acc.minLeafId, props.minLeafId)
-        },
-      }).load(points)
-      built = true
+      requireAlive('build')
+      buildIndex()
     },
     buildAsync() {
-      // The native build runs on a thread pool and resolves on a later tick.
+      requireAlive('buildAsync')
+      // The native build runs on a thread pool and resolves on a later tick,
+      // finishing even if the engine is disposed meanwhile.
       return new Promise<void>((resolve, reject) => {
         setTimeout(() => {
           try {
-            engine.build()
+            buildIndex()
             resolve()
           } catch (error) {
             reject(error)
@@ -220,6 +243,7 @@ export function createFakeClusterEngine(): FakeClusterEngine {
       })
     },
     getClusters(viewport) {
+      requireAlive('getClusters')
       fakeClusterEngineStats.getClusters++
       return requireIndex()
         .getClusters(
@@ -229,23 +253,35 @@ export function createFakeClusterEngine(): FakeClusterEngine {
         .map(toNode)
     },
     getChildren(clusterId) {
+      requireAlive('getChildren')
       fakeClusterEngineStats.getChildren++
       return requireIndex().getChildren(clusterId).map(toNode)
     },
     getLeaves(clusterId, limit, offset) {
+      requireAlive('getLeaves')
       fakeClusterEngineStats.getLeaves++
       return requireIndex()
         .getLeaves(clusterId, limit <= 0 ? Infinity : limit, offset)
         .map(toNode)
     },
     getClusterExpansionZoom(clusterId) {
+      requireAlive('getClusterExpansionZoom')
       fakeClusterEngineStats.getClusterExpansionZoom++
       return requireIndex().getClusterExpansionZoom(clusterId)
     },
+    dispose() {
+      requireAlive('dispose')
+      fakeClusterEngineStats.disposed++
+      disposed = true
+      index = null
+      points = []
+    },
     get isBuilt() {
+      requireAlive('isBuilt')
       return built
     },
     get pointCount() {
+      requireAlive('pointCount')
       return points.length
     },
   }

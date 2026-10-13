@@ -22,14 +22,19 @@ public:
   double getPointCount() override;
   bool getIsBuilt() override;
 
+  // Releases the index now instead of when the JS GC finalizes this object.
+  // A build in flight holds its own reference and frees the index when done.
+  void dispose() override;
+
 protected:
   size_t getExternalMemorySize() noexcept override {
-    return _engine.memorySize();
+    return _engine != nullptr ? _engine->memorySize() : 0;
   }
 
 private:
-  ClusterEngineCore _engine;
-  EngineClusterNode toFeature(const ClusterNode& node) const;
+  // Shared so buildAsync can keep the index alive without capturing `this`.
+  std::shared_ptr<ClusterEngineCore> _engine = std::make_shared<ClusterEngineCore>();
+  ClusterEngineCore& engine();
 };
 
 } // namespace margelo::nitro::nitromapcluster
