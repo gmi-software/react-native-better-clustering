@@ -153,8 +153,9 @@ struct LongitudeRange {
  * A viewport as supercluster normalizes a query bbox: latitudes clamped to
  * [-90, 90] and longitudes wrapped into [-180, 180]. A viewport that crosses
  * the antimeridian becomes two ranges, [west, 180] and [-180, east]; one that
- * spans 360 degrees or more becomes the whole world. Non-finite bounds give no
- * range, so the query returns nothing.
+ * spans 360 degrees or more becomes the whole world. Any non-finite bound,
+ * infinities included, gives no range, so the query returns nothing (where
+ * supercluster would read an infinite span as the whole world).
  */
 struct NormalizedViewport {
   double south = 0.0;
@@ -165,7 +166,10 @@ struct NormalizedViewport {
 
 inline NormalizedViewport normalizeViewport(const ViewportBounds& viewport) {
   NormalizedViewport normalized;
-  if (std::isnan(viewport.south) || std::isnan(viewport.north)) return normalized;
+  if (!std::isfinite(viewport.south) || !std::isfinite(viewport.north) ||
+      !std::isfinite(viewport.west) || !std::isfinite(viewport.east)) {
+    return normalized;
+  }
   normalized.south = clamp(viewport.south, -90.0, 90.0);
   normalized.north = clamp(viewport.north, -90.0, 90.0);
 
@@ -174,7 +178,6 @@ inline NormalizedViewport normalizeViewport(const ViewportBounds& viewport) {
     normalized.rangeCount = 1;
     return normalized;
   }
-  if (!std::isfinite(viewport.west) || !std::isfinite(viewport.east)) return normalized;
 
   // An east edge of exactly 180 stays 180 rather than wrapping to -180.
   const double west = wrapLongitude(viewport.west);

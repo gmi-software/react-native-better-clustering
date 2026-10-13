@@ -5,7 +5,7 @@
  * the way supercluster normalizes a bbox, so a viewport across the antimeridian
  * can be passed unwrapped (`west: 170, east: 190`) or wrapped
  * (`west: 170, east: -170`), and a span of 360° or more covers the whole world.
- * Latitudes are clamped to ±90°.
+ * Latitudes are clamped to ±90°. A `NaN` or infinite bound returns no features.
  */
 export interface Viewport {
   /** Northern latitude bound in degrees. */

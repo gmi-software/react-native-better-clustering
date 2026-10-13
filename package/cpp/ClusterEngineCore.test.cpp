@@ -712,8 +712,13 @@ static void testGetClustersAcrossAntimeridian() {
     assert(idsIn(-180.0, 180.0) == all);
     assert(idsIn(0.0, 360.0) == all);
     assert(idsIn(-720.0, 720.0) == all);
-    // Non-finite bounds return nothing.
+    // Non-finite bounds return nothing, infinities included.
+    const double inf = std::numeric_limits<double>::infinity();
     assert(idsIn(std::numeric_limits<double>::quiet_NaN(), 180.0).empty());
+    assert(idsIn(-inf, inf).empty());
+    assert(idsIn(-inf, 180.0).empty());
+    assert(engine.getClusters({inf, -25.0, 180.0, -180.0, 16.0}).empty());
+    assert(engine.getClusters({-10.0, -inf, 180.0, -180.0, 16.0}).empty());
   }
 }
 
