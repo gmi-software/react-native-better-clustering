@@ -253,7 +253,12 @@ export class Supercluster<P extends AnyProps = AnyProps> {
   }
 
   /**
-   * Zoom level at which a cluster expands into multiple children.
+   * Zoom level at which a cluster expands into multiple children: the first
+   * zoom where {@linkcode Supercluster.getClusters getClusters} shows its
+   * children instead of the cluster, from whichever zoom it was seen at.
+   *
+   * Returns `maxZoom + 1` for a cluster that never splits within the zoom
+   * range (points at the same coordinate, for example) and for a point id.
    *
    * @throws When {@linkcode Supercluster.load load} has not completed.
    */

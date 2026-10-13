@@ -70,6 +70,12 @@ const viewport = bboxToViewport([-180, -90, 180, 90], 10)
 const clusters = engine.getClusters(viewport)
 ```
 
+`getClusterExpansionZoom(id)` returns the first zoom at which the cluster has
+split into its children, whichever zoom you saw it at, so "zoom to the expansion
+zoom on press" always reveals the children. It returns `maxZoom + 1` for a
+cluster that never splits within the zoom range (points at the same
+coordinate) and for a point id.
+
 Always guard queries with `isBuilt` when options or points can change between
 renders:
 

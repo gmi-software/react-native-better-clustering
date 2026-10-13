@@ -130,6 +130,33 @@ function membershipHash(index, features, n) {
   return hash
 }
 
+// Hashes each cluster's expansion zoom at one zoom, keyed by the smallest id
+// among its leaves: `(minLeafId, getClusterExpansionZoom)` pairs sorted by
+// `minLeafId`, both folded with 32-bit FNV-1a. The C++ test computes the same
+// hash bit-for-bit.
+function expansionHash(index, features) {
+  const pairs = []
+  for (const feature of features) {
+    if (!feature.properties.cluster) continue
+    const clusterId = feature.properties.cluster_id
+    let minLeafId = Infinity
+    for (const leaf of index.getLeaves(clusterId, Infinity)) {
+      if (leaf.id < minLeafId) minLeafId = leaf.id
+    }
+    pairs.push([minLeafId, index.getClusterExpansionZoom(clusterId)])
+  }
+  pairs.sort((a, b) => a[0] - b[0])
+
+  let hash = 2166136261
+  for (const pair of pairs) {
+    for (const value of pair) {
+      hash = (hash ^ value) >>> 0
+      hash = Math.imul(hash, 16777619) >>> 0
+    }
+  }
+  return hash
+}
+
 const lines = []
 for (const testCase of CASES) {
   const index = new Supercluster({
@@ -144,6 +171,7 @@ for (const testCase of CASES) {
   const nodes = []
   const clusters = []
   const memberships = []
+  const expansions = []
   for (let z = testCase.minZoom; z <= testCase.maxZoom; z++) {
     const features = index.getClusters([-180, -85, 180, 85], z)
     nodes.push(features.length)
@@ -151,6 +179,7 @@ for (const testCase of CASES) {
       features.filter((feature) => feature.properties.cluster).length
     )
     memberships.push(`${membershipHash(index, features, testCase.n)}u`)
+    expansions.push(`${expansionHash(index, features)}u`)
   }
 
   lines.push(
@@ -158,7 +187,8 @@ for (const testCase of CASES) {
     `  {${testCase.n}, ${testCase.seed}u, ${testCase.radius}.0, ${testCase.extent}, ${testCase.minZoom}, ${testCase.maxZoom}, ${testCase.minPoints},`,
     `   {${nodes.join(', ')}},`,
     `   {${clusters.join(', ')}},`,
-    `   {${memberships.join(', ')}}},`
+    `   {${memberships.join(', ')}},`,
+    `   {${expansions.join(', ')}}},`
   )
 }
 
