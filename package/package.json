@@ -99,7 +99,9 @@
     "test:ci": "bun test --isolate",
     "test:native": "bash scripts/test-native.sh",
     "verify:pack": "node scripts/verify-pack.mjs",
-    "verify:exports": "node scripts/verify-exports.mjs"
+    "verify:exports": "node scripts/verify-exports.mjs",
+    "bench": "node bench/run.mjs",
+    "bench:compare": "node bench/compare.mjs"
   },
   "keywords": [
     "react-native",
