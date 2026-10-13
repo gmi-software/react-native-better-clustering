@@ -109,6 +109,11 @@ distinct nearby markers keep expanding by zooming, and clusters larger than
 `spiderfyMaxLeaves` stay bubbles. With `preserveClusterPressBehavior`, a press
 only calls `onClusterPress`.
 
+`MapView` never clusters at a zoom above `maxZoom`, so a cluster still there at
+`maxZoom` stays a cluster however far the map zooms in, and spreads out as
+above. `useClusterer` instead returns its markers on their own there (see
+[Above `maxZoom`](./engine.md#above-maxzoom)).
+
 ## Per-marker opt-out
 
 Markers cluster by default (`cluster` omitted or `cluster={true}`). Exclude

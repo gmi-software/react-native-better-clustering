@@ -68,8 +68,10 @@ export interface ClusterEngine extends HybridObject<{
   buildAsync(): Promise<void>
 
   /**
-   * Return clusters visible in the viewport at the given zoom. See
-   * {@linkcode Viewport} for how bounds across the antimeridian are read.
+   * Return clusters visible in the viewport at the given zoom. Above
+   * `maxZoom`, every point in the viewport is returned on its own, as in
+   * supercluster. See {@linkcode Viewport} for how the zoom and bounds across
+   * the antimeridian are read.
    *
    * @throws When {@linkcode ClusterEngine.isBuilt isBuilt} is `false` — call `build()` first.
    */
@@ -112,8 +114,9 @@ export interface ClusterEngine extends HybridObject<{
    * zoom where `getClusters` shows its children instead of the cluster, from
    * whichever zoom the cluster was seen at.
    *
-   * Returns `maxZoom + 1` for a cluster that never splits within the zoom
-   * range (points at the same coordinate, for example) and for a point id.
+   * Returns `maxZoom + 1` for a cluster still there at `maxZoom` (points at
+   * the same coordinate, for example), which `getClusters` returns as its
+   * points from that zoom on, and for a point id.
    *
    * @throws When {@linkcode ClusterEngine.isBuilt isBuilt} is `false`.
    * @throws When `clusterId` is not a 32-bit integer.

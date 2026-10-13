@@ -49,6 +49,16 @@ export interface ClusterIndex<P extends AnyProps> {
   isCurrent: boolean
 }
 
+/** {@linkcode useClusterIndex} options: `useClusterer`'s, and the compat `MapView`'s. */
+export interface ClusterIndexOptions extends UseClustererOptions {
+  /**
+   * Query no zoom above `maxZoom`, past which `useClusterer` returns every
+   * point on its own. The compat `MapView` spiderfies the clusters that
+   * zooming can't split instead. Defaults to `false`.
+   */
+  stopAtMaxZoom?: boolean
+}
+
 const NO_FEATURES: never[] = []
 
 function toError(error: unknown): Error {
@@ -76,7 +86,7 @@ export function useClusterIndex<P extends AnyProps = AnyProps>(
   data: PointFeature<P>[],
   mapDimensions: MapDimensions,
   region: MapRegion,
-  options?: UseClustererOptions,
+  options?: ClusterIndexOptions,
   isSameFeature?: SameFeature<P>
 ): ClusterIndex<P> {
   const {
@@ -89,6 +99,7 @@ export function useClusterIndex<P extends AnyProps = AnyProps>(
     clusterProperties = DEFAULT_SUPERCLUSTER_OPTIONS.clusterProperties,
     // Left undefined on purpose: `Supercluster` defaults it to `extent`.
     viewportTileSize,
+    stopAtMaxZoom = false,
     onError,
   } = options ?? {}
 
@@ -225,12 +236,16 @@ export function useClusterIndex<P extends AnyProps = AnyProps>(
       return NO_FEATURES
     }
 
-    return supercluster.getClustersFromRegion(
-      { latitude, longitude, latitudeDelta, longitudeDelta },
-      { width, height }
-    )
+    const visibleRegion = { latitude, longitude, latitudeDelta, longitudeDelta }
+    return stopAtMaxZoom
+      ? supercluster.getClustersFromRegionUpToMaxZoom(visibleRegion, {
+          width,
+          height,
+        })
+      : supercluster.getClustersFromRegion(visibleRegion, { width, height })
   }, [
     supercluster,
+    stopAtMaxZoom,
     latitude,
     longitude,
     latitudeDelta,

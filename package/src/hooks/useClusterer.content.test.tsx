@@ -190,6 +190,34 @@ describe('useClusterer content keying (#12)', () => {
   })
 })
 
+describe('useClusterer above maxZoom (#26)', () => {
+  // Around points a and b, zoomed in well past maxZoom 14.
+  const STREET: MapRegion = {
+    latitude: 37.78005,
+    longitude: -122.42005,
+    latitudeDelta: 0.0005,
+    longitudeDelta: 0.0005,
+  }
+
+  it('returns every point on its own, as react-native-clusterer does', async () => {
+    const data = points()
+    const { result, rerender } = renderHook(
+      ({ region }) =>
+        useClusterer(data, MAP_DIMENSIONS, region, { maxZoom: 14 }),
+      { initialProps: { region: REGION } }
+    )
+    await flush()
+    expect(result.current[0].filter(isClusterFeature)).toHaveLength(1)
+
+    rerender({ region: STREET })
+
+    expect(result.current[0].filter(isClusterFeature)).toEqual([])
+    expect(
+      result.current[0].map((feature) => feature.properties.id).sort()
+    ).toEqual(['a', 'b'])
+  })
+})
+
 describe('useClusterer native memory (#24)', () => {
   /** The base points plus one more, so every call is a new dataset. */
   function dataset(n: number): PointFeature<Props>[] {

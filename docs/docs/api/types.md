@@ -51,7 +51,7 @@ import type {
 |--------|---------|-------------|
 | `radius` | `40` | Cluster radius in pixels |
 | `minZoom` | `1` | Min zoom for clustering |
-| `maxZoom` | `20` | Max zoom for clustering |
+| `maxZoom` | `20` | Max zoom for clustering. Queries above it return every point on its own (see [Above `maxZoom`](./engine.md#above-maxzoom)) |
 | `minPoints` | `2` | Min points to form a cluster |
 | `extent` | `512` | Tile extent used for projection math (see [note](#radius-and-extent)) |
 | `nodeSize` | `64` | KD-tree leaf size |

@@ -90,6 +90,16 @@ const CASES = [
     maxZoom: 14,
     minPoints: 2,
   },
+  // Still clustered at maxZoom, so maxZoom + 1 has to split the clusters.
+  {
+    n: 5000,
+    seed: 12345,
+    radius: 40,
+    extent: 512,
+    minZoom: 0,
+    maxZoom: 8,
+    minPoints: 2,
+  },
   {
     n: 8000,
     seed: 424242,
@@ -206,7 +216,7 @@ const ANTIMERIDIAN_BBOXES = [
   [0, -90, 360, 90],
   [-200, -90, 200, 90],
 ]
-const ANTIMERIDIAN_ZOOMS = [2, 6, 10, 16]
+const ANTIMERIDIAN_ZOOMS = [2, 6, 10, 16, 17]
 
 // Hashes the set of features a query returns: `(minLeafId, point count)` per
 // feature, sorted, folded with 32-bit FNV-1a. A missing or duplicated feature
@@ -258,7 +268,8 @@ for (const testCase of CASES) {
   const clusters = []
   const memberships = []
   const expansions = []
-  for (let z = testCase.minZoom; z <= testCase.maxZoom; z++) {
+  // maxZoom + 1 too: the level where every point stands on its own.
+  for (let z = testCase.minZoom; z <= testCase.maxZoom + 1; z++) {
     const features = index.getClusters([-180, -85, 180, 85], z)
     nodes.push(features.length)
     clusters.push(
