@@ -278,6 +278,7 @@ mock.module('react-native-nitro-modules', () => ({
       }
       return createFakeClusterEngine()
     },
+    updateMemorySize: <T,>(engine: T) => engine,
   },
 }))
 

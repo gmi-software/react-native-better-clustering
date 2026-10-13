@@ -22,13 +22,18 @@ public:
   double getPointCount() override;
   bool getIsBuilt() override;
 
+  // Frees the index now, not at GC; a pending buildAsync frees it when done.
+  void dispose() override;
+
 protected:
   size_t getExternalMemorySize() noexcept override {
-    return _engine.memorySize();
+    return _engine != nullptr ? _engine->memorySize() : 0;
   }
 
 private:
-  ClusterEngineCore _engine;
+  // Shared so a pending buildAsync keeps the index alive without capturing `this`.
+  std::shared_ptr<ClusterEngineCore> _engine = std::make_shared<ClusterEngineCore>();
+  ClusterEngineCore& engine();
   EngineClusterNode toFeature(const ClusterNode& node) const;
 };
 

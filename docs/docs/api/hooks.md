@@ -40,7 +40,8 @@ const [clusters, supercluster] = useClusterer(
 
 Cluster features include `properties.getExpansionRegion()` for zoom-on-tap.
 
-The hook destroys the underlying `Supercluster` engine on unmount. Index
+The hook destroys the underlying `Supercluster` engine on unmount, which frees
+its native index right away instead of at the next garbage collection. Index
 building runs asynchronously via `loadAsync()` so large datasets (10k+ points)
 do not block the JS thread. Clusters stay empty until the first build has
 loaded; check `supercluster.isLoaded` before calling query methods directly.

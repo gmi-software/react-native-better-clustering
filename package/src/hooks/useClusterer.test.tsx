@@ -39,9 +39,11 @@ mock.module('react-native-nitro-modules', () => ({
         getChildren: () => [],
         getLeaves: () => [],
         getClusterExpansionZoom: () => 0,
+        dispose: () => {},
       }
       return engine
     },
+    updateMemorySize: <T,>(engine: T) => engine,
   },
 }))
 

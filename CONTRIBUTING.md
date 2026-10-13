@@ -172,6 +172,11 @@ The pod scheme only exists after Xcode has loaded the workspace once (`xcodebuil
   c++ -std=c++20 -I. -fsanitize=undefined,float-cast-overflow -fno-sanitize-recover=all ClusterEngineCore.test.cpp -o cluster_test
   ./cluster_test
   ```
+- `HybridClusterEngine` (the Nitro object around the core) has a lifetime test that links Nitro's C++ runtime and React Native's JSI from `node_modules`, so it needs `bun install` first. It runs under ASan and UBSan; pass `thread` for TSan. CI does not run it yet:
+  ```bash
+  cd package
+  bun run test:native          # or: bun run test:native thread
+  ```
 
 ## Nitro Modules
 

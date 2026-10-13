@@ -19,6 +19,7 @@ import {
 mock.module('react-native-nitro-modules', () => ({
   NitroModules: {
     createHybridObject: () => createFakeClusterEngine(),
+    updateMemorySize: <T,>(engine: T) => engine,
   },
 }))
 
@@ -186,5 +187,41 @@ describe('useClusterer content keying (#12)', () => {
     await flush()
 
     expect(fakeClusterEngineStats.created).toBe(1)
+  })
+})
+
+describe('useClusterer native memory (#24)', () => {
+  /** The base points plus one more, so every call is a new dataset. */
+  function dataset(n: number): PointFeature<Props>[] {
+    return [...points(), point(`extra-${n}`, -122.44 + n * 0.001, 37.77)]
+  }
+
+  it('disposes every engine it replaces, and the last one on unmount', async () => {
+    const { rerender, unmount } = renderClusterer(dataset(0))
+    await flush()
+
+    for (let n = 1; n <= 20; n++) {
+      rerender({ data: dataset(n) })
+      await flush()
+    }
+
+    expect(fakeClusterEngineStats.created).toBe(21)
+    expect(fakeClusterEngineStats.disposed).toBe(20)
+
+    unmount()
+    expect(fakeClusterEngineStats.disposed).toBe(21)
+  })
+
+  it('disposes an engine superseded while it was still building', async () => {
+    const { rerender, unmount } = renderClusterer(dataset(0))
+    await flush()
+
+    rerender({ data: dataset(1) })
+    rerender({ data: dataset(2) })
+    await flush()
+    unmount()
+
+    expect(fakeClusterEngineStats.created).toBe(3)
+    expect(fakeClusterEngineStats.disposed).toBe(3)
   })
 })
