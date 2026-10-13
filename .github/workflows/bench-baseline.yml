@@ -1,0 +1,30 @@
+name: Bench baseline
+
+# package/bench/baseline.json is the committed reference snapshot of the core
+# benchmark, refreshed from a CI run (package/bench/README.md). It may change
+# only in a pull request labelled `bench-baseline`, so a refresh is always a
+# deliberate, reviewed step and never rides along with an engine change.
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened, labeled, unlabeled]
+    paths:
+      - 'package/bench/baseline.json'
+
+concurrency:
+  group: bench-baseline-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  baseline-label:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Require the bench-baseline label
+        if: ${{ !contains(github.event.pull_request.labels.*.name, 'bench-baseline') }}
+        run: |
+          echo "::error::package/bench/baseline.json changed. Label the pull request bench-baseline if the refresh is intended (see package/bench/README.md)."
+          exit 1

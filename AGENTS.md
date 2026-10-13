@@ -8,8 +8,8 @@ This guide helps automated agents submit high-quality PRs for this repo.
 - `example/` is an Expo app used for manual verification.
 - `docs/` is the technical documentation (Docusaurus, English). User-facing docs live under `docs/docs/` (API, setup, guides, troubleshooting, etc.). Run `bun run docs:start` or `bun run docs:build` from root.
 - Root `package.json` defines the Bun workspace, pins Bun (`packageManager`), and holds the repo-wide lint/format/commitlint tooling (`eslint.config.mjs`, `.prettierrc`, `commitlint.config.js`, `.husky/`).
-- `package/cpp/` is the shared C++ engine (compiled by the podspec and `android/CMakeLists.txt` from explicit source lists); `package/bench/` is a local C++ micro-benchmark; `package/scripts/` holds the npm package checks; `package/test/setup.ts` is the `bun test` preload.
-- `.github/` holds CI (`ci.yml`, `pr-title.yml`, path-filtered `native.yml` → reusable `native-build.yml`, `release.yml`, `docs.yml`, `react-doctor.yml`), issue/PR templates, CODEOWNERS and Dependabot. `config/` holds shared tool config (clang-format); `scripts/` holds repo scripts.
+- `package/cpp/` is the shared C++ engine (compiled by the podspec and `android/CMakeLists.txt` from explicit source lists); `package/bench/` is the core benchmark (`bun run bench`) and its CI gate; `package/scripts/` holds the npm package checks; `package/test/setup.ts` is the `bun test` preload.
+- `.github/` holds CI (`ci.yml`, `pr-title.yml`, path-filtered `native.yml` → reusable `native-build.yml`, path-filtered `bench.yml` and `bench-baseline.yml`, `release.yml`, `docs.yml`, `react-doctor.yml`), issue/PR templates, CODEOWNERS and Dependabot. `config/` holds shared tool config (clang-format); `scripts/` holds repo scripts.
 
 ## Local setup
 
@@ -28,6 +28,7 @@ A single `bun install` at the root installs every workspace (`package`, `example
 - Test (single file): `cd package && bun test src/utils/distance.test.ts` (`bun test`; mock modules with `mock.module()` before a dynamic `import()` — see CONTRIBUTING.md)
 - Build: `cd package && bun run build` (react-native-builder-bob → `lib/module` ESM + `lib/typescript` declarations)
 - Verify the npm package: `cd package && bun run verify:pack && bun run verify:exports` (both run in CI)
+- Benchmark the C++ core: `cd package && bun run bench` (see `package/bench/README.md`; instruction counts need Linux and valgrind)
 - Run example: `cd example && bunx expo prebuild && bunx expo run:ios` or `bunx expo run:android`
 - Docs (dev): `bun run docs:start`. Docs (build): `bun run docs:build`
 - Release: CI only, tag-driven — never run release-it or `npm publish` locally. See `RELEASING.md`.
