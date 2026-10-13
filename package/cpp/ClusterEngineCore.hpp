@@ -53,6 +53,35 @@ public:
   }
 
 private:
+  // Collects a range query's hits in a leaf and appends them to the result in
+  // batches. A push_back per hit is a function call wherever the inliner
+  // keeps it out of line (GCC 13 on x86-64 does in the core benchmark), and
+  // the call then costs more than the test itself. A viewport leaf often
+  // hits most of its points; a `within` leaf hits a few, so it keeps
+  // push_back, which a batch per leaf would cost more than it saves.
+  class LeafHits {
+  public:
+    explicit LeafHits(std::vector<int32_t>& result) : _result(result) {}
+
+    void add(int32_t index) {
+      _hits[_count++] = index;
+      if (_count == kCapacity) flush();
+    }
+
+    void flush() {
+      if (_count > 0) {
+        _result.insert(_result.end(), _hits, _hits + _count);
+        _count = 0;
+      }
+    }
+
+  private:
+    static constexpr int32_t kCapacity = 64;
+    std::vector<int32_t>& _result;
+    int32_t _hits[kCapacity];
+    int32_t _count = 0;
+  };
+
   std::vector<Item> _items;
   int32_t _nodeSize = 64;
 
@@ -77,12 +106,14 @@ private:
                     double minX, double minY, double maxX, double maxY,
                     std::vector<int32_t>& result) const {
     if (right - left <= _nodeSize) {
+      LeafHits hits(result);
       for (int32_t i = left; i <= right; i++) {
         const Item& item = _items[i];
         if (item.x >= minX && item.x <= maxX && item.y >= minY && item.y <= maxY) {
-          result.push_back(item.index);
+          hits.add(item.index);
         }
       }
+      hits.flush();
       return;
     }
 
