@@ -95,12 +95,20 @@ results:
 
 | Call | Condition | Result |
 |------|-----------|--------|
+| `setOptions` | an option outside its [valid values](./types.md#valid-values) | throws, naming the option; the previous options and index stay |
 | `setPoints` | `null` / wrong layout | throws |
 | `getClusters`, `getChildren`, `getLeaves`, `getClusterExpansionZoom` | `isBuilt === false` | throws |
+| `getChildren`, `getLeaves`, `getClusterExpansionZoom` | `clusterId` is not a 32-bit integer (`NaN`, `Infinity`, `1.5`) | throws |
+| `getLeaves` | fractional `limit` or `offset`, or `NaN` `offset` | throws |
 
-Invalid buffers and missing `build()` throw with messages prefixed
-`ClusterEngine:`. Use `packPoints()` for buffers and check `isBuilt` after
-reloads.
+Invalid buffers, invalid numbers and missing `build()` throw with messages
+prefixed `ClusterEngine:`. Use `packPoints()` for buffers and check `isBuilt`
+after reloads.
+
+`getLeaves` reads a `limit` of `0`, a negative number, `Infinity` or `NaN` as no
+limit, so supercluster's `getLeaves(id, Infinity)` returns every leaf. A
+negative `offset` skips none. For an id that is a whole number but no node, such
+as `-1`, `getChildren` and `getLeaves` return `[]`.
 
 ## Types
 

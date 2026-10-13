@@ -38,6 +38,9 @@ export interface ClusterEngine extends HybridObject<{
   /**
    * Configure clustering. Resets {@linkcode ClusterEngine.isBuilt isBuilt} until the next
    * {@linkcode ClusterEngine.build build}.
+   *
+   * @throws When an option is outside the range documented on {@linkcode ClusterEngineOptions},
+   * naming the option. The previous options and index stay.
    */
   setOptions(options: ClusterEngineOptions): void
 
@@ -55,16 +58,20 @@ export interface ClusterEngine extends HybridObject<{
   getClusters(viewport: Viewport): EngineClusterNode[]
 
   /**
-   * Return direct children of a cluster id.
+   * Return direct children of a cluster id, or `[]` for an id that is not a cluster.
    *
    * @throws When {@linkcode ClusterEngine.isBuilt isBuilt} is `false`.
+   * @throws When `clusterId` is not a 32-bit integer.
    */
   getChildren(clusterId: number): EngineClusterNode[]
 
   /**
-   * Return leaf points under a cluster (paginated). Pass `limit <= 0` for unlimited.
+   * Return leaf points under a cluster (paginated). A `limit` of `0`, below `0`,
+   * `Infinity` or `NaN` means unlimited; a negative `offset` skips none.
    *
    * @throws When {@linkcode ClusterEngine.isBuilt isBuilt} is `false`.
+   * @throws When `clusterId` is not a 32-bit integer, `limit` or `offset` is
+   * fractional, or `offset` is `NaN`.
    */
   getLeaves(
     clusterId: number,
@@ -81,6 +88,7 @@ export interface ClusterEngine extends HybridObject<{
    * range (points at the same coordinate, for example) and for a point id.
    *
    * @throws When {@linkcode ClusterEngine.isBuilt isBuilt} is `false`.
+   * @throws When `clusterId` is not a 32-bit integer.
    */
   getClusterExpansionZoom(clusterId: number): number
 
