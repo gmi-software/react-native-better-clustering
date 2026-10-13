@@ -10,6 +10,7 @@ import {
 } from 'bun:test'
 
 import type { ClusterFeature, PointFeature } from '../geojson'
+import type { ClusterBounds } from '../specs/ClusterBounds'
 import type { EngineClusterNode } from '../specs/EngineClusterNode'
 
 const mockEngine = {
@@ -26,6 +27,7 @@ const mockEngine = {
   getClusters: jest.fn((): EngineClusterNode[] => []),
   getChildren: jest.fn(() => []),
   getLeaves: jest.fn(() => []),
+  getClusterBounds: jest.fn((): ClusterBounds | undefined => undefined),
   getClusterExpansionZoom: jest.fn(() => 10),
   dispose: jest.fn(),
 }
@@ -510,6 +512,58 @@ describe('Supercluster.getAllLeaves', () => {
   })
 })
 
+describe('Supercluster.getClusterBounds', () => {
+  beforeEach(() => {
+    jest.clearAllMocks()
+    mockEngine.isBuilt = false
+  })
+
+  const BOUNDS: ClusterBounds = {
+    north: 52.4,
+    south: 50.0,
+    east: 21.1,
+    west: 16.9,
+  }
+
+  it('returns the native bounds as a [west, south, east, north] bbox', () => {
+    mockEngine.getClusterBounds.mockReturnValueOnce(BOUNDS)
+    const clusterer = new Supercluster().load([SAMPLE_POINT])
+
+    expect(clusterer.getClusterBounds(42)).toEqual([16.9, 50.0, 21.1, 52.4])
+    expect(mockEngine.getClusterBounds).toHaveBeenCalledWith(42)
+  })
+
+  it('returns undefined for an id the engine has no bounds for', () => {
+    const clusterer = new Supercluster().load([SAMPLE_POINT])
+
+    expect(clusterer.getClusterBounds(-1)).toBeUndefined()
+  })
+
+  it('fits the expansion region to the bounds without reading the leaves', () => {
+    mockEngine.getClusterBounds.mockReturnValueOnce(BOUNDS)
+    const clusterer = new Supercluster().load([SAMPLE_POINT])
+
+    const region = clusterer.getClusterExpansionRegion(42)
+
+    expect(region.latitude).toBeCloseTo(51.2, 10)
+    expect(region.longitude).toBeCloseTo(19, 10)
+    expect(region.latitudeDelta).toBeCloseTo(2.4 * 1.5, 10)
+    expect(region.longitudeDelta).toBeCloseTo(4.2 * 1.5, 10)
+    expect(mockEngine.getLeaves).not.toHaveBeenCalled()
+  })
+
+  it('keeps the default expansion region for an id without bounds', () => {
+    const clusterer = new Supercluster().load([SAMPLE_POINT])
+
+    expect(clusterer.getClusterExpansionRegion(-1)).toEqual({
+      latitude: 0,
+      longitude: 0,
+      latitudeDelta: 0.01,
+      longitudeDelta: 0.01,
+    })
+  })
+})
+
 describe('Supercluster numeric input validation', () => {
   beforeEach(() => {
     jest.clearAllMocks()
@@ -536,6 +590,7 @@ describe('Supercluster numeric input validation', () => {
       () => clusterer.getLeaves(Infinity),
       () => clusterer.getAllLeaves(NaN),
       () => clusterer.getClusterExpansionZoom(1e12),
+      () => clusterer.getClusterBounds(-0.5),
       () => clusterer.getClusterExpansionRegion(0.5),
     ]) {
       expect(query).toThrow(
@@ -544,6 +599,7 @@ describe('Supercluster numeric input validation', () => {
     }
     expect(mockEngine.getChildren).not.toHaveBeenCalled()
     expect(mockEngine.getLeaves).not.toHaveBeenCalled()
+    expect(mockEngine.getClusterBounds).not.toHaveBeenCalled()
     expect(mockEngine.getClusterExpansionZoom).not.toHaveBeenCalled()
   })
 

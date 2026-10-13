@@ -1,4 +1,5 @@
 import type { HybridObject } from 'react-native-nitro-modules'
+import type { ClusterBounds } from './ClusterBounds'
 import type { ClusterEngineOptions } from './ClusterEngineOptions'
 import type { EngineClusterNode } from './EngineClusterNode'
 import type { Viewport } from './Viewport'
@@ -13,6 +14,7 @@ import type { Viewport } from './Viewport'
  * 4. Query — {@linkcode ClusterEngine.getClusters getClusters},
  *    {@linkcode ClusterEngine.getChildren getChildren},
  *    {@linkcode ClusterEngine.getLeaves getLeaves},
+ *    {@linkcode ClusterEngine.getClusterBounds getClusterBounds},
  *    {@linkcode ClusterEngine.getClusterExpansionZoom getClusterExpansionZoom}.
  * 5. {@linkcode ClusterEngine.dispose dispose} — free the native index now
  *    rather than at garbage collection; a pending `buildAsync` frees it when it
@@ -94,6 +96,16 @@ export interface ClusterEngine extends HybridObject<{
     limit: number,
     offset: number
   ): EngineClusterNode[]
+
+  /**
+   * Return the box every leaf under a cluster spans, without returning the
+   * leaves: four numbers however many points the cluster holds. A point id
+   * spans its own point; an id that is no node returns `undefined`.
+   *
+   * @throws When {@linkcode ClusterEngine.isBuilt isBuilt} is `false`.
+   * @throws When `clusterId` is not a 32-bit integer.
+   */
+  getClusterBounds(clusterId: number): ClusterBounds | undefined
 
   /**
    * Zoom level at which a cluster expands into multiple children: the first

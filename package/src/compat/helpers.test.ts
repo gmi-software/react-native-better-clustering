@@ -2,6 +2,7 @@ import { describe, expect, it } from 'bun:test'
 import React from 'react'
 
 import {
+  bboxToFitCoordinates,
   computeClusterLayoutSignature,
   markerToGeoJSONFeature,
 } from './helpers'
@@ -82,5 +83,24 @@ describe('computeClusterLayoutSignature', () => {
     ])
 
     expect(before).not.toBe(after)
+  })
+})
+
+describe('bboxToFitCoordinates', () => {
+  it('returns the south-west corner, the centre and the north-east corner', () => {
+    expect(bboxToFitCoordinates([16.9, 50.0, 21.1, 52.4])).toEqual([
+      { latitude: 50.0, longitude: 16.9 },
+      { latitude: 51.2, longitude: 19 },
+      { latitude: 52.4, longitude: 21.1 },
+    ])
+  })
+
+  it('keeps every step under 180° of longitude for a box wider than that', () => {
+    const [southWest, centre, northEast] = bboxToFitCoordinates([
+      -100, -10, 100, 10,
+    ])
+
+    expect(centre!.longitude - southWest!.longitude).toBe(100)
+    expect(northEast!.longitude - centre!.longitude).toBe(100)
   })
 })

@@ -21,6 +21,7 @@ export {
 } from './geometry'
 export type { MapDimensions } from './geometry'
 
+export type { ClusterBounds } from '../specs/ClusterBounds'
 export type { ClusterEngine } from '../specs/ClusterEngine.nitro'
 export type { ClusterEngineOptions } from '../specs/ClusterEngineOptions'
 export type { EngineClusterNode } from '../specs/EngineClusterNode'
