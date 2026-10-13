@@ -1,10 +1,11 @@
 // Regenerates the ground-truth table in `cpp/ClusterEngineCore.test.cpp`
 // (testSuperclusterParity) from the reference supercluster implementation.
 //
-//   npx --yes -p supercluster@8 node scripts/generate-supercluster-parity-fixture.mjs
+//   node scripts/generate-supercluster-parity-fixture.mjs
 //
-// Paste the output over the `CASES` table in the test. supercluster is not a
-// dependency of this package — the fixture is checked in so CI stays offline.
+// Run from `package/`, so it uses the pinned supercluster devDependency. Paste
+// the output over the `cases` table in the test. The fixture is checked in so
+// the C++ test stays independent of Node.
 
 import Supercluster from 'supercluster'
 
@@ -99,6 +100,36 @@ const CASES = [
   },
 ]
 
+// Hashes which points share a cluster at one zoom, independent of cluster ids
+// (supercluster's ids differ from the engine's). Every point is labelled with
+// the smallest id among the leaves of the feature that contains it, then the
+// labels are folded with 32-bit FNV-1a in point-id order. The C++ test computes
+// the same hash bit-for-bit.
+function membershipHash(index, features, n) {
+  const labels = new Uint32Array(n)
+  for (const feature of features) {
+    if (!feature.properties.cluster) {
+      labels[feature.id] = feature.id
+      continue
+    }
+    const leaves = index.getLeaves(feature.properties.cluster_id, Infinity)
+    let label = leaves[0].id
+    for (const leaf of leaves) {
+      if (leaf.id < label) label = leaf.id
+    }
+    for (const leaf of leaves) {
+      labels[leaf.id] = label
+    }
+  }
+
+  let hash = 2166136261
+  for (let i = 0; i < n; i++) {
+    hash = (hash ^ labels[i]) >>> 0
+    hash = Math.imul(hash, 16777619) >>> 0
+  }
+  return hash
+}
+
 const lines = []
 for (const testCase of CASES) {
   const index = new Supercluster({
@@ -112,19 +143,22 @@ for (const testCase of CASES) {
 
   const nodes = []
   const clusters = []
+  const memberships = []
   for (let z = testCase.minZoom; z <= testCase.maxZoom; z++) {
     const features = index.getClusters([-180, -85, 180, 85], z)
     nodes.push(features.length)
     clusters.push(
       features.filter((feature) => feature.properties.cluster).length
     )
+    memberships.push(`${membershipHash(index, features, testCase.n)}u`)
   }
 
   lines.push(
     `  // n=${testCase.n} seed=${testCase.seed} radius=${testCase.radius} extent=${testCase.extent} zoom ${testCase.minZoom}..${testCase.maxZoom} minPoints=${testCase.minPoints}`,
     `  {${testCase.n}, ${testCase.seed}u, ${testCase.radius}.0, ${testCase.extent}, ${testCase.minZoom}, ${testCase.maxZoom}, ${testCase.minPoints},`,
     `   {${nodes.join(', ')}},`,
-    `   {${clusters.join(', ')}}},`
+    `   {${clusters.join(', ')}},`,
+    `   {${memberships.join(', ')}}},`
   )
 }
 

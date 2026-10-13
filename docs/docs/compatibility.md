@@ -62,9 +62,12 @@ For custom map stacks, use advanced subpaths:
 
 The C++ engine reproduces [supercluster](https://github.com/mapbox/supercluster)
 feature-for-feature: with the same points, `radius`, `extent`, `minPoints` and
-zoom range, `getClusters` returns the same clusters. This is pinned by a
+zoom range, `getClusters` returns the same clusters with the same members. A
 checked-in fixture in `package/cpp/ClusterEngineCore.test.cpp`, generated from
-supercluster itself and verified in CI.
+supercluster 8.0.1 and verified in CI, pins this for five seeded datasets of
+3,000–8,000 points (`extent` 256, 512 and 1024, `minPoints: 2`): at every zoom
+the engine must return the same number of features and of clusters, and group
+the same points into each cluster.
 
 Two deliberate differences remain, neither of which changes cluster membership
 in practice:
@@ -89,7 +92,9 @@ one you get:
 | `MapView` (main export) | `256` | react-native-map-clustering |
 | `useClusterer`, `Supercluster` | `extent` (`512`) | react-native-clusterer |
 
-Pass `viewportTileSize` explicitly to override either default. See
+`useClusterer` and `Supercluster` accept a `viewportTileSize` option to override
+their default; pass `256` to query the same zoom as `MapView`. `MapView` has no
+such prop and always uses `256`, as react-native-map-clustering does. See
 [`SuperclusterOptions`](./api/types.md#viewport-tile-size).
 
 > Earlier releases normalised the cluster radius incorrectly, clustering at
@@ -97,4 +102,6 @@ Pass `viewportTileSize` explicitly to override either default. See
 > `MapView` one zoom level below react-native-map-clustering. The two errors
 > largely cancelled at the shipped defaults, so `MapView` looked about right
 > while `useClusterer` did not. Both are fixed. If you tuned `radius` against
-> the old `/engine` or `/hooks` behaviour, halve it to keep the previous look.
+> the old `/engine` or `/hooks` behaviour, multiply it by `256 / extent` to keep
+> the previous clustering: halve it at the default `extent: 512`, keep it at
+> `256`, quarter it at `1024`.

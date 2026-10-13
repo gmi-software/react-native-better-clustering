@@ -67,7 +67,9 @@ together as `radius / extent`. Raising `extent` therefore tightens clustering
 and lowering it loosens clustering, at the same `radius`.
 
 Given the same options and zoom, this package produces the same clusters as
-supercluster.
+supercluster, apart from two edge cases (points exactly on the radius boundary,
+and tie-breaking with `minPoints` above 2) described under
+[supercluster parity](../compatibility.md#supercluster-parity).
 
 #### Viewport tile size
 
