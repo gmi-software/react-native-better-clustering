@@ -2,6 +2,7 @@ import { memo, useCallback, useEffect, useRef, useState } from 'react'
 import { Platform, Pressable, StyleSheet, Text, View } from 'react-native'
 import type { Region } from 'react-native-maps'
 import { ControlPanel, ControlRow, StatusText } from '../components/Controls'
+import { useSetHudHidden } from '../hud/HudVisibility'
 import {
   generatePoints,
   POLAND_BOUNDS,
@@ -136,7 +137,13 @@ const BenchMap = memo(function BenchMap({
 })
 
 /** Time since the run started, redrawn on every JS frame: it stops when JS does. */
-function JsClock({ startedAt }: { startedAt: number }) {
+function JsClock({
+  startedAt,
+  large,
+}: {
+  startedAt: number
+  large: boolean
+}) {
   const [now, setNow] = useState(startedAt)
   useEffect(() => {
     let frameId = requestAnimationFrame(function onFrame() {
@@ -146,7 +153,7 @@ function JsClock({ startedAt }: { startedAt: number }) {
     return () => cancelAnimationFrame(frameId)
   }, [])
   return (
-    <Text style={styles.clock} testID="bench-clock">
+    <Text style={[styles.clock, large && styles.clockLarge]} testID="bench-clock">
       {((now - startedAt) / 1000).toFixed(2)} s
     </Text>
   )
@@ -171,6 +178,9 @@ export function BenchmarkScreen() {
   const [tick, setTick] = useState(0)
   const [startedAt, setStartedAt] = useState(0)
   const [result, setResult] = useState<string | null>(null)
+  // For screen recordings: no dev HUD, a larger clock that restarts at mount.
+  const [recording, setRecording] = useState(false)
+  const setHudHidden = useSetHudHidden()
 
   const mapRef = useRef<MapHandle | null>(null)
   const nextRef = useRef<(() => void) | null>(null)
@@ -251,6 +261,9 @@ export function BenchmarkScreen() {
       // Mount: from the render that hands the library its markers.
       resetBenchCounters()
       const mountStart = performance.now()
+      if (recording) {
+        setStartedAt(mountStart)
+      }
       setMapMounted(true)
       setPhase('mounting')
       await waitUntil(
@@ -383,12 +396,23 @@ export function BenchmarkScreen() {
             />
           ))}
         </ControlRow>
-        <Chip
-          label="Start"
-          onPress={() => void run()}
-          selected
-          testID="bench-start"
-        />
+        <ControlRow>
+          <Chip
+            label="Recording look"
+            onPress={() => {
+              setRecording(!recording)
+              setHudHidden(!recording)
+            }}
+            selected={recording}
+            testID="bench-recording"
+          />
+          <Chip
+            label="Start"
+            onPress={() => void run()}
+            selected
+            testID="bench-start"
+          />
+        </ControlRow>
       </ControlPanel>
     )
   }
@@ -405,14 +429,22 @@ export function BenchmarkScreen() {
             tick={tick}
           />
         ) : null}
-        <View style={styles.overlay} pointerEvents="none">
-          <Text style={styles.overlayTitle} testID="bench-library">
+        <View
+          style={[styles.overlay, recording && styles.overlayLarge]}
+          pointerEvents="none"
+        >
+          <Text
+            style={[styles.overlayTitle, recording && styles.overlayTitleLarge]}
+            testID="bench-library"
+          >
             {library.name} {library.version}
           </Text>
-          <Text style={styles.overlayLine}>
+          <Text
+            style={[styles.overlayLine, recording && styles.overlayLineLarge]}
+          >
             {count.toLocaleString('en-US')} markers
           </Text>
-          <JsClock startedAt={startedAt} />
+          <JsClock large={recording} startedAt={startedAt} />
         </View>
       </View>
       <ControlPanel>
@@ -497,6 +529,20 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: '700',
     fontVariant: ['tabular-nums'],
+  },
+  overlayLarge: {
+    right: 8,
+    padding: 14,
+    borderRadius: 14,
+  },
+  overlayTitleLarge: {
+    fontSize: 15,
+  },
+  overlayLineLarge: {
+    fontSize: 15,
+  },
+  clockLarge: {
+    fontSize: 44,
   },
   result: {
     color: '#111827',
