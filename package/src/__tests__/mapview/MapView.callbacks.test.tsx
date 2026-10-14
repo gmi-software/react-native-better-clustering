@@ -141,10 +141,19 @@ describe('MapView region updates', () => {
 
     await settleRegion(regionAt(GROUP_CENTER, 20))
 
-    // One query for the rendered clusters and a second one only to compute
-    // the LayoutAnimation signature (audit finding F-28; the #5 branch
-    // removes it).
-    expect(fakeClusterEngineStats.getClusters - before).toBe(2)
+    // The LayoutAnimation check and the render ask for the same region, and
+    // the engine answers it once.
+    expect(fakeClusterEngineStats.getClusters - before).toBe(1)
+  })
+
+  it('does not query the engine for a LayoutAnimation it will not run', async () => {
+    render(<Map animationEnabled={false} clusterUpdateIntervalMs={0} />)
+    await flush()
+    const before = fakeClusterEngineStats.getClusters
+
+    await settleRegion(regionAt(GROUP_CENTER, 20))
+
+    expect(fakeClusterEngineStats.getClusters - before).toBe(1)
   })
 
   it('animates the next layout on iOS when the settled clusters change, unless animationEnabled is false', async () => {

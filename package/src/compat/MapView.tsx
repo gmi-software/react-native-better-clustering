@@ -355,8 +355,10 @@ const CompatMapView = forwardRef(function CompatMapView(
   // `bubbleExitMs`) so a continuous zoom does not stack multiple bubble
   // generations and saturate the JS thread.
   const [isMapMoving, setIsMapMoving] = useState(false)
+  // Mirrors `isMapMoving` so the per-frame `onRegionChange` sets it only once
+  // per gesture: React bails out of an equal update only after rendering again.
+  const isMapMovingRef = useRef(false)
   const regionThrottleStateRef = useRef(createThrottleRegionSyncState())
-  const clusterLayoutSignatureRef = useRef('')
   const [mapDimensions, setMapDimensions] = useState(() => ({
     width: width ?? WINDOW_WIDTH,
     height: height ?? WINDOW_HEIGHT,
@@ -455,11 +457,12 @@ const CompatMapView = forwardRef(function CompatMapView(
     isSameMarkerFeature
   )
 
-  const clusterLayoutSignature = useMemo(
-    () => computeClusterLayoutSignature(clusters),
-    [clusters]
-  )
-  clusterLayoutSignatureRef.current = clusterLayoutSignature
+  // The clusters on screen, for the settle handler to compare the next ones
+  // with.
+  const renderedClustersRef = useRef(clusters)
+  useEffect(() => {
+    renderedClustersRef.current = clusters
+  })
 
   // Callbacks are read through refs, so a new callback identity alone never
   // fires them: `onMarkersChange={setState}` with inline children would loop.
@@ -652,7 +655,10 @@ const CompatMapView = forwardRef(function CompatMapView(
 
   const handleRegionChange = useCallback(
     (region: Region, details: Details) => {
-      setIsMapMoving(true)
+      if (!isMapMovingRef.current) {
+        isMapMovingRef.current = true
+        setIsMapMoving(true)
+      }
       // Keep clusters in sync while the map moves, but throttle recomputation so
       // pinch/pan does not trigger a full re-cluster on every native frame.
       scheduleThrottledRegionSync(
@@ -670,6 +676,7 @@ const CompatMapView = forwardRef(function CompatMapView(
     (region: Region, details: Details) => {
       // Gesture settled: re-enable cross-fade so the final cluster transition
       // animates, while intermediate frames during the move stayed instant.
+      isMapMovingRef.current = false
       setIsMapMoving(false)
       flushThrottledRegionSync(
         region,
@@ -677,20 +684,25 @@ const CompatMapView = forwardRef(function CompatMapView(
         regionThrottleStateRef.current
       )
 
-      const mapRegion = toMapRegion(region)
-      const nextSignature =
-        clusteringEnabled && supercluster.isLoaded
-          ? computeClusterLayoutSignature(
-              supercluster.getClustersFromRegion(mapRegion, mapDimensions)
-            )
-          : clusterLayoutSignatureRef.current
-
+      // Animate only a commit that changes the clusters: the next commit with
+      // any change takes the animation. The query is the one the render runs
+      // for this region, so the engine answers it once.
       if (
         animationEnabled &&
         Platform.OS === 'ios' &&
-        nextSignature !== clusterLayoutSignatureRef.current
+        clusteringEnabled &&
+        supercluster.isLoaded
       ) {
-        LayoutAnimation.configureNext(layoutAnimationConf)
+        const nextClusters = supercluster.getClustersFromRegionUpToMaxZoom(
+          toMapRegion(region),
+          mapDimensions
+        )
+        if (
+          computeClusterLayoutSignature(nextClusters) !==
+          computeClusterLayoutSignature(renderedClustersRef.current)
+        ) {
+          LayoutAnimation.configureNext(layoutAnimationConf)
+        }
       }
 
       // Defer notifying the consumer until `clusters` is recomputed for the
