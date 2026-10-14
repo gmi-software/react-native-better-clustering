@@ -66,8 +66,8 @@ are supported, plus:
 | `clusterColor` | `#0F52FF` | Default cluster bubble color (GMI brand blue) |
 | `clusterTextColor` | `#FFFFFF` | Default cluster label color |
 | `clusterFontFamily` | — | Font family for cluster count label |
-| `animationEnabled` | `true` | Animate cluster changes (iOS only) |
-| `layoutAnimationConf` | 200ms easeInEaseOut create/delete + scale update | LayoutAnimation config when `animationEnabled` (tuned for cluster bubble transitions; pass a custom config to override) |
+| `animationEnabled` | `true` | Fade the default cluster bubbles on zoom (iOS + Android); see `clusterFadeInDuration` |
+| `layoutAnimationConf` | — | Deprecated and ignored, accepted for react-native-map-clustering compatibility. `LayoutAnimation` cannot animate map markers on the New Architecture: they are native map annotations outside React Native's layout. Tune the fade with `clusterFadeInDuration` |
 | `clusterFadeInDuration` | `250` | Cross-fade duration (ms) for default cluster bubbles on zoom: new bubbles fade in while removed ones linger and fade out, eliminating the blink from native annotations being added/removed (iOS + Android). Driven by Reanimated on the UI thread; without the optional `react-native-reanimated` peer, bubbles do not fade and removed ones disappear at once. Bubbles cross-fade when the map settles; during an active pinch/pan, new bubbles appear at once and removed ones stay for 100 ms before they go, so a continuous zoom neither leaves gaps nor stacks bubble generations on the JS thread. Gated by `animationEnabled`; ignored with a custom `renderCluster`. Set to `0` to disable |
 | `tracksViewChanges` | `false` | Forwarded to default cluster markers |
 | `edgePadding` | 50px each side | Padding for `fitToCoordinates` on cluster press |

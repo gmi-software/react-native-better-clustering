@@ -1,6 +1,5 @@
 import React from 'react'
-import { isClusterFeature } from '../geojson'
-import type { BBox, ClusterFeature, PointFeature } from '../geojson/types'
+import type { BBox, PointFeature } from '../geojson/types'
 
 /**
  * Whether a React child is a clusterable `react-native-maps` `Marker`.
@@ -46,7 +45,7 @@ const markerElements = new WeakMap<
  * React reconciliation. Leaves out `coordinate`, `children`, and the props that
  * name cluster properties (`cluster`, `cluster_id`, `point_count_abbreviated`,
  * `getExpansionRegion`), so a marker such as `<Marker cluster>` is never
- * mistaken for a cluster by {@linkcode isClusterFeature}.
+ * mistaken for a cluster by `isClusterFeature`.
  *
  * @see {@linkcode isMarker}
  */
@@ -92,29 +91,6 @@ export function markerElementOf(
   feature: PointFeature
 ): React.ReactElement<MarkerLikeProps> | undefined {
   return markerElements.get(feature)
-}
-
-/**
- * Stable fingerprint of visible clusters/markers for layout-animation gating.
- *
- * Includes cluster id, point count, and coordinates so implode/explode and
- * bubble resize transitions run only when the visible set actually changes.
- */
-export function computeClusterLayoutSignature(
-  features: Array<PointFeature | ClusterFeature>
-): string {
-  return features
-    .map((feature) => {
-      const [longitude, latitude] = feature.geometry.coordinates
-
-      if (isClusterFeature(feature)) {
-        return `c:${feature.properties.cluster_id}:${feature.properties.point_count}:${latitude}:${longitude}`
-      }
-
-      const index = feature.properties.index
-      return `p:${index}:${latitude}:${longitude}`
-    })
-    .join('|')
 }
 
 /**

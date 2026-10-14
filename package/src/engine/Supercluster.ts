@@ -61,11 +61,6 @@ export class Supercluster<P extends AnyProps = AnyProps> {
   private readonly minLeafIndices = new WeakMap<ClusterFeature<P>, number>()
   private destroyed = false
   private building = false
-  /** The last {@linkcode Supercluster.getClustersFromRegionUpToMaxZoom} answer. */
-  private lastRegionQuery: {
-    key: string
-    features: Array<PointFeature<P> | ClusterFeature<P>>
-  } | null = null
   private readonly options: Required<SuperclusterOptions>
 
   /**
@@ -182,8 +177,6 @@ export class Supercluster<P extends AnyProps = AnyProps> {
     }
 
     this.loadedFeatures = valid
-    // Point features in the last answer are the replaced ones.
-    this.lastRegionQuery = null
   }
 
   /**
@@ -204,7 +197,6 @@ export class Supercluster<P extends AnyProps = AnyProps> {
     this.destroyed = true
     this.engine = null
     this.loadedFeatures = []
-    this.lastRegionQuery = null
 
     if (engine != null && !this.building) {
       engine.dispose()
@@ -254,8 +246,6 @@ export class Supercluster<P extends AnyProps = AnyProps> {
    * queried at `maxZoom` at most, so points that zooming never splits stay
    * clustered however far the map zooms in.
    *
-   * Asked for the same region and dimensions again, it returns the same array.
-   *
    * @internal The compat `MapView` spiderfies those clusters instead of
    * stacking their markers on top of each other.
    */
@@ -263,23 +253,7 @@ export class Supercluster<P extends AnyProps = AnyProps> {
     region: MapRegion,
     mapDimensions: MapDimensions
   ): Array<PointFeature<P> | ClusterFeature<P>> {
-    // `MapView` asks for the settled region twice, once to decide on a layout
-    // animation and once to render it, so repeat the last answer instead of
-    // querying the engine again.
-    const { latitude, longitude, latitudeDelta, longitudeDelta } = region
-    const key = `${latitude}|${longitude}|${latitudeDelta}|${longitudeDelta}|${mapDimensions.width}|${mapDimensions.height}`
-    if (this.lastRegionQuery?.key === key) {
-      return this.lastRegionQuery.features
-    }
-
-    const features = this.queryRegion(
-      region,
-      mapDimensions,
-      this.options.maxZoom
-    )
-    // An instance that is not loaded yet answers `[]` now and more later.
-    this.lastRegionQuery = this.isLoaded ? { key, features } : null
-    return features
+    return this.queryRegion(region, mapDimensions, this.options.maxZoom)
   }
 
   private queryRegion(

@@ -11,8 +11,6 @@ import React, {
 } from 'react'
 import {
   Dimensions,
-  LayoutAnimation,
-  Platform,
   StyleSheet,
   View,
   type LayoutAnimationConfig,
@@ -45,7 +43,6 @@ import {
 import ClusterMarker from './ClusterMarker'
 import {
   bboxToFitCoordinates,
-  computeClusterLayoutSignature,
   elementKey,
   isMarker,
   markerElementOf,
@@ -94,27 +91,6 @@ const DEFAULT_EDGE_PADDING: EdgePadding = {
   left: 50,
   right: 50,
   bottom: 50,
-}
-
-/**
- * Shorter than `LayoutAnimation.Presets.spring` (700ms overshoot) and tuned for
- * cluster bubble create/update/delete instead of a generic full-tree relayout.
- * Override via `layoutAnimationConf`.
- */
-const DEFAULT_LAYOUT_ANIMATION: LayoutAnimationConfig = {
-  duration: 200,
-  create: {
-    type: LayoutAnimation.Types.easeInEaseOut,
-    property: LayoutAnimation.Properties.opacity,
-  },
-  update: {
-    type: LayoutAnimation.Types.easeInEaseOut,
-    property: LayoutAnimation.Properties.scaleXY,
-  },
-  delete: {
-    type: LayoutAnimation.Types.easeInEaseOut,
-    property: LayoutAnimation.Properties.opacity,
-  },
 }
 
 /**
@@ -229,9 +205,19 @@ export interface ClusteredMapViewProps extends Omit<
   selectedClusterId?: string | number
   /** Background color for the selected cluster. */
   selectedClusterColor?: string
-  /** Animate cluster implode/explode on zoom (iOS only). @default `true` */
+  /**
+   * Fades the default cluster bubbles in and out on zoom; see
+   * {@linkcode clusterFadeInDuration}. @default `true`
+   */
   animationEnabled?: boolean
-  /** LayoutAnimation preset/config used when `animationEnabled` (iOS only). */
+  /**
+   * Accepted for react-native-map-clustering compatibility and ignored.
+   *
+   * @deprecated `LayoutAnimation` cannot animate map markers on the New
+   * Architecture, which this library requires: markers are native map
+   * annotations outside React Native's layout. Use
+   * {@linkcode clusterFadeInDuration} to tune the bubble fade.
+   */
   layoutAnimationConf?: LayoutAnimationConfig
   /**
    * Fade-in duration (ms) for cluster bubbles when they (re)mount on zoom, which
@@ -323,7 +309,8 @@ const CompatMapView = forwardRef(function CompatMapView(
     selectedClusterId,
     selectedClusterColor = '#FF5722',
     animationEnabled = true,
-    layoutAnimationConf = DEFAULT_LAYOUT_ANIMATION,
+    // Kept out of `restProps`, so it is not passed on to the native map.
+    layoutAnimationConf: _layoutAnimationConf,
     clusterFadeInDuration = 250,
     tracksViewChanges = false,
     width,
@@ -456,13 +443,6 @@ const CompatMapView = forwardRef(function CompatMapView(
     clustererOptions,
     isSameMarkerFeature
   )
-
-  // The clusters on screen, for the settle handler to compare the next ones
-  // with.
-  const renderedClustersRef = useRef(clusters)
-  useEffect(() => {
-    renderedClustersRef.current = clusters
-  })
 
   // Callbacks are read through refs, so a new callback identity alone never
   // fires them: `onMarkersChange={setState}` with inline children would loop.
@@ -684,27 +664,6 @@ const CompatMapView = forwardRef(function CompatMapView(
         regionThrottleStateRef.current
       )
 
-      // Animate only a commit that changes the clusters: the next commit with
-      // any change takes the animation. The query is the one the render runs
-      // for this region, so the engine answers it once.
-      if (
-        animationEnabled &&
-        Platform.OS === 'ios' &&
-        clusteringEnabled &&
-        supercluster.isLoaded
-      ) {
-        const nextClusters = supercluster.getClustersFromRegionUpToMaxZoom(
-          toMapRegion(region),
-          mapDimensions
-        )
-        if (
-          computeClusterLayoutSignature(nextClusters) !==
-          computeClusterLayoutSignature(renderedClustersRef.current)
-        ) {
-          LayoutAnimation.configureNext(layoutAnimationConf)
-        }
-      }
-
       // Defer notifying the consumer until `clusters` is recomputed for the
       // settled region, so we reuse that single computation instead of querying
       // the engine a second time here (the old inline `deriveVisibleMapFeatures`
@@ -712,14 +671,7 @@ const CompatMapView = forwardRef(function CompatMapView(
       // no `onRegionChangeComplete` callback was provided).
       pendingRegionChangeRef.current = { region, details }
     },
-    [
-      animationEnabled,
-      clusteringEnabled,
-      layoutAnimationConf,
-      mapDimensions,
-      supercluster,
-      syncCurrentRegion,
-    ]
+    [syncCurrentRegion]
   )
 
   // `currentRegion` is a fresh object on every settle, so this runs once per
