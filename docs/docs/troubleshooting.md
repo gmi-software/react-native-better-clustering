@@ -113,7 +113,7 @@ and every zoom step mounts hundreds of new native markers, which stalls the
 map.
 
 Pass a larger `radius`, about twice the default: roughly 12% of the map width,
-which is around 56 on a phone, as in the examples above:
+which is around 50 on a phone:
 
 ```tsx
 <MapView radius={Dimensions.get('window').width * 0.12}>{markers}</MapView>

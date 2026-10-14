@@ -79,10 +79,11 @@ function isSameMarkerFeature(previous: PointFeature, next: PointFeature) {
 }
 
 /**
- * How long a bubble removed while the map moves stays on screen, opaque. Covers
- * the few frames MapKit takes to show the annotations that replace it, and is
- * no longer than the default recompute interval, so at most one extra bubble
- * generation is mounted.
+ * Longest a bubble removed while the map moves stays on screen, opaque; never
+ * longer than the fade. Covers the few frames MapKit takes to show the
+ * annotations that replace it, and matches the default recompute interval, so
+ * at that interval at most one extra bubble generation is mounted. A shorter
+ * `clusterUpdateIntervalMs` can keep more.
  */
 const MOVING_EXIT_HOLD_MS = 100
 
@@ -227,8 +228,10 @@ export interface ClusteredMapViewProps extends Omit<
    * is provided. Set to `0` to disable.
    *
    * Bubbles cross-fade when the map settles. While it moves, new bubbles
-   * appear at once and removed ones stay for 100 ms before they go, so a
-   * continuous zoom neither leaves gaps nor stacks bubble generations.
+   * appear at once and removed ones stay for up to 100 ms (never longer than
+   * this duration) before they go, so a continuous zoom leaves no gaps; at
+   * the default {@linkcode clusterUpdateIntervalMs} at most one extra
+   * generation of bubbles stays mounted.
    *
    * Needs `react-native-reanimated`, an optional peer dependency: without it
    * the bubbles do not fade, and development builds warn once.

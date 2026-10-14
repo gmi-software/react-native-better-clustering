@@ -52,7 +52,7 @@ are supported, plus:
 
 | Prop | Default | Description |
 |------|---------|-------------|
-| `radius` | `~6%` of screen width | Cluster radius in pixels. The default matches react-native-map-clustering and is smaller than the default bubble; for dense data pass about twice it (around `56` on a phone), see [Troubleshooting](../troubleshooting.md#zooming-stutters-with-many-markers) |
+| `radius` | `~6%` of screen width | Cluster radius in pixels. The default matches react-native-map-clustering and is smaller than the default bubble; for dense data pass about twice it (around `50` on a phone), see [Troubleshooting](../troubleshooting.md#zooming-stutters-with-many-markers) |
 | `minPoints` | `2` | Minimum points to form a cluster |
 | `minZoom` | `1` | Minimum zoom level |
 | `maxZoom` | `20` | Maximum zoom level for clustering |
@@ -68,7 +68,7 @@ are supported, plus:
 | `clusterFontFamily` | — | Font family for cluster count label |
 | `animationEnabled` | `true` | Fade the default cluster bubbles on zoom (iOS + Android); see `clusterFadeInDuration` |
 | `layoutAnimationConf` | — | Deprecated and ignored, accepted for react-native-map-clustering compatibility. `LayoutAnimation` cannot animate map markers on the New Architecture: they are native map annotations outside React Native's layout. Tune the fade with `clusterFadeInDuration` |
-| `clusterFadeInDuration` | `250` | Cross-fade duration (ms) for default cluster bubbles on zoom: new bubbles fade in while removed ones linger and fade out, eliminating the blink from native annotations being added/removed (iOS + Android). Driven by Reanimated on the UI thread; without the optional `react-native-reanimated` peer, bubbles do not fade and removed ones disappear at once. Bubbles cross-fade when the map settles; during an active pinch/pan, new bubbles appear at once and removed ones stay for 100 ms before they go, so a continuous zoom neither leaves gaps nor stacks bubble generations on the JS thread. Gated by `animationEnabled`; ignored with a custom `renderCluster`. Set to `0` to disable |
+| `clusterFadeInDuration` | `250` | Cross-fade duration (ms) for default cluster bubbles on zoom: new bubbles fade in while removed ones linger and fade out, eliminating the blink from native annotations being added/removed (iOS + Android). Driven by Reanimated on the UI thread; without the optional `react-native-reanimated` peer, bubbles do not fade and removed ones disappear at once. Bubbles cross-fade when the map settles; during an active pinch/pan, new bubbles appear at once and removed ones stay for up to 100 ms (never longer than this duration) before they go, so a continuous zoom leaves no gaps; at the default `clusterUpdateIntervalMs` at most one extra generation of bubbles stays mounted. Gated by `animationEnabled`; ignored with a custom `renderCluster`. Set to `0` to disable |
 | `tracksViewChanges` | `false` | Forwarded to default cluster markers |
 | `edgePadding` | 50px each side | Padding for `fitToCoordinates` on cluster press |
 | `preserveClusterPressBehavior` | `false` | Skip auto `fitToCoordinates` on cluster press |
