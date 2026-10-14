@@ -145,8 +145,7 @@ describe('MapView region updates', () => {
   })
 
   it('never configures a LayoutAnimation, which cannot animate map markers', async () => {
-    const config = { duration: 300 }
-    render(<Map layoutAnimationConf={config} />)
+    render(<Map layoutAnimationConf={{ duration: 300 }} />)
     await flush()
 
     await settleRegion(regionAt(GROUP_CENTER, 20))

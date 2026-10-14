@@ -535,11 +535,7 @@ const CompatMapView = forwardRef(function CompatMapView(
   // Removed bubbles cross-fade out once the gesture settles. While the map is
   // moving, a 250ms exit at a ~100ms recompute cadence would keep 2-3 bubble
   // generations mounted at once, which is what dragged the JS thread to ~30fps
-  // on continuous zoom-out. Instead a removed bubble stays opaque for
-  // `MOVING_EXIT_HOLD_MS` and then goes: MapKit drops an annotation at once but
-  // shows the ones that replace it a few frames later, so dropping the bubble
-  // straight away left its area empty for those frames. Bubbles that mount
-  // while the map moves appear at once (`appearInstantly`) for the same reason.
+  // on continuous zoom-out, so they only stay for `MOVING_EXIT_HOLD_MS`.
   const bubbleExitMs = isMapMoving
     ? Math.min(clusterFadeIn, MOVING_EXIT_HOLD_MS)
     : clusterFadeIn
@@ -853,10 +849,11 @@ const CompatMapView = forwardRef(function CompatMapView(
   const presentBubbles = useFadePresence(clusterBubbleItems, bubbleExitMs)
   const clusterBubbleEntries = sortByKey(presentBubbles, (entry) => entry.key)
 
-  // Only exiting bubbles see the fade-out change between moving (`0`: stay
-  // opaque until dropped) and settled, so starting or ending a gesture
-  // re-renders no other bubble; `appearInstantly` is read only when a bubble
-  // mounts.
+  // Bubbles that mount while the map moves appear at once, so the bubble they
+  // replace does not leave a gap when it goes. Only exiting bubbles see the
+  // fade-out change between moving (`0`: stay opaque until dropped) and
+  // settled, so starting or ending a gesture re-renders no other bubble;
+  // `appearInstantly` is read only when a bubble mounts.
   const clusterBubbleMarkers = clusterBubbleEntries.map(
     ({ key, data, exiting }) => (
       <ClusterMarker
