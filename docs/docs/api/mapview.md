@@ -52,7 +52,7 @@ are supported, plus:
 
 | Prop | Default | Description |
 |------|---------|-------------|
-| `radius` | `~6%` of screen width | Cluster radius in pixels |
+| `radius` | `~6%` of screen width | Cluster radius in pixels. The default matches react-native-map-clustering and is smaller than the default bubble; for dense data pass about twice it (around `56` on a phone), see [Troubleshooting](../troubleshooting.md#zooming-stutters-with-many-markers) |
 | `minPoints` | `2` | Minimum points to form a cluster |
 | `minZoom` | `1` | Minimum zoom level |
 | `maxZoom` | `20` | Maximum zoom level for clustering |
