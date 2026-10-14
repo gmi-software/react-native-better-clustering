@@ -154,7 +154,7 @@ function JsClock({
   }, [])
   return (
     <Text style={[styles.clock, large && styles.clockLarge]} testID="bench-clock">
-      {((now - startedAt) / 1000).toFixed(2)} s
+      {(Math.max(0, now - startedAt) / 1000).toFixed(2)} s
     </Text>
   )
 }
@@ -258,12 +258,16 @@ export function BenchmarkScreen() {
       results.baseline = { jsHeap: jsHeap() }
       await waitForNext('ready')
 
+      if (recording) {
+        // Draw the clock at 0.00 s before the mount, so a freeze shows on it.
+        setStartedAt(performance.now())
+        await new Promise((resolve) => requestAnimationFrame(resolve))
+        await new Promise((resolve) => requestAnimationFrame(resolve))
+      }
+
       // Mount: from the render that hands the library its markers.
       resetBenchCounters()
       const mountStart = performance.now()
-      if (recording) {
-        setStartedAt(mountStart)
-      }
       setMapMounted(true)
       setPhase('mounting')
       await waitUntil(
