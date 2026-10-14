@@ -4,6 +4,12 @@ import { Marker, type MapMarker, type MapMarkerProps } from 'react-native-maps'
 import type { ClusterFeature } from '../geojson/types'
 import { reanimated, type Reanimated } from './reanimated'
 
+/**
+ * Width of the white ring around a bubble. It is a white circle under the
+ * coloured one rather than a `borderWidth`: React Native draws a border on an
+ * unclipped view into an image on the CPU, again on every layout and opacity
+ * change, while a plain circle stays a GPU-drawn layer.
+ */
 const BUBBLE_BORDER_WIDTH = 2.5
 const HALO_SCALE = 1.18
 const SHADOW_PADDING = 6
@@ -170,6 +176,7 @@ function ClusterMarker({
   const points = feature.properties.point_count
   const { width, height, fontSize, size, haloSize } =
     clusterBubbleMetrics(points)
+  const innerSize = size - BUBBLE_BORDER_WIDTH * 2
   const [longitude, latitude] = feature.geometry.coordinates
   const label = formatClusterCount(points)
 
@@ -210,29 +217,35 @@ function ClusterMarker({
       />
       <View
         style={[
-          styles.bubble,
+          styles.ring,
           styles.bubbleShadow,
-          {
-            backgroundColor: clusterColor,
-            width: size,
-            height: size,
-            borderRadius: size / 2,
-            borderWidth: BUBBLE_BORDER_WIDTH,
-          },
+          { width: size, height: size, borderRadius: size / 2 },
         ]}
       >
-        <Text
+        <View
           style={[
-            styles.text,
+            styles.bubble,
             {
-              color: clusterTextColor,
-              fontSize,
-              ...(clusterFontFamily ? { fontFamily: clusterFontFamily } : {}),
+              backgroundColor: clusterColor,
+              width: innerSize,
+              height: innerSize,
+              borderRadius: innerSize / 2,
             },
           ]}
         >
-          {label}
-        </Text>
+          <Text
+            style={[
+              styles.text,
+              {
+                color: clusterTextColor,
+                fontSize,
+                ...(clusterFontFamily ? { fontFamily: clusterFontFamily } : {}),
+              },
+            ]}
+          >
+            {label}
+          </Text>
+        </View>
       </View>
     </View>
   )
@@ -270,12 +283,17 @@ const styles = StyleSheet.create({
     opacity: 0.2,
     zIndex: 0,
   },
+  ring: {
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    zIndex: 1,
+  },
   bubble: {
     display: 'flex',
     justifyContent: 'center',
     alignItems: 'center',
-    borderColor: 'rgba(255, 255, 255, 0.92)',
-    zIndex: 1,
   },
   bubbleShadow: Platform.select({
     ios: {
