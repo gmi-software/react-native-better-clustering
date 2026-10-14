@@ -96,6 +96,9 @@ export const mapState = {
 
 export const layoutAnimationCalls: unknown[] = []
 
+/** Every `withTiming` call: the opacity a fading bubble animates to, and how long. */
+export const opacityAnimations: Array<{ to: unknown; duration?: number }> = []
+
 export function resetHarness(): void {
   harnessControls.mapReady = true
   harnessControls.layout = { width: 390, height: 844 }
@@ -105,6 +108,7 @@ export function resetHarness(): void {
   mapState.fitToCoordinates = []
   mapState.animateToRegion = []
   layoutAnimationCalls.length = 0
+  opacityAnimations.length = 0
   resetFakeClusterEngineStats()
 }
 
@@ -162,7 +166,13 @@ mock.module('react-native', () => ({
 // react-native-reanimated
 // ---------------------------------------------------------------------------
 
-mock.module('react-native-reanimated', () => fakeReanimated)
+mock.module('react-native-reanimated', () => ({
+  ...fakeReanimated,
+  withTiming: <T,>(value: T, config?: { duration?: number }): T => {
+    opacityAnimations.push({ to: value, duration: config?.duration })
+    return fakeReanimated.withTiming(value)
+  },
+}))
 
 // ---------------------------------------------------------------------------
 // react-native-maps

@@ -113,6 +113,16 @@ describe('ClusterMarker fade', () => {
     expect(withTiming).not.toHaveBeenCalled()
   })
 
+  it('does not restart the fade when a re-render keeps its target', () => {
+    const props = baseProps({ fadeInDuration: 250 })
+    const { rerender } = render(<ClusterMarker {...props} />)
+    withTiming.mockClear()
+
+    rerender(<ClusterMarker {...props} fadeInDuration={300} />)
+
+    expect(withTiming).not.toHaveBeenCalled()
+  })
+
   it('renders a plain marker when the fade is off', () => {
     render(<ClusterMarker {...baseProps({ fadeInDuration: 0 })} />)
 

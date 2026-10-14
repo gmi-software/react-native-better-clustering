@@ -26,6 +26,7 @@ import {
   harnessControls,
   mapState,
   mountLog,
+  opacityAnimations,
   press,
   regionAt,
   renderedMarkerIds,
@@ -622,6 +623,32 @@ describe('MapView fade while moving', () => {
     } finally {
       jest.useRealTimers()
     }
+  })
+
+  it('keeps a bubble removed while the map moves opaque instead of fading it out', async () => {
+    const { container } = render(<FadingMap initialRegion={zoomedOut} />)
+    await flush()
+    opacityAnimations.length = 0
+
+    act(() => {
+      mapState.props?.onRegionChange?.(regionAt(CENTER, CITY_ZOOM), {
+        isGesture: true,
+      })
+    })
+
+    expect(bubble(container)?.label).toBe('3')
+    expect(opacityAnimations).toEqual([])
+  })
+
+  it('fades out a bubble removed when the map settles', async () => {
+    const { container } = render(<FadingMap initialRegion={zoomedOut} />)
+    await flush()
+    opacityAnimations.length = 0
+
+    await settleRegion(regionAt(CENTER, CITY_ZOOM))
+
+    expect(bubble(container)?.label).toBe('3')
+    expect(opacityAnimations).toEqual([{ to: 0, duration: 250 }])
   })
 })
 
