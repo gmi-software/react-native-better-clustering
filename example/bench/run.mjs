@@ -125,15 +125,35 @@ function deviceInfo() {
   }
 }
 
+/** A run takes 1 to 3 minutes; a hung Maestro must not stall the rest. */
+const RUN_TIMEOUT_MS = 10 * 60 * 1000
+
 function runMaestro(maestroArgs) {
   return new Promise((resolve) => {
     const child = spawn('maestro', maestroArgs)
     let stdout = ''
     let stderr = ''
+    const timer = setTimeout(() => child.kill('SIGKILL'), RUN_TIMEOUT_MS)
     child.stdout.on('data', (chunk) => (stdout += chunk))
     child.stderr.on('data', (chunk) => (stderr += chunk))
-    child.on('close', (status) => resolve({ status, stdout, stderr }))
+    child.on('close', (status) => {
+      clearTimeout(timer)
+      resolve({ status, stdout, stderr })
+    })
   })
+}
+
+/** Stops the app, so the next run starts a fresh process; fine if it is not running. */
+function stopApp() {
+  const [command, commandArgs] =
+    args.platform === 'ios'
+      ? ['xcrun', ['simctl', 'terminate', args.device, args.appId]]
+      : [adb, ['-s', args.device, 'shell', 'am', 'force-stop', args.appId]]
+  try {
+    execFileSync(command, commandArgs, { stdio: 'ignore' })
+  } catch {
+    // Not running.
+  }
 }
 
 let current = null
@@ -170,6 +190,7 @@ for (let run = 1; run <= args.runs; run += 1) {
     for (const lib of args.libs) {
       for (let attempt = 1; attempt <= 2; attempt += 1) {
         current = { run, lib, count, attempt, memory: {}, result: null }
+        stopApp()
         const started = Date.now()
         // Asynchronous: the collector must answer the flow's requests meanwhile.
         const maestro = await runMaestro(

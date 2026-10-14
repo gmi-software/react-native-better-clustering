@@ -4,9 +4,10 @@
 appId: ${APP_ID}
 name: Benchmark ${LIB} ${COUNT}
 ---
+# run.mjs stops the app first, so each run starts a fresh process. Maestro's
+# own stopApp hangs when the app is not running.
 - launchApp:
-    clearState: true
-    stopApp: true
+    stopApp: false
 - scrollUntilVisible:
     element:
       id: scenario-benchmark
