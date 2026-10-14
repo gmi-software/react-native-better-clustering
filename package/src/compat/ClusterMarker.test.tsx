@@ -75,6 +75,16 @@ describe('ClusterMarker fade', () => {
     expect(markerProps.at(-1)?.animatedProps).toEqual({ opacity: 0 })
   })
 
+  it('mounts opaque when it appears instantly', () => {
+    render(
+      <ClusterMarker
+        {...baseProps({ fadeInDuration: 250, appearInstantly: true })}
+      />
+    )
+
+    expect(markerProps.at(-1)?.animatedProps).toEqual({ opacity: 1 })
+  })
+
   it('renders a plain marker when the fade is off', () => {
     render(<ClusterMarker {...baseProps({ fadeInDuration: 0 })} />)
 
@@ -195,6 +205,14 @@ describe('areClusterMarkerPropsEqual', () => {
     const next = baseProps({ onPress, fadeInDuration: 250 })
 
     expect(areClusterMarkerPropsEqual(prev, next)).toBe(false)
+  })
+
+  it('returns true when only appearInstantly changes', () => {
+    const onPress = jest.fn()
+    const prev = baseProps({ onPress, appearInstantly: true })
+    const next = baseProps({ onPress, appearInstantly: false })
+
+    expect(areClusterMarkerPropsEqual(prev, next)).toBe(true)
   })
 
   it('returns false when feature reference changes', () => {

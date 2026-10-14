@@ -46,9 +46,11 @@ import ClusterMarker from './ClusterMarker'
 import {
   bboxToFitCoordinates,
   computeClusterLayoutSignature,
+  elementKey,
   isMarker,
   markerElementOf,
   markerToGeoJSONFeature,
+  sortByKey,
 } from './helpers'
 import { reanimated, warnFadeUnavailable } from './reanimated'
 import { renderSpiderClusterMarkers } from './renderSpiderClusterMarkers'
@@ -229,6 +231,10 @@ export interface ClusteredMapViewProps extends Omit<
    * on both iOS and Android to the default cluster markers; ignored when
    * {@linkcode animationEnabled} is `false` or a custom {@linkcode renderCluster}
    * is provided. Set to `0` to disable.
+   *
+   * Bubbles cross-fade when the map settles. While it moves, bubbles appear
+   * and disappear at once, so a continuous zoom neither leaves gaps nor stacks
+   * bubble generations.
    *
    * Needs `react-native-reanimated`, an optional peer dependency: without it
    * the bubbles do not fade, and development builds warn once.
@@ -539,7 +545,9 @@ const CompatMapView = forwardRef(function CompatMapView(
   // the map is actively moving we drop removed bubbles immediately (duration 0):
   // at a ~100ms recompute cadence, a 250ms exit would keep 2-3 bubble
   // generations mounted at once, which is what dragged the JS thread to ~30fps
-  // on continuous zoom-out.
+  // on continuous zoom-out. Bubbles that mount while it moves appear at once
+  // to match (`appearInstantly`): fading them in from transparent while their
+  // predecessors are already gone left the area empty for a moment.
   const effectiveFadeOut = isMapMoving ? 0 : clusterFadeIn
 
   useEffect(() => {
@@ -842,7 +850,10 @@ const CompatMapView = forwardRef(function CompatMapView(
       })
     }
 
-    return { immediateMarkers: immediate, clusterBubbleItems: bubbles }
+    return {
+      immediateMarkers: sortByKey(immediate, elementKey),
+      clusterBubbleItems: bubbles,
+    }
   }, [
     clusteringEnabled,
     clusters,
@@ -862,11 +873,14 @@ const CompatMapView = forwardRef(function CompatMapView(
     spiderLineColor,
   ])
 
-  const clusterBubbleEntries = useFadePresence(
-    clusterBubbleItems,
-    effectiveFadeOut
-  )
+  // Sorted after `useFadePresence`, which lists exiting bubbles last: an
+  // exiting bubble keeps its place too, so it fades out instead of blinking.
+  const presentBubbles = useFadePresence(clusterBubbleItems, effectiveFadeOut)
+  const clusterBubbleEntries = sortByKey(presentBubbles, (entry) => entry.key)
 
+  // Every duration here stays the same while the map moves and settles, so
+  // starting or ending a gesture re-renders no bubble; `appearInstantly` is
+  // read only when a bubble mounts.
   const clusterBubbleMarkers = clusterBubbleEntries.map(
     ({ key, data, exiting }) => (
       <ClusterMarker
@@ -878,7 +892,8 @@ const CompatMapView = forwardRef(function CompatMapView(
         clusterFontFamily={data.clusterFontFamily}
         tracksViewChanges={data.tracksViewChanges}
         fadeInDuration={clusterFadeIn}
-        fadeOutDuration={effectiveFadeOut}
+        fadeOutDuration={clusterFadeIn}
+        appearInstantly={isMapMoving}
         exiting={exiting}
       />
     )

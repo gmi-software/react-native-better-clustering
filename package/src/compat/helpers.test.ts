@@ -4,7 +4,9 @@ import React from 'react'
 import {
   bboxToFitCoordinates,
   computeClusterLayoutSignature,
+  elementKey,
   markerToGeoJSONFeature,
+  sortByKey,
 } from './helpers'
 import { isClusterFeature } from '../geojson'
 import type { ClusterFeature, PointFeature } from '../geojson/types'
@@ -102,5 +104,30 @@ describe('bboxToFitCoordinates', () => {
 
     expect(centre!.longitude - southWest!.longitude).toBe(100)
     expect(northEast!.longitude - centre!.longitude).toBe(100)
+  })
+})
+
+describe('sortByKey', () => {
+  it('orders items by key without changing the input', () => {
+    const items = [{ key: 'b' }, { key: 'c' }, { key: 'a' }]
+
+    expect(sortByKey(items, (item) => item.key)).toEqual([
+      { key: 'a' },
+      { key: 'b' },
+      { key: 'c' },
+    ])
+    expect(items.map((item) => item.key)).toEqual(['b', 'c', 'a'])
+  })
+
+  it('orders rendered children by their React key', () => {
+    const children = ['s2', 's0', 's1'].map((key) =>
+      React.createElement('marker', { key })
+    )
+
+    expect(sortByKey(children, elementKey).map(elementKey)).toEqual([
+      's0',
+      's1',
+      's2',
+    ])
   })
 })

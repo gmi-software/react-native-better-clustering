@@ -496,6 +496,107 @@ describe('MapView marker keys (#28)', () => {
   })
 })
 
+describe('MapView child order', () => {
+  // A marker that changes place among the map's children is removed and
+  // re-added as a native annotation, which blinks it out.
+  const order = (container: HTMLElement) =>
+    renderedMarkers(container).map((marker) => marker.id)
+
+  it('keeps markers in the same order when the engine returns them in another', async () => {
+    const { container, rerender } = render(<Map points={SINGLES} />)
+    await flush()
+    expect(order(container)).toEqual(['s0', 's1', 's2'])
+
+    // The rebuilt index lists the points in the new children order.
+    rerender(<Map points={[...SINGLES].reverse()} />)
+    await flush()
+
+    expect(fakeClusterEngineStats.created).toBe(2)
+    expect(order(container)).toEqual(['s0', 's1', 's2'])
+  })
+
+  it('keeps an exiting bubble in its place instead of moving it last', async () => {
+    // Five points ~1 m apart, east of GROUP: still one bubble at zoom 19.
+    const tight: TestPoint[] = Array.from({ length: 5 }, (_, i) => ({
+      id: `t${i}`,
+      latitude: CENTER.latitude,
+      longitude: CENTER.longitude + 0.0008 + i * 0.000001,
+    }))
+    const center = {
+      latitude: CENTER.latitude + 0.0002,
+      longitude: CENTER.longitude + 0.0004,
+    }
+    const { container } = render(
+      <MapView initialRegion={regionAt(center, 17)} spiralEnabled={false}>
+        {[...GROUP, ...tight].map((point) => (
+          <Marker key={point.id} testID={point.id} coordinate={point} />
+        ))}
+      </MapView>
+    )
+    await flush()
+    const bubbleLabels = () =>
+      renderedMarkers(container)
+        .filter((marker) => marker.isCluster)
+        .map((marker) => marker.label)
+    // GROUP is a bubble of 4 (g4 is apart), the tight points one of 5.
+    expect(bubbleLabels()).toEqual(['4', '5'])
+
+    jest.useFakeTimers()
+    try {
+      // GROUP's bubble splits into its points and lingers, exiting.
+      act(() => {
+        mapState.props?.onRegionChangeComplete?.(regionAt(center, 19), {
+          isGesture: true,
+        })
+      })
+      expect(bubbleLabels()).toEqual(['4', '5'])
+    } finally {
+      jest.useRealTimers()
+    }
+  })
+})
+
+describe('MapView fade while moving', () => {
+  // SINGLES merge into one new bubble when zoomed out this far.
+  const zoomedOut = regionAt(CENTER, 9)
+
+  function FadingMap() {
+    return (
+      <MapView initialRegion={regionAt(CENTER, CITY_ZOOM)}>
+        {SINGLES.map((point) => (
+          <Marker key={point.id} testID={point.id} coordinate={point} />
+        ))}
+      </MapView>
+    )
+  }
+
+  const bubble = (container: HTMLElement) =>
+    renderedMarkers(container).find((marker) => marker.isCluster)
+
+  it('shows a bubble that appears while the map moves at once', async () => {
+    const { container } = render(<FadingMap />)
+    await flush()
+    expect(bubble(container)).toBeUndefined()
+
+    act(() => {
+      mapState.props?.onRegionChange?.(zoomedOut, { isGesture: true })
+    })
+
+    expect(bubble(container)?.label).toBe('3')
+    expect(bubble(container)?.opacity).toBe(1)
+  })
+
+  it('fades in a bubble that appears when the map settles', async () => {
+    const { container } = render(<FadingMap />)
+    await flush()
+
+    await settleRegion(zoomedOut)
+
+    expect(bubble(container)?.label).toBe('3')
+    expect(bubble(container)?.opacity).toBe(0)
+  })
+})
+
 describe('Marker cluster prop (#14)', () => {
   const clusterable = (points: TestPoint[]) =>
     points.map((point) => ({ ...point, cluster: true }))

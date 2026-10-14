@@ -118,6 +118,32 @@ export function computeClusterLayoutSignature(
 }
 
 /**
+ * A copy of `items` ordered by `keyOf`, so markers that stay on screen keep
+ * their order among the map's children whatever order the engine returns them
+ * in.
+ *
+ * Fabric removes and re-inserts a child that changes place among its siblings,
+ * and react-native-maps turns that into removing and re-adding the native
+ * annotation: a marker whose relative order changes blinks out for a frame or
+ * more. The engine's order changes with the zoom, so on every zoom step most
+ * markers that stayed would blink at once.
+ */
+export function sortByKey<T>(
+  items: ReadonlyArray<T>,
+  keyOf: (item: T) => string
+): T[] {
+  return items
+    .map((item) => ({ item, key: keyOf(item) }))
+    .sort((a, b) => (a.key < b.key ? -1 : a.key > b.key ? 1 : 0))
+    .map(({ item }) => item)
+}
+
+/** The React key of a rendered child, for {@linkcode sortByKey}. */
+export function elementKey(node: React.ReactNode): string {
+  return React.isValidElement(node) && node.key != null ? node.key : ''
+}
+
+/**
  * Coordinates for `fitToCoordinates` that fit `bbox`: its corners with its
  * centre between them. Google Maps grows the fitted box point by point, each
  * time the shorter way round the globe, so the corners alone would fit the

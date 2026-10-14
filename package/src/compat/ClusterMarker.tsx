@@ -38,22 +38,31 @@ function createFadingMarker({
     ref,
     fadeInDuration,
     fadeOutDuration,
+    appearInstantly,
     exiting,
     ...markerProps
   }: MapMarkerProps & {
     ref: Ref<MapMarker>
     fadeInDuration: number
     fadeOutDuration: number
+    appearInstantly: boolean
     exiting: boolean
   }) {
-    const opacity = useSharedValue(0)
+    // Both only take the value from the first render.
+    const opacity = useSharedValue(appearInstantly ? 1 : 0)
+    const target = useRef(appearInstantly ? 1 : 0)
 
+    // Animates only when the target changes, so a re-render, or the second
+    // effect run under StrictMode, does not restart the fade.
     useEffect(() => {
-      if (exiting) {
-        opacity.value = withTiming(0, { duration: fadeOutDuration })
-      } else {
-        opacity.value = withTiming(1, { duration: fadeInDuration })
+      const next = exiting ? 0 : 1
+      if (target.current === next) {
+        return
       }
+      target.current = next
+      opacity.value = withTiming(next, {
+        duration: exiting ? fadeOutDuration : fadeInDuration,
+      })
     }, [exiting, fadeInDuration, fadeOutDuration, opacity])
 
     const animatedProps = useAnimatedProps(() => ({ opacity: opacity.value }))
@@ -127,6 +136,13 @@ export interface ClusterMarkerProps {
    */
   fadeOutDuration?: number
   /**
+   * When `true`, a fading bubble mounts fully opaque instead of fading in.
+   * Read only when the bubble mounts, so changing it re-renders nothing.
+   *
+   * @default false
+   */
+  appearInstantly?: boolean
+  /**
    * When `true`, the bubble animates its opacity to `0` (cross-fade out). The
    * caller is responsible for keeping it mounted until the animation finishes.
    * Press handling is disabled while exiting so stale cluster data cannot fire
@@ -146,6 +162,7 @@ function ClusterMarker({
   tracksViewChanges = false,
   fadeInDuration = 0,
   fadeOutDuration = fadeInDuration,
+  appearInstantly = false,
   exiting = false,
 }: ClusterMarkerProps) {
   const points = feature.properties.point_count
@@ -225,6 +242,7 @@ function ClusterMarker({
         {...markerProps}
         fadeInDuration={fadeInDuration}
         fadeOutDuration={fadeOutDuration}
+        appearInstantly={appearInstantly}
         exiting={exiting}
       >
         {bubble}
@@ -284,6 +302,7 @@ const styles = StyleSheet.create({
   },
 })
 
+/** Leaves out `appearInstantly`, which only matters when the bubble mounts. */
 function areClusterMarkerPropsEqual(
   prev: ClusterMarkerProps,
   next: ClusterMarkerProps
