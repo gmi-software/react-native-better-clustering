@@ -56,7 +56,8 @@ function createFadingMarker({
     // effect run under StrictMode, does not restart the fade.
     useEffect(() => {
       const next = exiting ? 0 : 1
-      if (target.current === next) {
+      // A bubble exiting without a fade-out stays as it is until unmounted.
+      if (target.current === next || (exiting && fadeOutDuration <= 0)) {
         return
       }
       target.current = next
@@ -130,7 +131,8 @@ export interface ClusterMarkerProps {
    */
   fadeInDuration?: number
   /**
-   * Fade-out duration (ms) used when {@linkcode exiting} becomes `true`.
+   * Fade-out duration (ms) used when {@linkcode exiting} becomes `true`. `0`
+   * keeps an exiting bubble as it is until the caller unmounts it.
    *
    * @default `fadeInDuration`
    */

@@ -560,9 +560,11 @@ describe('MapView fade while moving', () => {
   // SINGLES merge into one new bubble when zoomed out this far.
   const zoomedOut = regionAt(CENTER, 9)
 
-  function FadingMap() {
+  function FadingMap({
+    initialRegion = regionAt(CENTER, CITY_ZOOM),
+  }: Partial<MapViewProps>) {
     return (
-      <MapView initialRegion={regionAt(CENTER, CITY_ZOOM)}>
+      <MapView initialRegion={initialRegion}>
         {SINGLES.map((point) => (
           <Marker key={point.id} testID={point.id} coordinate={point} />
         ))}
@@ -594,6 +596,32 @@ describe('MapView fade while moving', () => {
 
     expect(bubble(container)?.label).toBe('3')
     expect(bubble(container)?.opacity).toBe(0)
+  })
+
+  it('keeps a bubble removed while the map moves for a moment, then drops it', async () => {
+    // Starts zoomed out, so the first move recomputes the clusters at once.
+    const { container } = render(<FadingMap initialRegion={zoomedOut} />)
+    await flush()
+    expect(bubble(container)?.label).toBe('3')
+
+    jest.useFakeTimers()
+    try {
+      // Zooming back in splits the bubble into the three markers.
+      act(() => {
+        mapState.props?.onRegionChange?.(regionAt(CENTER, CITY_ZOOM), {
+          isGesture: true,
+        })
+      })
+      expect(renderedMarkerIds(container)).toEqual(['s0', 's1', 's2'])
+      expect(bubble(container)?.label).toBe('3')
+
+      act(() => {
+        jest.advanceTimersByTime(100)
+      })
+      expect(bubble(container)).toBeUndefined()
+    } finally {
+      jest.useRealTimers()
+    }
   })
 })
 

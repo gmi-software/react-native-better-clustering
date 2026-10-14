@@ -15,7 +15,11 @@ mock.module('react-native', () => ({
   View: 'View',
 }))
 
-mock.module('react-native-reanimated', () => fakeReanimated)
+const withTiming = jest.fn(fakeReanimated.withTiming)
+mock.module('react-native-reanimated', () => ({
+  ...fakeReanimated,
+  withTiming,
+}))
 
 const redraw = jest.fn()
 const markerProps: Array<Record<string, unknown>> = []
@@ -83,6 +87,30 @@ describe('ClusterMarker fade', () => {
     )
 
     expect(markerProps.at(-1)?.animatedProps).toEqual({ opacity: 1 })
+  })
+
+  it('fades an exiting bubble out over its fade-out duration', () => {
+    const props = baseProps({ fadeInDuration: 250, appearInstantly: true })
+    const { rerender } = render(<ClusterMarker {...props} />)
+    withTiming.mockClear()
+
+    rerender(<ClusterMarker {...props} exiting />)
+
+    expect(withTiming).toHaveBeenCalledWith(0, { duration: 250 })
+  })
+
+  it('keeps an exiting bubble as it is when its fade-out is 0', () => {
+    const props = baseProps({
+      fadeInDuration: 250,
+      fadeOutDuration: 0,
+      appearInstantly: true,
+    })
+    const { rerender } = render(<ClusterMarker {...props} />)
+    withTiming.mockClear()
+
+    rerender(<ClusterMarker {...props} exiting />)
+
+    expect(withTiming).not.toHaveBeenCalled()
   })
 
   it('renders a plain marker when the fade is off', () => {
