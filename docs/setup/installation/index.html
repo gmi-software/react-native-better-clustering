@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="generator" content="Docusaurus v3.9.2">
 <title data-rh="true">Platform Setup | React Native Better Clustering</title><meta data-rh="true" name="viewport" content="width=device-width,initial-scale=1"><meta data-rh="true" name="twitter:card" content="summary_large_image"><meta data-rh="true" property="og:url" content="https://gmi-software.github.io/react-native-better-clustering/docs/setup/installation"><meta data-rh="true" property="og:locale" content="en"><meta data-rh="true" name="docusaurus_locale" content="en"><meta data-rh="true" name="docsearch:language" content="en"><meta data-rh="true" name="docusaurus_version" content="current"><meta data-rh="true" name="docusaurus_tag" content="docs-default-current"><meta data-rh="true" name="docsearch:version" content="current"><meta data-rh="true" name="docsearch:docusaurus_tag" content="docs-default-current"><meta data-rh="true" property="og:title" content="Platform Setup | React Native Better Clustering"><meta data-rh="true" name="description" content="Install packages"><meta data-rh="true" property="og:description" content="Install packages"><link data-rh="true" rel="icon" href="/react-native-better-clustering/img/favicon.svg"><link data-rh="true" rel="canonical" href="https://gmi-software.github.io/react-native-better-clustering/docs/setup/installation"><link data-rh="true" rel="alternate" href="https://gmi-software.github.io/react-native-better-clustering/docs/setup/installation" hreflang="en"><link data-rh="true" rel="alternate" href="https://gmi-software.github.io/react-native-better-clustering/docs/setup/installation" hreflang="x-default"><script data-rh="true" type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Platform Setup","item":"https://gmi-software.github.io/react-native-better-clustering/docs/setup/installation"}]}</script><link rel="stylesheet" href="/react-native-better-clustering/assets/css/styles.e4ef878d.css">
-<script src="/react-native-better-clustering/assets/js/runtime~main.2721c7a2.js" defer="defer"></script>
+<script src="/react-native-better-clustering/assets/js/runtime~main.7ae538e3.js" defer="defer"></script>
 <script src="/react-native-better-clustering/assets/js/main.28ccab37.js" defer="defer"></script>
 </head>
 <body class="navigation-with-keyboard">
@@ -22,14 +22,15 @@ The native build fails on older versions (see
 <a class="" href="/react-native-better-clustering/docs/troubleshooting#nitro-version">Troubleshooting</a>).</p>
 <h3 class="anchor anchorTargetStickyNavbar_lz6K" id="reanimated-optional">Reanimated (optional)<a href="#reanimated-optional" class="hash-link" aria-label="Direct link to Reanimated (optional)" title="Direct link to Reanimated (optional)" translate="no">​</a></h3>
 <p>With <a href="https://docs.swmansion.com/react-native-reanimated/" target="_blank" rel="noopener noreferrer" class="">Reanimated</a>
-installed, the default cluster bubbles cross-fade on zoom, animated on the UI
-thread (see <a class="" href="/react-native-better-clustering/docs/api/mapview"><code>clusterFadeInDuration</code></a>). Install it by
+installed, the default cluster bubbles cross-fade on zoom, and a splitting
+cluster&#x27;s parts glide out of it while merging clusters glide into one, all
+animated on the UI thread (see <a class="" href="/react-native-better-clustering/docs/api/mapview"><code>clusterFadeInDuration</code></a>). Install it by
 following Reanimated&#x27;s own
 <a href="https://docs.swmansion.com/react-native-reanimated/docs/fundamentals/getting-started/" target="_blank" rel="noopener noreferrer" class="">installation guide</a>:
 it needs <code>react-native-worklets</code> and, in bare React Native, the Worklets Babel
 plugin.</p>
 <p>Without Reanimated, clusters still render: bubbles appear and disappear without
-a fade, and development builds log a one-time notice. Pass
+a fade or glide, and development builds log a one-time notice. Pass
 <code>clusterFadeInDuration={0}</code> to opt out of the fade and the notice.</p>
 <h2 class="anchor anchorTargetStickyNavbar_lz6K" id="new-architecture">New Architecture<a href="#new-architecture" class="hash-link" aria-label="Direct link to New Architecture" title="Direct link to New Architecture" translate="no">​</a></h2>
 <p>This library is a Nitro module and requires React Native&#x27;s <strong>New Architecture</strong>.
