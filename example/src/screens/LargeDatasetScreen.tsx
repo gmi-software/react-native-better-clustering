@@ -45,6 +45,9 @@ export function LargeDatasetScreen({ count }: { count: number }) {
     <>
       <MapView
         initialRegion={POLAND_REGION}
+        // About twice the default: at the default radius this many markers
+        // cover the map with overlapping bubbles and stall every zoom step.
+        radius={56}
         onMarkersChange={(features) => {
           setVisiblePoints(countPoints(features))
           setFirstMarkersMs(

@@ -141,24 +141,18 @@ describe('MapView region updates', () => {
 
     await settleRegion(regionAt(GROUP_CENTER, 20))
 
-    // One query for the rendered clusters and a second one only to compute
-    // the LayoutAnimation signature (audit finding F-28; the #5 branch
-    // removes it).
-    expect(fakeClusterEngineStats.getClusters - before).toBe(2)
+    expect(fakeClusterEngineStats.getClusters - before).toBe(1)
   })
 
-  it('animates the next layout on iOS when the settled clusters change, unless animationEnabled is false', async () => {
-    const { unmount } = render(<Map />)
+  it('never configures a LayoutAnimation, which cannot animate map markers', async () => {
+    render(<Map layoutAnimationConf={{ duration: 300 }} />)
     await flush()
-    await settleRegion(regionAt(GROUP_CENTER, 20))
-    expect(layoutAnimationCalls).toHaveLength(1)
-    unmount()
 
-    resetHarness()
-    render(<Map animationEnabled={false} />)
-    await flush()
     await settleRegion(regionAt(GROUP_CENTER, 20))
+
     expect(layoutAnimationCalls).toHaveLength(0)
+    // Accepted for compatibility, never passed on to the native map.
+    expect(mapState.props).not.toHaveProperty('layoutAnimationConf')
   })
 })
 

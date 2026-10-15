@@ -11,8 +11,6 @@ import React, {
 } from 'react'
 import {
   Dimensions,
-  LayoutAnimation,
-  Platform,
   StyleSheet,
   View,
   type LayoutAnimationConfig,
@@ -45,10 +43,11 @@ import {
 import ClusterMarker from './ClusterMarker'
 import {
   bboxToFitCoordinates,
-  computeClusterLayoutSignature,
+  elementKey,
   isMarker,
   markerElementOf,
   markerToGeoJSONFeature,
+  sortByKey,
 } from './helpers'
 import { reanimated, warnFadeUnavailable } from './reanimated'
 import { renderSpiderClusterMarkers } from './renderSpiderClusterMarkers'
@@ -79,32 +78,20 @@ function isSameMarkerFeature(previous: PointFeature, next: PointFeature) {
   return previous.properties.index === next.properties.index
 }
 
+/**
+ * Longest a bubble removed while the map moves stays on screen, opaque; never
+ * longer than the fade. Covers the few frames MapKit takes to show the
+ * annotations that replace it, and matches the default recompute interval, so
+ * at that interval at most one extra bubble generation is mounted. A shorter
+ * `clusterUpdateIntervalMs` can keep more.
+ */
+const MOVING_EXIT_HOLD_MS = 100
+
 const DEFAULT_EDGE_PADDING: EdgePadding = {
   top: 50,
   left: 50,
   right: 50,
   bottom: 50,
-}
-
-/**
- * Shorter than `LayoutAnimation.Presets.spring` (700ms overshoot) and tuned for
- * cluster bubble create/update/delete instead of a generic full-tree relayout.
- * Override via `layoutAnimationConf`.
- */
-const DEFAULT_LAYOUT_ANIMATION: LayoutAnimationConfig = {
-  duration: 200,
-  create: {
-    type: LayoutAnimation.Types.easeInEaseOut,
-    property: LayoutAnimation.Properties.opacity,
-  },
-  update: {
-    type: LayoutAnimation.Types.easeInEaseOut,
-    property: LayoutAnimation.Properties.scaleXY,
-  },
-  delete: {
-    type: LayoutAnimation.Types.easeInEaseOut,
-    property: LayoutAnimation.Properties.opacity,
-  },
 }
 
 /**
@@ -219,9 +206,19 @@ export interface ClusteredMapViewProps extends Omit<
   selectedClusterId?: string | number
   /** Background color for the selected cluster. */
   selectedClusterColor?: string
-  /** Animate cluster implode/explode on zoom (iOS only). @default `true` */
+  /**
+   * Fades the default cluster bubbles in and out on zoom; see
+   * {@linkcode clusterFadeInDuration}. @default `true`
+   */
   animationEnabled?: boolean
-  /** LayoutAnimation preset/config used when `animationEnabled` (iOS only). */
+  /**
+   * Accepted for react-native-map-clustering compatibility and ignored.
+   *
+   * @deprecated `LayoutAnimation` cannot animate map markers on the New
+   * Architecture, which this library requires: markers are native map
+   * annotations outside React Native's layout. Use
+   * {@linkcode clusterFadeInDuration} to tune the bubble fade.
+   */
   layoutAnimationConf?: LayoutAnimationConfig
   /**
    * Fade-in duration (ms) for cluster bubbles when they (re)mount on zoom, which
@@ -229,6 +226,12 @@ export interface ClusteredMapViewProps extends Omit<
    * on both iOS and Android to the default cluster markers; ignored when
    * {@linkcode animationEnabled} is `false` or a custom {@linkcode renderCluster}
    * is provided. Set to `0` to disable.
+   *
+   * Bubbles cross-fade when the map settles. While it moves, new bubbles
+   * appear at once and removed ones stay for up to 100 ms (never longer than
+   * this duration) before they go, so a continuous zoom leaves no gaps; at
+   * the default {@linkcode clusterUpdateIntervalMs} at most one extra
+   * generation of bubbles stays mounted.
    *
    * Needs `react-native-reanimated`, an optional peer dependency: without it
    * the bubbles do not fade, and development builds warn once.
@@ -309,7 +312,8 @@ const CompatMapView = forwardRef(function CompatMapView(
     selectedClusterId,
     selectedClusterColor = '#FF5722',
     animationEnabled = true,
-    layoutAnimationConf = DEFAULT_LAYOUT_ANIMATION,
+    // Kept out of `restProps`, so it is not passed on to the native map.
+    layoutAnimationConf: _layoutAnimationConf,
     clusterFadeInDuration = 250,
     tracksViewChanges = false,
     width,
@@ -337,12 +341,14 @@ const CompatMapView = forwardRef(function CompatMapView(
     details: Details
   } | null>(null)
   // `true` between the first `onRegionChange` and `onRegionChangeComplete` of a
-  // gesture. While moving we suppress cross-fade exit ghosts (see
-  // `effectiveFadeOut`) so a continuous zoom does not stack multiple bubble
+  // gesture. While moving, removed bubbles only linger briefly (see
+  // `bubbleExitMs`) so a continuous zoom does not stack multiple bubble
   // generations and saturate the JS thread.
   const [isMapMoving, setIsMapMoving] = useState(false)
+  // Mirrors `isMapMoving` so the per-frame `onRegionChange` sets it only once
+  // per gesture: React bails out of an equal update only after rendering again.
+  const isMapMovingRef = useRef(false)
   const regionThrottleStateRef = useRef(createThrottleRegionSyncState())
-  const clusterLayoutSignatureRef = useRef('')
   const [mapDimensions, setMapDimensions] = useState(() => ({
     width: width ?? WINDOW_WIDTH,
     height: height ?? WINDOW_HEIGHT,
@@ -441,12 +447,6 @@ const CompatMapView = forwardRef(function CompatMapView(
     isSameMarkerFeature
   )
 
-  const clusterLayoutSignature = useMemo(
-    () => computeClusterLayoutSignature(clusters),
-    [clusters]
-  )
-  clusterLayoutSignatureRef.current = clusterLayoutSignature
-
   // Callbacks are read through refs, so a new callback identity alone never
   // fires them: `onMarkersChange={setState}` with inline children would loop.
   const onMarkersChangeRef = useRef(onMarkersChange)
@@ -535,12 +535,13 @@ const CompatMapView = forwardRef(function CompatMapView(
     }
   }, [fadeRequested])
 
-  // Cross-fade exit ghosts are only kept around once the gesture settles. While
-  // the map is actively moving we drop removed bubbles immediately (duration 0):
-  // at a ~100ms recompute cadence, a 250ms exit would keep 2-3 bubble
+  // Removed bubbles cross-fade out once the gesture settles. While the map is
+  // moving, a 250ms exit at a ~100ms recompute cadence would keep 2-3 bubble
   // generations mounted at once, which is what dragged the JS thread to ~30fps
-  // on continuous zoom-out.
-  const effectiveFadeOut = isMapMoving ? 0 : clusterFadeIn
+  // on continuous zoom-out, so they only stay for `MOVING_EXIT_HOLD_MS`.
+  const bubbleExitMs = isMapMoving
+    ? Math.min(clusterFadeIn, MOVING_EXIT_HOLD_MS)
+    : clusterFadeIn
 
   useEffect(() => {
     if (superClusterRef) {
@@ -633,7 +634,10 @@ const CompatMapView = forwardRef(function CompatMapView(
 
   const handleRegionChange = useCallback(
     (region: Region, details: Details) => {
-      setIsMapMoving(true)
+      if (!isMapMovingRef.current) {
+        isMapMovingRef.current = true
+        setIsMapMoving(true)
+      }
       // Keep clusters in sync while the map moves, but throttle recomputation so
       // pinch/pan does not trigger a full re-cluster on every native frame.
       scheduleThrottledRegionSync(
@@ -651,28 +655,13 @@ const CompatMapView = forwardRef(function CompatMapView(
     (region: Region, details: Details) => {
       // Gesture settled: re-enable cross-fade so the final cluster transition
       // animates, while intermediate frames during the move stayed instant.
+      isMapMovingRef.current = false
       setIsMapMoving(false)
       flushThrottledRegionSync(
         region,
         syncCurrentRegion,
         regionThrottleStateRef.current
       )
-
-      const mapRegion = toMapRegion(region)
-      const nextSignature =
-        clusteringEnabled && supercluster.isLoaded
-          ? computeClusterLayoutSignature(
-              supercluster.getClustersFromRegion(mapRegion, mapDimensions)
-            )
-          : clusterLayoutSignatureRef.current
-
-      if (
-        animationEnabled &&
-        Platform.OS === 'ios' &&
-        nextSignature !== clusterLayoutSignatureRef.current
-      ) {
-        LayoutAnimation.configureNext(layoutAnimationConf)
-      }
 
       // Defer notifying the consumer until `clusters` is recomputed for the
       // settled region, so we reuse that single computation instead of querying
@@ -681,14 +670,7 @@ const CompatMapView = forwardRef(function CompatMapView(
       // no `onRegionChangeComplete` callback was provided).
       pendingRegionChangeRef.current = { region, details }
     },
-    [
-      animationEnabled,
-      clusteringEnabled,
-      layoutAnimationConf,
-      mapDimensions,
-      supercluster,
-      syncCurrentRegion,
-    ]
+    [syncCurrentRegion]
   )
 
   // `currentRegion` is a fresh object on every settle, so this runs once per
@@ -842,7 +824,10 @@ const CompatMapView = forwardRef(function CompatMapView(
       })
     }
 
-    return { immediateMarkers: immediate, clusterBubbleItems: bubbles }
+    return {
+      immediateMarkers: sortByKey(immediate, elementKey),
+      clusterBubbleItems: bubbles,
+    }
   }, [
     clusteringEnabled,
     clusters,
@@ -862,11 +847,16 @@ const CompatMapView = forwardRef(function CompatMapView(
     spiderLineColor,
   ])
 
-  const clusterBubbleEntries = useFadePresence(
-    clusterBubbleItems,
-    effectiveFadeOut
-  )
+  // Sorted after `useFadePresence`, which lists exiting bubbles last: an
+  // exiting bubble keeps its place too, so it fades out instead of blinking.
+  const presentBubbles = useFadePresence(clusterBubbleItems, bubbleExitMs)
+  const clusterBubbleEntries = sortByKey(presentBubbles, (entry) => entry.key)
 
+  // Bubbles that mount while the map moves appear at once, so the bubble they
+  // replace does not leave a gap when it goes. Only exiting bubbles see the
+  // fade-out change between moving (`0`: stay opaque until dropped) and
+  // settled, so starting or ending a gesture re-renders no other bubble;
+  // `appearInstantly` is read only when a bubble mounts.
   const clusterBubbleMarkers = clusterBubbleEntries.map(
     ({ key, data, exiting }) => (
       <ClusterMarker
@@ -878,7 +868,8 @@ const CompatMapView = forwardRef(function CompatMapView(
         clusterFontFamily={data.clusterFontFamily}
         tracksViewChanges={data.tracksViewChanges}
         fadeInDuration={clusterFadeIn}
-        fadeOutDuration={effectiveFadeOut}
+        fadeOutDuration={exiting && isMapMoving ? 0 : clusterFadeIn}
+        appearInstantly={isMapMoving}
         exiting={exiting}
       />
     )

@@ -198,7 +198,7 @@ Everything from `react-native-maps` `MapView`, plus:
 | `spiderLineColor`              | `#FF0000`             | Color of spider connector lines   |
 | `clusterColor`                 | `#0F52FF`             | Default cluster bubble color (GMI brand blue) |
 | `clusterTextColor`             | `#FFFFFF`             | Default cluster label color       |
-| `animationEnabled`             | `true`                | Animate cluster changes (iOS)     |
+| `animationEnabled`             | `true`                | Fade cluster bubbles on zoom      |
 | `onClusterPress`               | —                     | `(cluster, markers) => void`      |
 | `onError`                      | throws during render  | `(error) => void` — native index build failed or an option is invalid |
 | `renderCluster`                | —                     | Custom cluster renderer           |

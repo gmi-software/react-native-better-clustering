@@ -4,6 +4,12 @@ import { Marker, type MapMarker, type MapMarkerProps } from 'react-native-maps'
 import type { ClusterFeature } from '../geojson/types'
 import { reanimated, type Reanimated } from './reanimated'
 
+/**
+ * Width of the white ring around a bubble. It is a white circle under the
+ * coloured one rather than a `borderWidth`: React Native draws a border on an
+ * unclipped view into an image on the CPU, again on every layout and opacity
+ * change, while a plain circle stays a GPU-drawn layer.
+ */
 const BUBBLE_BORDER_WIDTH = 2.5
 const HALO_SCALE = 1.18
 const SHADOW_PADDING = 6
@@ -38,22 +44,32 @@ function createFadingMarker({
     ref,
     fadeInDuration,
     fadeOutDuration,
+    appearInstantly,
     exiting,
     ...markerProps
   }: MapMarkerProps & {
     ref: Ref<MapMarker>
     fadeInDuration: number
     fadeOutDuration: number
+    appearInstantly: boolean
     exiting: boolean
   }) {
-    const opacity = useSharedValue(0)
+    // Both only take the value from the first render.
+    const opacity = useSharedValue(appearInstantly ? 1 : 0)
+    const target = useRef(appearInstantly ? 1 : 0)
 
+    // Animates only when the target changes, so a re-render, or the second
+    // effect run under StrictMode, does not restart the fade.
     useEffect(() => {
-      if (exiting) {
-        opacity.value = withTiming(0, { duration: fadeOutDuration })
-      } else {
-        opacity.value = withTiming(1, { duration: fadeInDuration })
+      const next = exiting ? 0 : 1
+      // A bubble exiting without a fade-out stays as it is until unmounted.
+      if (target.current === next || (exiting && fadeOutDuration <= 0)) {
+        return
       }
+      target.current = next
+      opacity.value = withTiming(next, {
+        duration: exiting ? fadeOutDuration : fadeInDuration,
+      })
     }, [exiting, fadeInDuration, fadeOutDuration, opacity])
 
     const animatedProps = useAnimatedProps(() => ({ opacity: opacity.value }))
@@ -121,11 +137,19 @@ export interface ClusterMarkerProps {
    */
   fadeInDuration?: number
   /**
-   * Fade-out duration (ms) used when {@linkcode exiting} becomes `true`.
+   * Fade-out duration (ms) used when {@linkcode exiting} becomes `true`. `0`
+   * keeps an exiting bubble as it is until the caller unmounts it.
    *
    * @default `fadeInDuration`
    */
   fadeOutDuration?: number
+  /**
+   * When `true`, a fading bubble mounts fully opaque instead of fading in.
+   * Read only when the bubble mounts, so changing it re-renders nothing.
+   *
+   * @default false
+   */
+  appearInstantly?: boolean
   /**
    * When `true`, the bubble animates its opacity to `0` (cross-fade out). The
    * caller is responsible for keeping it mounted until the animation finishes.
@@ -146,11 +170,13 @@ function ClusterMarker({
   tracksViewChanges = false,
   fadeInDuration = 0,
   fadeOutDuration = fadeInDuration,
+  appearInstantly = false,
   exiting = false,
 }: ClusterMarkerProps) {
   const points = feature.properties.point_count
   const { width, height, fontSize, size, haloSize } =
     clusterBubbleMetrics(points)
+  const innerSize = size - BUBBLE_BORDER_WIDTH * 2
   const [longitude, latitude] = feature.geometry.coordinates
   const label = formatClusterCount(points)
 
@@ -191,29 +217,35 @@ function ClusterMarker({
       />
       <View
         style={[
-          styles.bubble,
+          styles.ring,
           styles.bubbleShadow,
-          {
-            backgroundColor: clusterColor,
-            width: size,
-            height: size,
-            borderRadius: size / 2,
-            borderWidth: BUBBLE_BORDER_WIDTH,
-          },
+          { width: size, height: size, borderRadius: size / 2 },
         ]}
       >
-        <Text
+        <View
           style={[
-            styles.text,
+            styles.bubble,
             {
-              color: clusterTextColor,
-              fontSize,
-              ...(clusterFontFamily ? { fontFamily: clusterFontFamily } : {}),
+              backgroundColor: clusterColor,
+              width: innerSize,
+              height: innerSize,
+              borderRadius: innerSize / 2,
             },
           ]}
         >
-          {label}
-        </Text>
+          <Text
+            style={[
+              styles.text,
+              {
+                color: clusterTextColor,
+                fontSize,
+                ...(clusterFontFamily ? { fontFamily: clusterFontFamily } : {}),
+              },
+            ]}
+          >
+            {label}
+          </Text>
+        </View>
       </View>
     </View>
   )
@@ -225,6 +257,7 @@ function ClusterMarker({
         {...markerProps}
         fadeInDuration={fadeInDuration}
         fadeOutDuration={fadeOutDuration}
+        appearInstantly={appearInstantly}
         exiting={exiting}
       >
         {bubble}
@@ -250,12 +283,17 @@ const styles = StyleSheet.create({
     opacity: 0.2,
     zIndex: 0,
   },
+  ring: {
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    zIndex: 1,
+  },
   bubble: {
     display: 'flex',
     justifyContent: 'center',
     alignItems: 'center',
-    borderColor: 'rgba(255, 255, 255, 0.92)',
-    zIndex: 1,
   },
   bubbleShadow: Platform.select({
     ios: {
@@ -284,6 +322,7 @@ const styles = StyleSheet.create({
   },
 })
 
+/** Leaves out `appearInstantly`, which only matters when the bubble mounts. */
 function areClusterMarkerPropsEqual(
   prev: ClusterMarkerProps,
   next: ClusterMarkerProps

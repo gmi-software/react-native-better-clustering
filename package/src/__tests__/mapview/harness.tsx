@@ -96,6 +96,9 @@ export const mapState = {
 
 export const layoutAnimationCalls: unknown[] = []
 
+/** Every `withTiming` call: the opacity a fading bubble animates to, and how long. */
+export const opacityAnimations: Array<{ to: unknown; duration?: number }> = []
+
 export function resetHarness(): void {
   harnessControls.mapReady = true
   harnessControls.layout = { width: 390, height: 844 }
@@ -105,6 +108,7 @@ export function resetHarness(): void {
   mapState.fitToCoordinates = []
   mapState.animateToRegion = []
   layoutAnimationCalls.length = 0
+  opacityAnimations.length = 0
   resetFakeClusterEngineStats()
 }
 
@@ -162,7 +166,13 @@ mock.module('react-native', () => ({
 // react-native-reanimated
 // ---------------------------------------------------------------------------
 
-mock.module('react-native-reanimated', () => fakeReanimated)
+mock.module('react-native-reanimated', () => ({
+  ...fakeReanimated,
+  withTiming: <T,>(value: T, config?: { duration?: number }): T => {
+    opacityAnimations.push({ to: value, duration: config?.duration })
+    return fakeReanimated.withTiming(value)
+  },
+}))
 
 // ---------------------------------------------------------------------------
 // react-native-maps
@@ -202,6 +212,10 @@ export function Marker(props: MarkerMockProps) {
   }, [id, testID])
 
   const { onPress } = props
+  // The fake Reanimated never animates, so this is the opacity a fading
+  // bubble starts from.
+  const opacity = (props.animatedProps as { opacity?: number } | undefined)
+    ?.opacity
   return createElement(
     'rn-marker',
     {
@@ -209,6 +223,7 @@ export function Marker(props: MarkerMockProps) {
       'data-cluster': props.testID == null ? 'true' : 'false',
       'data-latitude': String(props.coordinate.latitude),
       'data-longitude': String(props.coordinate.longitude),
+      'data-opacity': opacity == null ? undefined : String(opacity),
       'onClick': onPress == null ? undefined : () => onPress(),
     },
     props.children
@@ -328,17 +343,24 @@ export interface RenderedMarker {
   label: string
   latitude: number
   longitude: number
+  /** Opacity a fading bubble starts from; `null` for a marker that does not fade. */
+  opacity: number | null
 }
 
+/** Rendered markers in the order the map receives them as children. */
 export function renderedMarkers(container: HTMLElement): RenderedMarker[] {
-  return queryAll(container, 'rn-marker').map((element) => ({
-    element,
-    id: element.getAttribute('data-id') ?? '',
-    isCluster: element.getAttribute('data-cluster') === 'true',
-    label: element.textContent ?? '',
-    latitude: Number(element.getAttribute('data-latitude')),
-    longitude: Number(element.getAttribute('data-longitude')),
-  }))
+  return queryAll(container, 'rn-marker').map((element) => {
+    const opacity = element.getAttribute('data-opacity')
+    return {
+      element,
+      id: element.getAttribute('data-id') ?? '',
+      isCluster: element.getAttribute('data-cluster') === 'true',
+      label: element.textContent ?? '',
+      latitude: Number(element.getAttribute('data-latitude')),
+      longitude: Number(element.getAttribute('data-longitude')),
+      opacity: opacity == null ? null : Number(opacity),
+    }
+  })
 }
 
 /** Number of spiderfy connector lines (and other `Polyline`s) on the map. */

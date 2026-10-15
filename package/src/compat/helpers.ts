@@ -1,6 +1,5 @@
 import React from 'react'
-import { isClusterFeature } from '../geojson'
-import type { BBox, ClusterFeature, PointFeature } from '../geojson/types'
+import type { BBox, PointFeature } from '../geojson/types'
 
 /**
  * Whether a React child is a clusterable `react-native-maps` `Marker`.
@@ -46,7 +45,7 @@ const markerElements = new WeakMap<
  * React reconciliation. Leaves out `coordinate`, `children`, and the props that
  * name cluster properties (`cluster`, `cluster_id`, `point_count_abbreviated`,
  * `getExpansionRegion`), so a marker such as `<Marker cluster>` is never
- * mistaken for a cluster by {@linkcode isClusterFeature}.
+ * mistaken for a cluster by `isClusterFeature`.
  *
  * @see {@linkcode isMarker}
  */
@@ -95,26 +94,29 @@ export function markerElementOf(
 }
 
 /**
- * Stable fingerprint of visible clusters/markers for layout-animation gating.
+ * A copy of `items` ordered by `keyOf`, so markers that stay on screen keep
+ * their order among the map's children whatever order the engine returns them
+ * in.
  *
- * Includes cluster id, point count, and coordinates so implode/explode and
- * bubble resize transitions run only when the visible set actually changes.
+ * Fabric removes and re-inserts a child that changes place among its siblings,
+ * and react-native-maps turns that into removing and re-adding the native
+ * annotation: a marker whose relative order changes blinks out for a frame or
+ * more. The engine's order changes with the zoom, so on every zoom step most
+ * markers that stayed would blink at once.
  */
-export function computeClusterLayoutSignature(
-  features: Array<PointFeature | ClusterFeature>
-): string {
-  return features
-    .map((feature) => {
-      const [longitude, latitude] = feature.geometry.coordinates
+export function sortByKey<T>(
+  items: ReadonlyArray<T>,
+  keyOf: (item: T) => string
+): T[] {
+  return items
+    .map((item) => ({ item, key: keyOf(item) }))
+    .sort((a, b) => (a.key < b.key ? -1 : a.key > b.key ? 1 : 0))
+    .map(({ item }) => item)
+}
 
-      if (isClusterFeature(feature)) {
-        return `c:${feature.properties.cluster_id}:${feature.properties.point_count}:${latitude}:${longitude}`
-      }
-
-      const index = feature.properties.index
-      return `p:${index}:${latitude}:${longitude}`
-    })
-    .join('|')
+/** The React key of a rendered child, for {@linkcode sortByKey}. */
+export function elementKey(node: React.ReactNode): string {
+  return React.isValidElement(node) && node.key != null ? node.key : ''
 }
 
 /**

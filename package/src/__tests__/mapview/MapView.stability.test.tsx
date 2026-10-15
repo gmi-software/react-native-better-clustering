@@ -26,6 +26,7 @@ import {
   harnessControls,
   mapState,
   mountLog,
+  opacityAnimations,
   press,
   regionAt,
   renderedMarkerIds,
@@ -493,6 +494,197 @@ describe('MapView marker keys (#28)', () => {
 
     expect(unmountsSince(start)).toEqual(['x0'])
     expect(retargetsSince(start)).toEqual([])
+  })
+})
+
+describe('MapView child order', () => {
+  // A marker that changes place among the map's children is removed and
+  // re-added as a native annotation, which blinks it out.
+  const order = (container: HTMLElement) =>
+    renderedMarkers(container).map((marker) => marker.id)
+
+  it('keeps markers in the same order when the engine returns them in another', async () => {
+    const { container, rerender } = render(<Map points={SINGLES} />)
+    await flush()
+    expect(order(container)).toEqual(['s0', 's1', 's2'])
+
+    // The rebuilt index lists the points in the new children order.
+    rerender(<Map points={[...SINGLES].reverse()} />)
+    await flush()
+
+    expect(fakeClusterEngineStats.created).toBe(2)
+    expect(order(container)).toEqual(['s0', 's1', 's2'])
+  })
+
+  it('keeps an exiting bubble in its place instead of moving it last', async () => {
+    // Five points ~1 m apart, east of GROUP: still one bubble at zoom 19.
+    const tight: TestPoint[] = Array.from({ length: 5 }, (_, i) => ({
+      id: `t${i}`,
+      latitude: CENTER.latitude,
+      longitude: CENTER.longitude + 0.0008 + i * 0.000001,
+    }))
+    const center = {
+      latitude: CENTER.latitude + 0.0002,
+      longitude: CENTER.longitude + 0.0004,
+    }
+    const { container } = render(
+      <MapView initialRegion={regionAt(center, 17)} spiralEnabled={false}>
+        {[...GROUP, ...tight].map((point) => (
+          <Marker key={point.id} testID={point.id} coordinate={point} />
+        ))}
+      </MapView>
+    )
+    await flush()
+    const bubbleLabels = () =>
+      renderedMarkers(container)
+        .filter((marker) => marker.isCluster)
+        .map((marker) => marker.label)
+    // GROUP is a bubble of 4 (g4 is apart), the tight points one of 5.
+    expect(bubbleLabels()).toEqual(['4', '5'])
+
+    jest.useFakeTimers()
+    try {
+      // GROUP's bubble splits into its points and lingers, exiting.
+      act(() => {
+        mapState.props?.onRegionChangeComplete?.(regionAt(center, 19), {
+          isGesture: true,
+        })
+      })
+      expect(bubbleLabels()).toEqual(['4', '5'])
+    } finally {
+      jest.useRealTimers()
+    }
+  })
+})
+
+describe('MapView fade while moving', () => {
+  // SINGLES merge into one new bubble when zoomed out this far.
+  const zoomedOut = regionAt(CENTER, 9)
+
+  function FadingMap({
+    initialRegion = regionAt(CENTER, CITY_ZOOM),
+  }: Partial<MapViewProps>) {
+    return (
+      <MapView initialRegion={initialRegion}>
+        {SINGLES.map((point) => (
+          <Marker key={point.id} testID={point.id} coordinate={point} />
+        ))}
+      </MapView>
+    )
+  }
+
+  const bubble = (container: HTMLElement) =>
+    renderedMarkers(container).find((marker) => marker.isCluster)
+
+  it('shows a bubble that appears while the map moves at once', async () => {
+    const { container } = render(<FadingMap />)
+    await flush()
+    expect(bubble(container)).toBeUndefined()
+
+    act(() => {
+      mapState.props?.onRegionChange?.(zoomedOut, { isGesture: true })
+    })
+
+    expect(bubble(container)?.label).toBe('3')
+    expect(bubble(container)?.opacity).toBe(1)
+  })
+
+  it('fades in a bubble that appears when the map settles', async () => {
+    const { container } = render(<FadingMap />)
+    await flush()
+
+    await settleRegion(zoomedOut)
+
+    expect(bubble(container)?.label).toBe('3')
+    expect(bubble(container)?.opacity).toBe(0)
+  })
+
+  it('keeps a bubble removed while the map moves for a moment, then drops it', async () => {
+    // Starts zoomed out, so the first move recomputes the clusters at once.
+    const { container } = render(<FadingMap initialRegion={zoomedOut} />)
+    await flush()
+    expect(bubble(container)?.label).toBe('3')
+
+    jest.useFakeTimers()
+    try {
+      // Zooming back in splits the bubble into the three markers.
+      act(() => {
+        mapState.props?.onRegionChange?.(regionAt(CENTER, CITY_ZOOM), {
+          isGesture: true,
+        })
+      })
+      expect(renderedMarkerIds(container)).toEqual(['s0', 's1', 's2'])
+      expect(bubble(container)?.label).toBe('3')
+
+      act(() => {
+        jest.advanceTimersByTime(100)
+      })
+      expect(bubble(container)).toBeUndefined()
+    } finally {
+      jest.useRealTimers()
+    }
+  })
+
+  it('keeps a bubble removed while the map moves opaque instead of fading it out', async () => {
+    const { container } = render(<FadingMap initialRegion={zoomedOut} />)
+    await flush()
+    opacityAnimations.length = 0
+
+    act(() => {
+      mapState.props?.onRegionChange?.(regionAt(CENTER, CITY_ZOOM), {
+        isGesture: true,
+      })
+    })
+
+    expect(bubble(container)?.label).toBe('3')
+    expect(opacityAnimations).toEqual([])
+  })
+
+  it('fades out a bubble removed when the map settles', async () => {
+    const { container } = render(<FadingMap initialRegion={zoomedOut} />)
+    await flush()
+    opacityAnimations.length = 0
+
+    await settleRegion(regionAt(CENTER, CITY_ZOOM))
+
+    expect(bubble(container)?.label).toBe('3')
+    expect(opacityAnimations).toEqual([{ to: 0, duration: 250 }])
+  })
+
+  it('lets a bubble held while the map moves fade out in full when it settles', async () => {
+    const { container } = render(<FadingMap initialRegion={zoomedOut} />)
+    await flush()
+    opacityAnimations.length = 0
+
+    jest.useFakeTimers()
+    try {
+      const zoomedIn = regionAt(CENTER, CITY_ZOOM)
+      act(() => {
+        mapState.props?.onRegionChange?.(zoomedIn, { isGesture: true })
+      })
+      act(() => {
+        jest.advanceTimersByTime(40)
+      })
+
+      // Settles before the 100 ms hold ends: the bubble starts fading out…
+      act(() => {
+        mapState.props?.onRegionChangeComplete?.(zoomedIn, { isGesture: true })
+      })
+      expect(opacityAnimations).toEqual([{ to: 0, duration: 250 }])
+
+      // …and stays mounted until the fade ends.
+      act(() => {
+        jest.advanceTimersByTime(249)
+      })
+      expect(bubble(container)?.label).toBe('3')
+
+      act(() => {
+        jest.advanceTimersByTime(1)
+      })
+      expect(bubble(container)).toBeUndefined()
+    } finally {
+      jest.useRealTimers()
+    }
   })
 })
 

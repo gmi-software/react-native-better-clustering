@@ -103,6 +103,27 @@ of being removed and re-added. Memoize custom marker components too.
 With `/hooks`, use `stabilizeClusterFeatures` and key your markers by a stable
 point `id`.
 
+## Zooming stutters with many markers
+
+The default `radius` matches react-native-map-clustering, so a drop-in swap
+draws the same clusters. With the default `extent: 512` it clusters markers
+that are about 12–24 pt apart on screen, while a default cluster bubble is
+32–56 pt wide. Dense data therefore covers the map with overlapping bubbles,
+and every zoom step mounts hundreds of new native markers, which stalls the
+map.
+
+Pass a larger `radius`, about twice the default: roughly 12% of the map width,
+which is around 50 on a phone:
+
+```tsx
+<MapView radius={Dimensions.get('window').width * 0.12}>{markers}</MapView>
+```
+
+In the example app's 50,000-marker scenario on an iOS simulator, doubling the
+radius cut the bubbles on screen by about two thirds and made the longest frame
+during a pinch about four times shorter. Each cluster then covers a larger
+area, so pressing one zooms in less.
+
 ## Some markers never appear on the map
 
 Points whose `latitude` or `longitude` is not a finite number — `undefined`,
