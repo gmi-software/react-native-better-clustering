@@ -116,4 +116,63 @@ describe('useFadePresence', () => {
       { key: 'b', data: 3, exiting: false },
     ])
   })
+
+  describe('when exitDurationMs changes during an exit', () => {
+    const both = [
+      { key: 'a', data: 1 },
+      { key: 'b', data: 2 },
+    ]
+    const onlyA = [{ key: 'a', data: 1 }]
+
+    function removeBAfter(exitDurationMs: number) {
+      const hook = renderHook(
+        ({ items, exitMs }) => useFadePresence(items, exitMs),
+        { initialProps: { items: both, exitMs: exitDurationMs } }
+      )
+      act(() => {
+        jest.runOnlyPendingTimers()
+      })
+      hook.rerender({ items: onlyA, exitMs: exitDurationMs })
+      return hook
+    }
+
+    const keys = (entries: Array<{ key: string }>) =>
+      entries.map((entry) => entry.key)
+
+    it('restarts the exit with a longer duration', () => {
+      const { result, rerender } = removeBAfter(100)
+      act(() => {
+        jest.advanceTimersByTime(40)
+      })
+
+      rerender({ items: onlyA, exitMs: 250 })
+      act(() => {
+        jest.advanceTimersByTime(249)
+      })
+      expect(keys(result.current)).toEqual(['a', 'b'])
+
+      act(() => {
+        jest.advanceTimersByTime(1)
+      })
+      expect(keys(result.current)).toEqual(['a'])
+    })
+
+    it('keeps the exit as it is with a shorter duration', () => {
+      const { result, rerender } = removeBAfter(250)
+      act(() => {
+        jest.advanceTimersByTime(40)
+      })
+
+      rerender({ items: onlyA, exitMs: 100 })
+      act(() => {
+        jest.advanceTimersByTime(209)
+      })
+      expect(keys(result.current)).toEqual(['a', 'b'])
+
+      act(() => {
+        jest.advanceTimersByTime(1)
+      })
+      expect(keys(result.current)).toEqual(['a'])
+    })
+  })
 })

@@ -650,6 +650,42 @@ describe('MapView fade while moving', () => {
     expect(bubble(container)?.label).toBe('3')
     expect(opacityAnimations).toEqual([{ to: 0, duration: 250 }])
   })
+
+  it('lets a bubble held while the map moves fade out in full when it settles', async () => {
+    const { container } = render(<FadingMap initialRegion={zoomedOut} />)
+    await flush()
+    opacityAnimations.length = 0
+
+    jest.useFakeTimers()
+    try {
+      const zoomedIn = regionAt(CENTER, CITY_ZOOM)
+      act(() => {
+        mapState.props?.onRegionChange?.(zoomedIn, { isGesture: true })
+      })
+      act(() => {
+        jest.advanceTimersByTime(40)
+      })
+
+      // Settles before the 100 ms hold ends: the bubble starts fading out…
+      act(() => {
+        mapState.props?.onRegionChangeComplete?.(zoomedIn, { isGesture: true })
+      })
+      expect(opacityAnimations).toEqual([{ to: 0, duration: 250 }])
+
+      // …and stays mounted until the fade ends.
+      act(() => {
+        jest.advanceTimersByTime(249)
+      })
+      expect(bubble(container)?.label).toBe('3')
+
+      act(() => {
+        jest.advanceTimersByTime(1)
+      })
+      expect(bubble(container)).toBeUndefined()
+    } finally {
+      jest.useRealTimers()
+    }
+  })
 })
 
 describe('Marker cluster prop (#14)', () => {
