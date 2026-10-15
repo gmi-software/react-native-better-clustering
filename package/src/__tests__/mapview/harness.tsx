@@ -99,6 +99,12 @@ export const layoutAnimationCalls: unknown[] = []
 /** Every `withTiming` call: the opacity a fading bubble animates to, and how long. */
 export const opacityAnimations: Array<{ to: unknown; duration?: number }> = []
 
+/**
+ * Every eased `withTiming` call: a gliding bubble's latitude or longitude,
+ * and how long it takes to get there.
+ */
+export const glideAnimations: Array<{ to: unknown; duration?: number }> = []
+
 export function resetHarness(): void {
   harnessControls.mapReady = true
   harnessControls.layout = { width: 390, height: 844 }
@@ -109,6 +115,7 @@ export function resetHarness(): void {
   mapState.animateToRegion = []
   layoutAnimationCalls.length = 0
   opacityAnimations.length = 0
+  glideAnimations.length = 0
   resetFakeClusterEngineStats()
 }
 
@@ -168,8 +175,14 @@ mock.module('react-native', () => ({
 
 mock.module('react-native-reanimated', () => ({
   ...fakeReanimated,
-  withTiming: <T,>(value: T, config?: { duration?: number }): T => {
-    opacityAnimations.push({ to: value, duration: config?.duration })
+  withTiming: <T,>(
+    value: T,
+    config?: { duration?: number; easing?: unknown }
+  ): T => {
+    // Only the glide passes an easing.
+    const animations =
+      config?.easing == null ? opacityAnimations : glideAnimations
+    animations.push({ to: value, duration: config?.duration })
     return fakeReanimated.withTiming(value)
   },
 }))
@@ -212,10 +225,12 @@ export function Marker(props: MarkerMockProps) {
   }, [id, testID])
 
   const { onPress } = props
-  // The fake Reanimated never animates, so this is the opacity a fading
-  // bubble starts from.
-  const opacity = (props.animatedProps as { opacity?: number } | undefined)
-    ?.opacity
+  // The fake Reanimated never animates, so these are the opacity and place a
+  // fading bubble starts from.
+  const animated = props.animatedProps as
+    { opacity?: number; coordinate?: LatLng } | undefined
+  const opacity = animated?.opacity
+  const start = animated?.coordinate
   return createElement(
     'rn-marker',
     {
@@ -224,6 +239,8 @@ export function Marker(props: MarkerMockProps) {
       'data-latitude': String(props.coordinate.latitude),
       'data-longitude': String(props.coordinate.longitude),
       'data-opacity': opacity == null ? undefined : String(opacity),
+      'data-start':
+        start == null ? undefined : `${start.latitude},${start.longitude}`,
       'onClick': onPress == null ? undefined : () => onPress(),
     },
     props.children
@@ -345,12 +362,19 @@ export interface RenderedMarker {
   longitude: number
   /** Opacity a fading bubble starts from; `null` for a marker that does not fade. */
   opacity: number | null
+  /**
+   * Where a fading bubble starts from; `null` for a marker that does not
+   * fade. Its `latitude` and `longitude` stay there too: the glide moves it.
+   */
+  start: LatLng | null
 }
 
 /** Rendered markers in the order the map receives them as children. */
 export function renderedMarkers(container: HTMLElement): RenderedMarker[] {
   return queryAll(container, 'rn-marker').map((element) => {
     const opacity = element.getAttribute('data-opacity')
+    const [startLatitude, startLongitude] =
+      element.getAttribute('data-start')?.split(',').map(Number) ?? []
     return {
       element,
       id: element.getAttribute('data-id') ?? '',
@@ -359,6 +383,10 @@ export function renderedMarkers(container: HTMLElement): RenderedMarker[] {
       latitude: Number(element.getAttribute('data-latitude')),
       longitude: Number(element.getAttribute('data-longitude')),
       opacity: opacity == null ? null : Number(opacity),
+      start:
+        startLatitude == null || startLongitude == null
+          ? null
+          : { latitude: startLatitude, longitude: startLongitude },
     }
   })
 }

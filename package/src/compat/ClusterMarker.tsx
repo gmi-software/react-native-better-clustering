@@ -16,6 +16,16 @@ const HALO_SCALE = 1.18
 const SHADOW_PADDING = 6
 
 /**
+ * How long a fade-in or glide waits before it starts. Mounting a zoom step's
+ * bubbles (a hundred or more annotations around the screen) can hold the UI
+ * thread for a few hundred milliseconds, and Reanimated times animations by
+ * the clock: one started before that would be over by the time the bubble
+ * shows. Waiting a few frames starts it on the first frame after the mount,
+ * so it plays in full.
+ */
+const START_DELAY_MS = 50
+
+/**
  * `react-native-maps` markers are native annotations: a bubble that unmounts and
  * remounts is removed and re-added in one commit, a visible blink. `MapView`
  * keys bubbles by their cluster's smallest marker, so most survive zoom steps;
@@ -45,6 +55,7 @@ function createFadingMarker({
   Easing,
   useAnimatedProps,
   useSharedValue,
+  withDelay,
   withTiming,
 }: Reanimated) {
   const AnimatedMarker = Animated.createAnimatedComponent(Marker)
@@ -75,7 +86,7 @@ function createFadingMarker({
     // These only take the value from the first render.
     const opacity = useSharedValue(appearInstantly ? 1 : 0)
     const target = useRef(appearInstantly ? 1 : 0)
-    const start = glideFrom ?? coordinate
+    const start = useRef(glideFrom ?? coordinate).current
     const latitude = useSharedValue(start.latitude)
     const longitude = useSharedValue(start.longitude)
     const placed = useRef<LatLng>(start)
@@ -89,9 +100,10 @@ function createFadingMarker({
         return
       }
       target.current = next
-      opacity.value = withTiming(next, {
+      const fade = withTiming(next, {
         duration: exiting ? fadeOutDuration : fadeInDuration,
       })
+      opacity.value = exiting ? fade : withDelay(START_DELAY_MS, fade)
     }, [exiting, fadeInDuration, fadeOutDuration, opacity])
 
     // Glides only when the place it heads for changes, so a re-render does
@@ -107,27 +119,34 @@ function createFadingMarker({
       }
       placed.current = { latitude: toLatitude, longitude: toLongitude }
       if (glideDuration > 0) {
-        const config = { duration: glideDuration, easing: glideEasing }
-        latitude.value = withTiming(toLatitude, config)
-        longitude.value = withTiming(toLongitude, config)
+        // An exiting bubble is already on screen and has only its hold to go.
+        const glide = (to: number) => {
+          const timing = withTiming(to, {
+            duration: glideDuration,
+            easing: glideEasing,
+          })
+          return exiting ? timing : withDelay(START_DELAY_MS, timing)
+        }
+        latitude.value = glide(toLatitude)
+        longitude.value = glide(toLongitude)
       } else {
         latitude.value = toLatitude
         longitude.value = toLongitude
       }
-    }, [toLatitude, toLongitude, glideDuration, latitude, longitude])
+    }, [exiting, toLatitude, toLongitude, glideDuration, latitude, longitude])
 
     const animatedProps = useAnimatedProps(() => ({
       opacity: opacity.value,
       coordinate: { latitude: latitude.value, longitude: longitude.value },
     }))
 
-    // `coordinate` is passed too, for the first frame and as the fallback;
-    // Reanimated reapplies the animated one over every React commit.
+    // The static `coordinate` stays where the bubble mounted, so a React
+    // commit never moves it ahead of the glide.
     return (
       <AnimatedMarker
         ref={ref}
         {...markerProps}
-        coordinate={coordinate}
+        coordinate={start}
         animatedProps={animatedProps}
       />
     )
