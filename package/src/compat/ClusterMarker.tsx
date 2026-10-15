@@ -140,8 +140,10 @@ function createFadingMarker({
       coordinate: { latitude: latitude.value, longitude: longitude.value },
     }))
 
-    // The static `coordinate` stays where the bubble mounted, so a React
-    // commit never moves it ahead of the glide.
+    // The static `coordinate` stays where the bubble mounted. A React commit
+    // applies it to the native marker, and Reanimated does not put the
+    // animated one back until it next changes: passing the new place here
+    // jumped every bubble that was still waiting to glide straight there.
     return (
       <AnimatedMarker
         ref={ref}
