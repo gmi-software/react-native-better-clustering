@@ -50,6 +50,7 @@ import {
   sortByKey,
 } from './helpers'
 import { reanimated, warnFadeUnavailable } from './reanimated'
+import { featuresNearView } from './nearView'
 import { renderSpiderClusterMarkers } from './renderSpiderClusterMarkers'
 import { useFadePresence } from './useFadePresence'
 import {
@@ -252,6 +253,20 @@ export interface ClusteredMapViewProps extends Omit<
    * @default `100`
    */
   clusterUpdateIntervalMs?: number
+  /**
+   * How far outside the map, in points, cluster bubbles still render. The
+   * clusters are found, and reported to {@linkcode onMarkersChange}, for the
+   * region plus half its size on each side, as react-native-map-clustering
+   * does; only rendering stops at this margin. Markers are not affected.
+   *
+   * A smaller margin mounts fewer native annotations on each zoom step, which
+   * keeps the UI thread free for the bubbles' fade and glide; a larger one
+   * leaves fewer bubbles to appear at the edges during a fast pan. Pass
+   * `Infinity` to render every cluster found.
+   *
+   * @default `100`
+   */
+  clusterRenderMargin?: number
 }
 
 /** Data retained per default cluster bubble so it can be cross-faded out. */
@@ -319,6 +334,7 @@ const CompatMapView = forwardRef(function CompatMapView(
     width,
     height,
     clusterUpdateIntervalMs = 100,
+    clusterRenderMargin = 100,
     spiralEnabled = true,
     spiderfyMinZoom = 19,
     spiderfyMaxLeaves = 50,
@@ -722,6 +738,27 @@ const CompatMapView = forwardRef(function CompatMapView(
     return regionLongitudeDelta / mapDimensions.width
   }, [spiderLeaves, regionLongitudeDelta, mapDimensions.width])
 
+  // Clusters far outside the map are not rendered (see `clusterRenderMargin`).
+  // Kept as the same array while the clusters it holds stay the same, so a
+  // pan that changes none of them re-renders nothing below.
+  const nearClustersRef = useRef<GeoJSONFeature[]>(clusters)
+  const nearClusters = useMemo(() => {
+    const near = featuresNearView(
+      clusters,
+      currentRegion,
+      mapDimensions,
+      clusterRenderMargin
+    )
+    const previous = nearClustersRef.current
+    return near.length === previous.length &&
+      near.every((feature, index) => feature === previous[index])
+      ? previous
+      : near
+  }, [clusters, currentRegion, mapDimensions, clusterRenderMargin])
+  useEffect(() => {
+    nearClustersRef.current = nearClusters
+  })
+
   // Split rendering: everything except the default cluster bubbles is rendered
   // immediately, while the default bubbles go through `useFadePresence` so a
   // removed bubble lingers and cross-fades out as its replacements fade in.
@@ -760,7 +797,7 @@ const CompatMapView = forwardRef(function CompatMapView(
         : `cluster-${cluster.id}`
     }
 
-    for (const feature of clusters) {
+    for (const feature of nearClusters) {
       if (!isClusterFeature(feature)) {
         // Keeps the key `Children.toArray` gave it, so each marker stays one
         // React instance when others are inserted or removed before it.
@@ -830,7 +867,7 @@ const CompatMapView = forwardRef(function CompatMapView(
     }
   }, [
     clusteringEnabled,
-    clusters,
+    nearClusters,
     isCurrent,
     propsChildren,
     handleClusterPress,
