@@ -41,6 +41,7 @@ import {
   type ClusterIndexOptions,
 } from '../hooks/useClusterIndex'
 import ClusterMarker from './ClusterMarker'
+import { nearestWithin, screenScaleOf, type LatLng } from './glide'
 import {
   bboxToFitCoordinates,
   elementKey,
@@ -86,6 +87,18 @@ function isSameMarkerFeature(previous: PointFeature, next: PointFeature) {
  * `clusterUpdateIntervalMs` can keep more.
  */
 const MOVING_EXIT_HOLD_MS = 100
+
+/**
+ * How far, in cluster radii, a bubble may glide from the bubble it split from
+ * or into the bubble it merged into. A zoom step spreads a cluster's parts
+ * over about two radii; past this it fades in place.
+ */
+const GLIDE_REACH_RADII = 4
+
+function latLngOf(feature: ClusterFeature): LatLng {
+  const [longitude, latitude] = feature.geometry.coordinates
+  return { latitude, longitude }
+}
 
 const DEFAULT_EDGE_PADDING: EdgePadding = {
   top: 50,
@@ -207,8 +220,9 @@ export interface ClusteredMapViewProps extends Omit<
   /** Background color for the selected cluster. */
   selectedClusterColor?: string
   /**
-   * Fades the default cluster bubbles in and out on zoom; see
-   * {@linkcode clusterFadeInDuration}. @default `true`
+   * Animates the default cluster bubbles on zoom: they fade in and out, and
+   * on a zoom step a cluster's parts glide out of it and merging clusters
+   * glide into one. See {@linkcode clusterFadeInDuration}. @default `true`
    */
   animationEnabled?: boolean
   /**
@@ -233,8 +247,14 @@ export interface ClusteredMapViewProps extends Omit<
    * the default {@linkcode clusterUpdateIntervalMs} at most one extra
    * generation of bubbles stays mounted.
    *
+   * It also times the glide: when a zoom step splits a cluster, the new
+   * bubbles start at its place and glide to theirs, a bubble whose cluster
+   * moves slides there, and merging bubbles glide into the one that takes
+   * them in (while the map moves, within the 100 ms they stay). Pans and data
+   * changes only fade.
+   *
    * Needs `react-native-reanimated`, an optional peer dependency: without it
-   * the bubbles do not fade, and development builds warn once.
+   * the bubbles do not fade or glide, and development builds warn once.
    *
    * @default `250`
    */
@@ -852,27 +872,89 @@ const CompatMapView = forwardRef(function CompatMapView(
   const presentBubbles = useFadePresence(clusterBubbleItems, bubbleExitMs)
   const clusterBubbleEntries = sortByKey(presentBubbles, (entry) => entry.key)
 
+  // Where bubbles glide, judged against the bubbles of the last commit. Only a
+  // zoom step glides bubbles in or out: zooming in, a new bubble starts at
+  // the one it split from; zooming out, a bubble that goes slides into the one
+  // that took it in. A pan or a data change only fades, so a bubble coming
+  // into view never flies out of a neighbour.
+  const placedBubblesRef = useRef<{
+    zoom: number
+    positions: Map<string, LatLng>
+  }>({ zoom: currentZoom, positions: new Map() })
+  // Where each exiting bubble glides, fixed when it starts to go.
+  const exitGlidesRef = useRef<Map<string, LatLng | undefined>>(new Map())
+  const placedBubbles = placedBubblesRef.current
+  const zoomStep = Math.sign(currentZoom - placedBubbles.zoom)
+  const screenScale =
+    clusterFadeIn > 0 && zoomStep !== 0
+      ? screenScaleOf(currentRegion, mapDimensions)
+      : null
+  const glideReach = GLIDE_REACH_RADII * radius
+  const bubblePositions = new Map<string, LatLng>()
+  for (const { key, data, exiting } of clusterBubbleEntries) {
+    if (!exiting) {
+      bubblePositions.set(key, latLngOf(data.feature))
+    }
+  }
+  const exitGlides = new Map<string, LatLng | undefined>()
+  const glideFromOf = (key: string, position: LatLng) =>
+    zoomStep > 0 && screenScale != null && !placedBubbles.positions.has(key)
+      ? nearestWithin(
+          position,
+          placedBubbles.positions.values(),
+          screenScale,
+          glideReach
+        )
+      : undefined
+  const glideToOf = (key: string, position: LatLng) => {
+    const glide = exitGlidesRef.current.has(key)
+      ? exitGlidesRef.current.get(key)
+      : zoomStep < 0 && screenScale != null
+        ? nearestWithin(
+            position,
+            bubblePositions.values(),
+            screenScale,
+            glideReach
+          )
+        : undefined
+    exitGlides.set(key, glide)
+    return glide
+  }
+
+  useEffect(() => {
+    placedBubblesRef.current = { zoom: currentZoom, positions: bubblePositions }
+    exitGlidesRef.current = exitGlides
+  })
+
   // Bubbles that mount while the map moves appear at once, so the bubble they
   // replace does not leave a gap when it goes. Only exiting bubbles see the
   // fade-out change between moving (`0`: stay opaque until dropped) and
   // settled, so starting or ending a gesture re-renders no other bubble;
   // `appearInstantly` is read only when a bubble mounts.
+  // An exiting bubble glides for as long as it stays: the fade when settled,
+  // the hold while the map moves.
   const clusterBubbleMarkers = clusterBubbleEntries.map(
-    ({ key, data, exiting }) => (
-      <ClusterMarker
-        key={key}
-        feature={data.feature}
-        onPress={handleClusterPress}
-        clusterColor={data.clusterColor}
-        clusterTextColor={data.clusterTextColor}
-        clusterFontFamily={data.clusterFontFamily}
-        tracksViewChanges={data.tracksViewChanges}
-        fadeInDuration={clusterFadeIn}
-        fadeOutDuration={exiting && isMapMoving ? 0 : clusterFadeIn}
-        appearInstantly={isMapMoving}
-        exiting={exiting}
-      />
-    )
+    ({ key, data, exiting }) => {
+      const position = latLngOf(data.feature)
+      return (
+        <ClusterMarker
+          key={key}
+          feature={data.feature}
+          onPress={handleClusterPress}
+          clusterColor={data.clusterColor}
+          clusterTextColor={data.clusterTextColor}
+          clusterFontFamily={data.clusterFontFamily}
+          tracksViewChanges={data.tracksViewChanges}
+          fadeInDuration={clusterFadeIn}
+          fadeOutDuration={exiting && isMapMoving ? 0 : clusterFadeIn}
+          appearInstantly={isMapMoving}
+          exiting={exiting}
+          glideFrom={exiting ? undefined : glideFromOf(key, position)}
+          glideTo={exiting ? glideToOf(key, position) : undefined}
+          glideDuration={exiting ? bubbleExitMs : clusterFadeIn}
+        />
+      )
+    }
   )
 
   return (

@@ -12,11 +12,16 @@
  * returns its `default` export instead of the module.
  *
  * The hooks run synchronously: `useAnimatedProps` returns its worklet's result
- * and `withTiming` its target value.
+ * and `withTiming` its target value. `Easing` returns named stand-ins, so a
+ * test can tell which curve a timing got.
  */
 export const fakeReanimated = {
   default: {
     createAnimatedComponent: <T>(component: T): T => component,
+  },
+  Easing: {
+    cubic: 'cubic',
+    out: (easing: string) => `out(${easing})`,
   },
   useSharedValue: <T>(value: T) => ({ value }),
   useAnimatedProps: <T>(worklet: () => T): T => worklet(),

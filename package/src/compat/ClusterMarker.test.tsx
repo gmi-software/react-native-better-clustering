@@ -76,7 +76,10 @@ describe('ClusterMarker fade', () => {
     render(<ClusterMarker {...baseProps({ fadeInDuration: 250 })} />)
 
     // Mounts transparent; the effect then animates the shared value to 1.
-    expect(markerProps.at(-1)?.animatedProps).toEqual({ opacity: 0 })
+    expect(markerProps.at(-1)?.animatedProps).toEqual({
+      opacity: 0,
+      coordinate: { latitude: 37.78, longitude: -122.42 },
+    })
   })
 
   it('mounts opaque when it appears instantly', () => {
@@ -86,7 +89,10 @@ describe('ClusterMarker fade', () => {
       />
     )
 
-    expect(markerProps.at(-1)?.animatedProps).toEqual({ opacity: 1 })
+    expect(markerProps.at(-1)?.animatedProps).toEqual({
+      opacity: 1,
+      coordinate: { latitude: 37.78, longitude: -122.42 },
+    })
   })
 
   it('fades an exiting bubble out over its fade-out duration', () => {
