@@ -207,6 +207,7 @@ Everything from `react-native-maps` `MapView`, plus:
 | `superClusterRef`              | —                     | Access the underlying engine      |
 | `width` / `height`             | window size           | Seed map dimensions before layout |
 | `clusterUpdateIntervalMs`      | `100`                 | Min interval (ms) between cluster updates while moving; `0` = only on settle |
+| `clusterRenderMargin`          | `100`                 | How far outside the map (pt) cluster bubbles still render; `Infinity` = every cluster found |
 
 
 Per-marker opt-out: `<Marker cluster={false} ... />`.

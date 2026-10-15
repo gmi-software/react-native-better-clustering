@@ -76,6 +76,7 @@ are supported, plus:
 | `selectedClusterColor` | `#FF5722` | Color when cluster is selected |
 | `width` / `height` | window size | Seed map dimensions before `onLayout` |
 | `clusterUpdateIntervalMs` | `100` | Minimum interval (ms) between cluster recomputations while the map is moving; `0` recomputes only on settle |
+| `clusterRenderMargin` | `100` | How far outside the map, in points, cluster bubbles still render. Clusters are found, and reported to `onMarkersChange`, for the region plus half its size on each side, as in react-native-map-clustering; only rendering stops at this margin, and markers are not affected. A smaller margin mounts fewer native annotations on each zoom step, which keeps the UI thread free for the bubble fade; a larger one leaves fewer bubbles to appear at the edges during a fast pan. `Infinity` renders every cluster found |
 | `superClusterRef` | — | Ref to access the underlying `Supercluster` engine |
 | `mapRef` | — | Callback ref to the inner `react-native-maps` instance |
 

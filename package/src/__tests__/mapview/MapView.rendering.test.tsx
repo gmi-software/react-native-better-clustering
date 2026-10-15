@@ -204,3 +204,46 @@ describe('MapView rendering', () => {
     expect(renderedMarkerIds(container)).toEqual([])
   })
 })
+
+describe('MapView clusterRenderMargin', () => {
+  // GROUP sits 0.03° west of this centre: past the map and its 100 pt margin
+  // (0.025°), but within the region queried around it (0.033°).
+  const eastOfGroup = regionAt(
+    { latitude: CENTER.latitude, longitude: CENTER.longitude + 0.03 },
+    CITY_ZOOM
+  )
+
+  it('does not render a cluster past the margin, and still reports it', async () => {
+    const reported: Array<Array<{ properties: { cluster?: boolean } }>> = []
+    const { container } = render(
+      <Map
+        initialRegion={eastOfGroup}
+        onMarkersChange={(features) => reported.push(features)}
+      />
+    )
+    await flush()
+
+    expect(clusterLabels(container)).toEqual([])
+    expect(
+      reported.at(-1)?.filter((feature) => feature.properties.cluster)
+    ).toHaveLength(1)
+  })
+
+  it('keeps rendering markers past the margin', async () => {
+    const { container } = render(
+      <Map initialRegion={eastOfGroup} points={GROUP.slice(0, 1)} />
+    )
+    await flush()
+
+    expect(renderedMarkerIds(container)).toEqual(['g0'])
+  })
+
+  it('renders every cluster found with an infinite margin', async () => {
+    const { container } = render(
+      <Map initialRegion={eastOfGroup} clusterRenderMargin={Infinity} />
+    )
+    await flush()
+
+    expect(clusterLabels(container)).toEqual(['5'])
+  })
+})
