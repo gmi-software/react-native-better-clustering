@@ -18,7 +18,7 @@ sidebar_position: 4
 |---------|---------|----------|
 | `react-native-maps` | `>=1.20.1` | Yes |
 | `react-native-nitro-modules` | `>=0.32.0` | Yes (declared optional, see below) |
-| `react-native-reanimated` | `^4.1.0` | No: only fades the default cluster bubbles |
+| `react-native-reanimated` | `^4.1.0` | No: only animates the default cluster bubbles |
 
 - **`react-native-maps`**: 1.20.1 is the version Expo SDK 54 installs. It runs
   on the New Architecture through React Native's interop layer; 1.21.0 is the
@@ -29,7 +29,7 @@ sidebar_position: 4
   Nitro version and a pre-release Nitro never gets a second, stable copy
   installed next to it. Install it yourself.
 - **`react-native-reanimated`**: when it is missing, cluster bubbles render
-  without the fade. `react-native-worklets` is Reanimated's own dependency, not
+  without the fade or glide. `react-native-worklets` is Reanimated's own dependency, not
   this library's; install the version your Reanimated asks for.
 
 ## Migrate from react-native-map-clustering

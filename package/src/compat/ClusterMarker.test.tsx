@@ -76,7 +76,10 @@ describe('ClusterMarker fade', () => {
     render(<ClusterMarker {...baseProps({ fadeInDuration: 250 })} />)
 
     // Mounts transparent; the effect then animates the shared value to 1.
-    expect(markerProps.at(-1)?.animatedProps).toEqual({ opacity: 0 })
+    expect(markerProps.at(-1)?.animatedProps).toEqual({
+      opacity: 0,
+      coordinate: { latitude: 37.78, longitude: -122.42 },
+    })
   })
 
   it('mounts opaque when it appears instantly', () => {
@@ -86,7 +89,10 @@ describe('ClusterMarker fade', () => {
       />
     )
 
-    expect(markerProps.at(-1)?.animatedProps).toEqual({ opacity: 1 })
+    expect(markerProps.at(-1)?.animatedProps).toEqual({
+      opacity: 1,
+      coordinate: { latitude: 37.78, longitude: -122.42 },
+    })
   })
 
   it('fades an exiting bubble out over its fade-out duration', () => {
@@ -127,6 +133,120 @@ describe('ClusterMarker fade', () => {
     render(<ClusterMarker {...baseProps({ fadeInDuration: 0 })} />)
 
     expect(markerProps.at(-1)).not.toHaveProperty('animatedProps')
+  })
+})
+
+describe('ClusterMarker glide', () => {
+  const at = (latitude: number, longitude: number): ClusterFeature => ({
+    ...CLUSTER,
+    geometry: { type: 'Point', coordinates: [longitude, latitude] },
+  })
+  const GLIDE = { duration: 250, easing: 'out(cubic)' }
+
+  beforeEach(() => {
+    markerProps.length = 0
+    withTiming.mockClear()
+  })
+
+  it('mounts at the bubble it split from and glides to its own place', () => {
+    render(
+      <ClusterMarker
+        {...baseProps({
+          fadeInDuration: 250,
+          glideFrom: { latitude: 37.7, longitude: -122.5 },
+        })}
+      />
+    )
+
+    expect(markerProps.at(-1)?.animatedProps).toMatchObject({
+      coordinate: { latitude: 37.7, longitude: -122.5 },
+    })
+    expect(withTiming).toHaveBeenCalledWith(37.78, GLIDE)
+    expect(withTiming).toHaveBeenCalledWith(-122.42, GLIDE)
+  })
+
+  it('glides to the new place when its cluster moves', () => {
+    const onPress = jest.fn()
+    const { rerender } = render(
+      <ClusterMarker {...baseProps({ onPress, fadeInDuration: 250 })} />
+    )
+    withTiming.mockClear()
+
+    rerender(
+      <ClusterMarker
+        {...baseProps({
+          onPress,
+          fadeInDuration: 250,
+          feature: at(37.8, -122.4),
+        })}
+      />
+    )
+
+    expect(withTiming).toHaveBeenCalledWith(37.8, GLIDE)
+    expect(withTiming).toHaveBeenCalledWith(-122.4, GLIDE)
+  })
+
+  it('glides an exiting bubble into the one that took it in', () => {
+    const props = baseProps({ fadeInDuration: 250, appearInstantly: true })
+    const { rerender } = render(<ClusterMarker {...props} />)
+    withTiming.mockClear()
+
+    rerender(
+      <ClusterMarker
+        {...props}
+        exiting
+        glideTo={{ latitude: 37.9, longitude: -122.3 }}
+        glideDuration={100}
+      />
+    )
+
+    const timing = { duration: 100, easing: 'out(cubic)' }
+    expect(withTiming).toHaveBeenCalledWith(37.9, timing)
+    expect(withTiming).toHaveBeenCalledWith(-122.3, timing)
+  })
+
+  it('fades an exiting bubble in place without a bubble to glide into', () => {
+    const props = baseProps({ fadeInDuration: 250, appearInstantly: true })
+    const { rerender } = render(<ClusterMarker {...props} />)
+    withTiming.mockClear()
+
+    rerender(<ClusterMarker {...props} exiting />)
+
+    expect(withTiming).toHaveBeenCalledTimes(1)
+    expect(withTiming).toHaveBeenCalledWith(0, { duration: 250 })
+  })
+
+  it('moves at once when the glide duration is 0', () => {
+    const onPress = jest.fn()
+    const props = baseProps({ onPress, fadeInDuration: 250, glideDuration: 0 })
+    const { rerender } = render(<ClusterMarker {...props} />)
+    withTiming.mockClear()
+
+    rerender(<ClusterMarker {...props} feature={at(37.8, -122.4)} />)
+
+    expect(withTiming).not.toHaveBeenCalled()
+  })
+
+  it('does not restart the glide when a re-render keeps its place', () => {
+    const onPress = jest.fn()
+    const { rerender } = render(
+      <ClusterMarker
+        {...baseProps({
+          onPress,
+          fadeInDuration: 250,
+          glideFrom: { latitude: 37.7, longitude: -122.5 },
+        })}
+      />
+    )
+    withTiming.mockClear()
+
+    rerender(
+      <ClusterMarker
+        {...baseProps({ onPress, fadeInDuration: 250, glideDuration: 300 })}
+      />
+    )
+
+    expect(withTiming).not.toHaveBeenCalled()
   })
 })
 
@@ -251,6 +371,41 @@ describe('areClusterMarkerPropsEqual', () => {
     const next = baseProps({ onPress, appearInstantly: false })
 
     expect(areClusterMarkerPropsEqual(prev, next)).toBe(true)
+  })
+
+  it('returns true when only glideFrom changes', () => {
+    const onPress = jest.fn()
+    const prev = baseProps({ onPress })
+    const next = baseProps({
+      onPress,
+      glideFrom: { latitude: 1, longitude: 2 },
+    })
+
+    expect(areClusterMarkerPropsEqual(prev, next)).toBe(true)
+  })
+
+  it('compares glideTo by position', () => {
+    const onPress = jest.fn()
+    const glideTo = (latitude: number) => ({ latitude, longitude: 2 })
+
+    expect(
+      areClusterMarkerPropsEqual(
+        baseProps({ onPress, glideTo: glideTo(1) }),
+        baseProps({ onPress, glideTo: glideTo(1) })
+      )
+    ).toBe(true)
+    expect(
+      areClusterMarkerPropsEqual(
+        baseProps({ onPress, glideTo: glideTo(1) }),
+        baseProps({ onPress, glideTo: glideTo(3) })
+      )
+    ).toBe(false)
+    expect(
+      areClusterMarkerPropsEqual(
+        baseProps({ onPress }),
+        baseProps({ onPress, glideTo: glideTo(1) })
+      )
+    ).toBe(false)
   })
 
   it('returns false when feature reference changes', () => {

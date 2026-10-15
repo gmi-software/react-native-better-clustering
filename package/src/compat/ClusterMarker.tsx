@@ -2,6 +2,7 @@ import React, { memo, useEffect, useRef, type Ref } from 'react'
 import { Platform, StyleSheet, Text, View } from 'react-native'
 import { Marker, type MapMarker, type MapMarkerProps } from 'react-native-maps'
 import type { ClusterFeature } from '../geojson/types'
+import type { LatLng } from './glide'
 import { reanimated, type Reanimated } from './reanimated'
 
 /**
@@ -13,6 +14,16 @@ import { reanimated, type Reanimated } from './reanimated'
 const BUBBLE_BORDER_WIDTH = 2.5
 const HALO_SCALE = 1.18
 const SHADOW_PADDING = 6
+
+/**
+ * How long a fade-in or glide waits before it starts. Mounting a zoom step's
+ * bubbles (a hundred or more annotations around the screen) can hold the UI
+ * thread for a few hundred milliseconds, and Reanimated times animations by
+ * the clock: one started before that would be over by the time the bubble
+ * shows. Waiting a few frames starts it on the first frame after the mount,
+ * so it plays in full.
+ */
+const START_DELAY_MS = 50
 
 /**
  * `react-native-maps` markers are native annotations: a bubble that unmounts and
@@ -29,34 +40,56 @@ const SHADOW_PADDING = 6
  * pushed `setNativeProps` from JS every frame for every bubble, which dominated
  * the CPU profile (~23% self-time) when dozens of clusters remounted on each zoom.
  *
+ * The position glides the same way, through the native `coordinate` prop: a
+ * bubble whose cluster moves slides to its new place instead of jumping, one
+ * that splits off starts at `glideFrom` and one that merges away slides to
+ * `glideTo` as it fades. `react-native-maps`' own `animateMarkerToCoordinate`
+ * is no substitute: it is linear, ignores a new target while it runs, and on
+ * iOS under the New Architecture turns any duration under a second into 0.
+ *
  * Reanimated is an optional peer dependency, so the fading marker only exists
  * when the app includes it; without it every bubble is a plain marker.
  */
 function createFadingMarker({
   default: Animated,
+  Easing,
   useAnimatedProps,
   useSharedValue,
+  withDelay,
   withTiming,
 }: Reanimated) {
   const AnimatedMarker = Animated.createAnimatedComponent(Marker)
+  const glideEasing = Easing.out(Easing.cubic)
 
   return function FadingMarker({
     ref,
+    coordinate,
     fadeInDuration,
     fadeOutDuration,
     appearInstantly,
     exiting,
+    glideFrom,
+    glideTo,
+    glideDuration,
     ...markerProps
   }: MapMarkerProps & {
     ref: Ref<MapMarker>
+    coordinate: LatLng
     fadeInDuration: number
     fadeOutDuration: number
     appearInstantly: boolean
     exiting: boolean
+    glideFrom: LatLng | undefined
+    glideTo: LatLng | undefined
+    glideDuration: number
   }) {
-    // Both only take the value from the first render.
+    // These only take the value from the first render.
     const opacity = useSharedValue(appearInstantly ? 1 : 0)
     const target = useRef(appearInstantly ? 1 : 0)
+    const start = useRef(glideFrom ?? coordinate).current
+    const latitude = useSharedValue(start.latitude)
+    const longitude = useSharedValue(start.longitude)
+    const placed = useRef<LatLng>(start)
 
     // Animates only when the target changes, so a re-render, or the second
     // effect run under StrictMode, does not restart the fade.
@@ -67,17 +100,55 @@ function createFadingMarker({
         return
       }
       target.current = next
-      opacity.value = withTiming(next, {
+      const fade = withTiming(next, {
         duration: exiting ? fadeOutDuration : fadeInDuration,
       })
+      opacity.value = exiting ? fade : withDelay(START_DELAY_MS, fade)
     }, [exiting, fadeInDuration, fadeOutDuration, opacity])
 
-    const animatedProps = useAnimatedProps(() => ({ opacity: opacity.value }))
+    // Glides only when the place it heads for changes, so a re-render does
+    // not restart it; a new place mid-glide continues from where it is.
+    const destination = exiting ? (glideTo ?? placed.current) : coordinate
+    const { latitude: toLatitude, longitude: toLongitude } = destination
+    useEffect(() => {
+      if (
+        placed.current.latitude === toLatitude &&
+        placed.current.longitude === toLongitude
+      ) {
+        return
+      }
+      placed.current = { latitude: toLatitude, longitude: toLongitude }
+      if (glideDuration > 0) {
+        // An exiting bubble is already on screen and has only its hold to go.
+        const glide = (to: number) => {
+          const timing = withTiming(to, {
+            duration: glideDuration,
+            easing: glideEasing,
+          })
+          return exiting ? timing : withDelay(START_DELAY_MS, timing)
+        }
+        latitude.value = glide(toLatitude)
+        longitude.value = glide(toLongitude)
+      } else {
+        latitude.value = toLatitude
+        longitude.value = toLongitude
+      }
+    }, [exiting, toLatitude, toLongitude, glideDuration, latitude, longitude])
 
+    const animatedProps = useAnimatedProps(() => ({
+      opacity: opacity.value,
+      coordinate: { latitude: latitude.value, longitude: longitude.value },
+    }))
+
+    // The static `coordinate` stays where the bubble mounted. A React commit
+    // applies it to the native marker, and Reanimated does not put the
+    // animated one back until it next changes: passing the new place here
+    // jumped every bubble that was still waiting to glide straight there.
     return (
       <AnimatedMarker
         ref={ref}
         {...markerProps}
+        coordinate={start}
         animatedProps={animatedProps}
       />
     )
@@ -159,6 +230,23 @@ export interface ClusterMarkerProps {
    * @default false
    */
   exiting?: boolean
+  /**
+   * Where a fading bubble starts when it mounts, to glide to its own place:
+   * the bubble it split from. Read only when the bubble mounts.
+   */
+  glideFrom?: LatLng
+  /**
+   * Where an {@linkcode exiting} bubble glides as it fades out: the bubble it
+   * merged into. Without it, it fades where it is.
+   */
+  glideTo?: LatLng
+  /**
+   * Duration (ms) of every glide: from {@linkcode glideFrom}, to a new place,
+   * and to {@linkcode glideTo}. `0` moves the bubble at once.
+   *
+   * @default `fadeInDuration`
+   */
+  glideDuration?: number
 }
 
 function ClusterMarker({
@@ -172,6 +260,9 @@ function ClusterMarker({
   fadeOutDuration = fadeInDuration,
   appearInstantly = false,
   exiting = false,
+  glideFrom,
+  glideTo,
+  glideDuration = fadeInDuration,
 }: ClusterMarkerProps) {
   const points = feature.properties.point_count
   const { width, height, fontSize, size, haloSize } =
@@ -259,6 +350,9 @@ function ClusterMarker({
         fadeOutDuration={fadeOutDuration}
         appearInstantly={appearInstantly}
         exiting={exiting}
+        glideFrom={glideFrom}
+        glideTo={glideTo}
+        glideDuration={glideDuration}
       >
         {bubble}
       </FadingMarker>
@@ -322,7 +416,20 @@ const styles = StyleSheet.create({
   },
 })
 
-/** Leaves out `appearInstantly`, which only matters when the bubble mounts. */
+function sameLatLng(a: LatLng | undefined, b: LatLng | undefined): boolean {
+  return (
+    a === b ||
+    (a != null &&
+      b != null &&
+      a.latitude === b.latitude &&
+      a.longitude === b.longitude)
+  )
+}
+
+/**
+ * Leaves out `appearInstantly` and `glideFrom`, which only matter when the
+ * bubble mounts.
+ */
 function areClusterMarkerPropsEqual(
   prev: ClusterMarkerProps,
   next: ClusterMarkerProps
@@ -336,7 +443,9 @@ function areClusterMarkerPropsEqual(
     prev.tracksViewChanges === next.tracksViewChanges &&
     prev.fadeInDuration === next.fadeInDuration &&
     prev.fadeOutDuration === next.fadeOutDuration &&
-    prev.exiting === next.exiting
+    prev.exiting === next.exiting &&
+    sameLatLng(prev.glideTo, next.glideTo) &&
+    prev.glideDuration === next.glideDuration
   )
 }
 
