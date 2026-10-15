@@ -28,15 +28,16 @@ The native build fails on older versions (see
 ### Reanimated (optional)
 
 With [Reanimated](https://docs.swmansion.com/react-native-reanimated/)
-installed, the default cluster bubbles cross-fade on zoom, animated on the UI
-thread (see [`clusterFadeInDuration`](../api/mapview.md)). Install it by
+installed, the default cluster bubbles cross-fade on zoom, and a splitting
+cluster's parts glide out of it while merging clusters glide into one, all
+animated on the UI thread (see [`clusterFadeInDuration`](../api/mapview.md)). Install it by
 following Reanimated's own
 [installation guide](https://docs.swmansion.com/react-native-reanimated/docs/fundamentals/getting-started/):
 it needs `react-native-worklets` and, in bare React Native, the Worklets Babel
 plugin.
 
 Without Reanimated, clusters still render: bubbles appear and disappear without
-a fade, and development builds log a one-time notice. Pass
+a fade or glide, and development builds log a one-time notice. Pass
 `clusterFadeInDuration={0}` to opt out of the fade and the notice.
 
 ## New Architecture

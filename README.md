@@ -96,10 +96,11 @@ npx expo prebuild --clean
 npx expo run:ios   # or: npx expo run:android
 ```
 
-### Optional: fading cluster bubbles
+### Optional: animated cluster bubbles
 
 With [Reanimated](https://docs.swmansion.com/react-native-reanimated/) installed,
-the default cluster bubbles cross-fade on zoom. Follow Reanimated's own
+the default cluster bubbles cross-fade on zoom, and glide: a splitting
+cluster's parts slide out of it and merging clusters slide into one. Follow Reanimated's own
 [installation guide](https://docs.swmansion.com/react-native-reanimated/docs/fundamentals/getting-started/)
 (it also needs `react-native-worklets`), or with Expo:
 
@@ -107,7 +108,7 @@ the default cluster bubbles cross-fade on zoom. Follow Reanimated's own
 npx expo install react-native-reanimated react-native-worklets
 ```
 
-Without it, bubbles appear and disappear without a fade, and development builds
+Without it, bubbles appear and disappear without a fade or glide, and development builds
 log a one-time notice unless you pass `clusterFadeInDuration={0}`.
 
 ## Usage
@@ -198,7 +199,7 @@ Everything from `react-native-maps` `MapView`, plus:
 | `spiderLineColor`              | `#FF0000`             | Color of spider connector lines   |
 | `clusterColor`                 | `#0F52FF`             | Default cluster bubble color (GMI brand blue) |
 | `clusterTextColor`             | `#FFFFFF`             | Default cluster label color       |
-| `animationEnabled`             | `true`                | Fade cluster bubbles on zoom      |
+| `animationEnabled`             | `true`                | Fade and glide cluster bubbles on zoom |
 | `onClusterPress`               | —                     | `(cluster, markers) => void`      |
 | `onError`                      | throws during render  | `(error) => void` — native index build failed or an option is invalid |
 | `renderCluster`                | —                     | Custom cluster renderer           |

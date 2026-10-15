@@ -11,8 +11,8 @@ sidebar_position: 2
 - React Native **0.78+** with the **New Architecture** enabled.
 - `react-native-nitro-modules` 0.32.0 or newer (required).
 - `react-native-maps` 1.20.1 or newer (required).
-- `react-native-reanimated` 4.1 or a later 4.x (optional): fades the cluster
-  bubbles on zoom.
+- `react-native-reanimated` 4.1 or a later 4.x (optional): fades and glides
+  the cluster bubbles on zoom.
 
 ## Install
 
@@ -28,7 +28,7 @@ npx expo install react-native-better-clustering react-native-nitro-modules react
 ```
 
 See [Platform Setup](./setup/installation.md) for `react-native-maps` plugin config
-and the optional Reanimated fade.
+and the optional Reanimated animation.
 
 ## Clustered map
 
