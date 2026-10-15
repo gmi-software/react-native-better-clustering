@@ -62,7 +62,7 @@ That is it. Your `<Marker>` children, cluster props, and `react-native-maps` opt
 | ---------------------------- | ---------- | ------------------------------------------- |
 | `react-native-maps`          | `>=1.20.1` | Required                                    |
 | `react-native-nitro-modules` | `>=0.32.0` | Required; install it next to the library    |
-| `react-native-reanimated`    | `^4.1.0`   | Optional; fades the cluster bubbles on zoom |
+| `react-native-reanimated`    | `^4.1.0`   | Optional; fades and glides the cluster bubbles on zoom |
 
 ### Bare React Native
 
