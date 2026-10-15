@@ -128,16 +128,16 @@ describe('MapView bubble glide', () => {
   })
 
   it('fades in a bubble that comes into view on a pan without gliding', async () => {
-    // The query covers twice the region each way, which here reaches the
+    // At this zoom and centre, the region queried around the map reaches the
     // western group but not the eastern one.
-    const west = { latitude: 52.2, longitude: 20.985 }
+    const west = { latitude: 52.2, longitude: 20.9946 }
     const { container } = render(
-      <GlidingMap initialRegion={regionAt(west, 15)} />
+      <GlidingMap initialRegion={regionAt(west, 16)} />
     )
     await flush()
     expect(bubbles(container)).toHaveLength(1)
 
-    await settleRegion(regionAt(BETWEEN, 15))
+    await settleRegion(regionAt(BETWEEN, 16))
 
     const entering = bubbles(container).find(
       (bubble) => bubble.longitude > MIDDLE
