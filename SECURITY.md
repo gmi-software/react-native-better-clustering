@@ -5,10 +5,10 @@
 Fixes land on the latest minor release. Older minors do not receive backports —
 upgrading is the supported path.
 
-| Version | Supported                      |
-| ------- | ------------------------------ |
-| 1.0.x   | ✅ latest patch (1.0.1 or later) |
-| < 1.0   | ❌                             |
+| Version | Supported       |
+| ------- | --------------- |
+| 1.1.x   | ✅ latest patch |
+| < 1.1   | ❌              |
 
 ## Reporting a vulnerability
 
@@ -46,7 +46,7 @@ match this repository.
 
 ## Supply chain
 
-From 1.0.1 on, releases are built and published only by the
+From 1.1.0 on, releases are built and published only by the
 [Release workflow](.github/workflows/release.yml), never from a developer
 machine:
 
@@ -61,7 +61,7 @@ machine:
 - workflows check out with `persist-credentials: false`, and CI never writes to
   git
 
-1.0.0 predates this workflow and was published without provenance; use 1.0.1
+1.0.0 predates this workflow and was published without provenance; use 1.1.0
 or later.
 
 If you believe a published artifact does not match this repository, treat it as
