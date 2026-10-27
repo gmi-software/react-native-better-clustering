@@ -7,10 +7,10 @@ slug: /intro
 
 # React Native Better Clustering
 
-`react-native-better-clustering` is a faster
+`react-native-better-clustering` is a drop-in replacement for
 **[react-native-map-clustering](https://github.com/tomekvenits/react-native-map-clustering)** —
 same `MapView` + `<Marker>` API, with a **C++ supercluster engine** via
-[Nitro Modules](https://nitro.margelo.com) instead of JS on the RN bridge.
+[Nitro Modules](https://nitro.margelo.com) instead of supercluster in JavaScript.
 
 ## Migration
 
@@ -21,9 +21,12 @@ same `MapView` + `<Marker>` API, with a **C++ supercluster engine** via
 
 ## Why C++/Nitro?
 
-Clustering large datasets in JavaScript causes dropped frames on every region
-change. This library builds the index in C++ and returns only visible
-features for the current viewport — without changing how you write map screens.
+react-native-map-clustering builds its supercluster index in JavaScript, on
+the JS thread, so a large dataset holds up touches and renders while it loads.
+`MapView` here builds the index in C++ on a background thread instead — without
+changing how you write map screens. Reading the clusters for the visible region
+is a synchronous native call from the JS thread, and markers still render
+through `react-native-maps`.
 
 ## Advanced APIs
 

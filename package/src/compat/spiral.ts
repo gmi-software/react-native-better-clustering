@@ -12,52 +12,79 @@ export interface SpiralPosition {
   centerPoint: SpiralCenter
 }
 
-/** Base spiral radius in degrees of latitude (≈ 22 m per step at any latitude). */
-const SPIRAL_STEP_DEG = 0.0002
+/** A screen offset from the spiral centre, in points (`x` east, `y` north). */
+export interface SpiralOffset {
+  x: number
+  y: number
+}
+
+/**
+ * Screen distance between neighbouring spiderfied markers: room for a ~32 pt
+ * marker plus 8 pt of gap.
+ */
+export const SPIRAL_SPACING_PT = 40
 
 const MIN_COS_LAT = 0.01
 
 /**
- * Archimedean spiral layout for overlapping markers at max zoom.
+ * Offsets for `count` markers along an Archimedean spiral whose turns are
+ * `spacing` apart, stepping about `spacing` along the curve between markers.
  *
- * The latitude offset is applied directly (degrees of latitude map to a
- * constant ground distance), while the longitude offset is divided by
- * `cos(latitude)` so east–west spacing stays visually even with the
- * north–south spacing. Without this correction, markers bunch up
- * horizontally as you move away from the equator.
+ * The first marker sits one `spacing` from the centre, so no marker covers
+ * the point the connector lines meet at.
+ */
+export function spiralOffsets(count: number, spacing: number): SpiralOffset[] {
+  const offsets: SpiralOffset[] = []
+  const growthPerRadian = spacing / (2 * Math.PI)
+  let angle = 0
+
+  for (let i = 0; i < count; i++) {
+    const radius = spacing + growthPerRadian * angle
+    offsets.push({ x: radius * Math.cos(angle), y: radius * Math.sin(angle) })
+    angle += spacing / radius
+  }
+
+  return offsets
+}
+
+/**
+ * Spiral layout for a cluster's overlapping markers at max zoom, with
+ * neighbours {@linkcode SPIRAL_SPACING_PT} apart on screen.
+ *
+ * Leaves without a numeric child `index` are skipped without leaving a gap.
+ *
+ * @param longitudePerPoint - Degrees of longitude one screen point spans at
+ *   the current zoom (`longitudeDelta / width`).
  */
 export function generateSpiral(
   center: SpiralCenter,
   leaves: PointFeature[],
-  _clusterIndex = 0
+  longitudePerPoint: number
 ): SpiralPosition[] {
-  const positions: SpiralPosition[] = []
-
+  // Web Mercator is conformal: one screen point spans `cos(latitude)` times as
+  // many degrees of latitude as of longitude.
   const cosLat = Math.max(
     Math.cos((center.latitude * Math.PI) / 180),
     MIN_COS_LAT
   )
+  const latitudePerPoint = longitudePerPoint * cosLat
 
-  for (let i = 0; i < leaves.length; i++) {
-    const leaf = leaves[i]
-    if (leaf == null) {
-      continue
-    }
-
+  const indices: number[] = []
+  for (const leaf of leaves) {
     const childIndex = leaf.properties.index
-    if (typeof childIndex !== 'number') {
-      continue
+    if (typeof childIndex === 'number') {
+      indices.push(childIndex)
     }
-
-    const angle = 0.25 * (i * 0.5)
-    const radius = SPIRAL_STEP_DEG * angle
-    positions.push({
-      index: childIndex,
-      latitude: center.latitude + radius * Math.cos(angle),
-      longitude: center.longitude + (radius * Math.sin(angle)) / cosLat,
-      centerPoint: center,
-    })
   }
 
-  return positions
+  const offsets = spiralOffsets(indices.length, SPIRAL_SPACING_PT)
+  return indices.map((index, i) => {
+    const offset = offsets[i]!
+    return {
+      index,
+      latitude: center.latitude + offset.y * latitudePerPoint,
+      longitude: center.longitude + offset.x * longitudePerPoint,
+      centerPoint: center,
+    }
+  })
 }

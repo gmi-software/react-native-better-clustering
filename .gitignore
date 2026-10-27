@@ -38,6 +38,9 @@ web-build/
 # TypeScript / library build output
 lib/
 
+# Core benchmark reports written by `bun run bench`
+package/bench/results/
+
 # Nitro bindings, generated from package/src/specs by `bun run specs`
 # (runs on install via the package's `prepare` script, and before publishing)
 package/nitrogen/
@@ -89,6 +92,7 @@ project.xcworkspace/
 
 # C++ local binaries
 package/cpp/cluster_test
+package/cpp/thread_test
 package/cpp/cluster_bench
 package/bench/cluster_bench
 

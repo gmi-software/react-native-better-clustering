@@ -51,11 +51,56 @@ import type {
 |--------|---------|-------------|
 | `radius` | `40` | Cluster radius in pixels |
 | `minZoom` | `1` | Min zoom for clustering |
-| `maxZoom` | `20` | Max zoom for clustering |
+| `maxZoom` | `20` | Max zoom for clustering. Queries above it return every point on its own (see [Above `maxZoom`](./engine.md#above-maxzoom)) |
 | `minPoints` | `2` | Min points to form a cluster |
-| `extent` | `512` | Tile extent |
+| `extent` | `512` | Tile extent used for projection math (see [note](#radius-and-extent)) |
 | `nodeSize` | `64` | KD-tree leaf size |
 | `clusterProperties` | `[]` | Map/reduce aggregation configs |
+| `viewportTileSize` | `extent` | Tile size used to pick a zoom from a map region (see [note](#viewport-tile-size)) |
+
+#### Valid values
+
+Loading points throws a `RangeError` naming the first option outside these
+ranges, instead of building an empty or unbounded index:
+
+| Option | Must be |
+|--------|---------|
+| `radius` | A finite number `>= 0` |
+| `minZoom`, `maxZoom` | Integers from `0` to `30` (supercluster's limit), with `minZoom <= maxZoom` |
+| `extent` | An integer `>= 1` |
+| `minPoints`, `nodeSize` | 32-bit integers. Below `2` and `1` they act as `2` and `1` |
+| `viewportTileSize` | A finite number `> 0` |
+
+`useClusterer`, `Clusterer` and `MapView` pass the error to `onError`, or throw
+it during render when `onError` is not set.
+
+#### Radius and extent
+
+`radius` and `extent` mean exactly what they mean in
+[supercluster](https://github.com/mapbox/supercluster): `radius` is the cluster
+radius in pixels of a tile that is `extent` pixels wide, so the two are read
+together as `radius / extent`. Raising `extent` therefore tightens clustering
+and lowering it loosens clustering, at the same `radius`.
+
+Given the same options and zoom, this package produces the same clusters as
+supercluster, apart from two edge cases (points exactly on the radius boundary,
+and tie-breaking with `minPoints` above 2) described under
+[supercluster parity](../compatibility.md#supercluster-parity).
+
+#### Viewport tile size
+
+`viewportTileSize` is separate from `extent`. It only affects
+`getClustersFromRegion` — how a map region plus a pixel size is turned into a
+zoom level — and shifts the result by a whole zoom level:
+
+| Value | Parity with |
+|-------|-------------|
+| `256` | react-native-map-clustering (`geo-viewport`'s default). Correct for map dimensions in logical points, which is what `onLayout` reports. |
+| `512` (`= extent`, the default) | react-native-clusterer, which passes its `extent` to `geo-viewport`. One zoom level lower. |
+
+The `MapView` compat layer sets `256` so a drop-in swap renders the same
+clusters. `useClusterer` and `Supercluster` default to `extent`, keeping
+react-native-clusterer parity; pass `viewportTileSize: 256` to opt in.
 
 ## Headless engine (`ClusterEngine`)
 
@@ -66,12 +111,17 @@ from `/engine`. See the [headless engine guide](./engine.md) for lifecycle,
 ```tsx
 import {
   createClusterEngine,
+  type ClusterBounds,
   type ClusterEngine,
   type ClusterEngineOptions,
   type EngineClusterNode,
   type Viewport,
 } from 'react-native-better-clustering/engine'
 ```
+
+Each `EngineClusterNode` has `minLeafId`: the smallest point id among its leaves
+(its own `id` for a point). A cluster keeps it across zoom levels while it only
+gains or loses other leaves, so it can key the cluster's marker.
 
 **Lifecycle:** `setOptions` → `setPoints` (`packPoints()` buffer) → `build()` → query.
 Query methods throw when `isBuilt` is `false`; `setPoints` throws on invalid buffers.

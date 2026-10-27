@@ -2,7 +2,7 @@
 
 <div align="center">
 
-A faster **[react-native-map-clustering](https://github.com/tomekvenits/react-native-map-clustering)** — same API, same `react-native-maps` workflow, but clustering runs in **C++ via Nitro** instead of JavaScript on the RN bridge.
+A drop-in replacement for **[react-native-map-clustering](https://github.com/tomekvenits/react-native-map-clustering)** — same API, same `react-native-maps` workflow, but clustering runs in **C++ via Nitro** instead of supercluster in JavaScript.
 
 [![npm version](https://img.shields.io/npm/v/react-native-better-clustering.svg)](https://www.npmjs.com/package/react-native-better-clustering)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE)
@@ -10,7 +10,7 @@ A faster **[react-native-map-clustering](https://github.com/tomekvenits/react-na
 [![Expo Compatible](https://img.shields.io/badge/Expo-Compatible-000020.svg)](https://expo.dev/)
 [![CI](https://github.com/gmi-software/react-native-better-clustering/actions/workflows/ci.yml/badge.svg)](https://github.com/gmi-software/react-native-better-clustering/actions/workflows/ci.yml)
 
-Built with [Nitro Modules](https://nitro.margelo.com/) for high-performance native clustering.
+Built with [Nitro Modules](https://nitro.margelo.com/) for native clustering.
 
 [Migration](#migration) • [Installation](#installation) • [Usage](#usage) • [Documentation](https://gmi-software.github.io/react-native-better-clustering/docs/intro) • [Example app](./example)
 
@@ -32,17 +32,19 @@ Built with [Nitro Modules](https://nitro.margelo.com/) for high-performance nati
   import { Marker } from 'react-native-maps'
 ```
 
-That is it. Your `<Marker>` children, cluster props, and `react-native-maps` options keep working — clustering just moves off the JS thread.
+That is it. Your `<Marker>` children, cluster props, and `react-native-maps` options keep working — the cluster index is now built in C++ on a background thread instead of in JavaScript on the JS thread.
 
 ## Why switch?
 
 
-|        | react-native-map-clustering     | This package                        |
-| ------ | ------------------------------- | ----------------------------------- |
-| API    | `MapView` + `<Marker>` children | **Same**                            |
-| Map    | `react-native-maps`             | `react-native-maps`                 |
-| Engine | JS supercluster                 | **C++ supercluster via Nitro**      |
-| Scale  | Good                            | **10k+ points without bridge jank** |
+|                | react-native-map-clustering         | This package                               |
+| -------------- | ----------------------------------- | ------------------------------------------ |
+| API            | `MapView` + `<Marker>` children     | **Same**                                   |
+| Map            | `react-native-maps`                 | `react-native-maps`                        |
+| Engine         | JS supercluster                     | **C++ supercluster via Nitro**             |
+| Index build    | JavaScript, on the JS thread        | **C++, on a background thread**            |
+| Viewport query | JavaScript, on the JS thread        | C++, a synchronous call from the JS thread |
+| Markers        | One `<Marker>` per cluster or point | Same, see [Roadmap](#roadmap)              |
 
 
 ## Supported platforms
@@ -56,26 +58,26 @@ That is it. Your `<Marker>` children, cluster props, and `react-native-maps` opt
 
 ## Installation
 
+| Peer dependency              | Version    | Notes                                       |
+| ---------------------------- | ---------- | ------------------------------------------- |
+| `react-native-maps`          | `>=1.20.1` | Required                                    |
+| `react-native-nitro-modules` | `>=0.32.0` | Required; install it next to the library    |
+| `react-native-reanimated`    | `^4.1.0`   | Optional; fades and glides the cluster bubbles on zoom |
+
 ### Bare React Native
 
 ```bash
-npm install react-native-better-clustering react-native-nitro-modules react-native-maps react-native-reanimated react-native-worklets
+npm install react-native-better-clustering react-native-nitro-modules react-native-maps
 cd ios && pod install && cd ..
 ```
 
-Rebuild the native app after installing. Add the Worklets Babel plugin (last in the list) to `babel.config.js`:
-
-```js
-plugins: ['react-native-worklets/plugin']
-```
+Rebuild the native app after installing.
 
 ### Expo
 
 ```bash
-npx expo install react-native-better-clustering react-native-nitro-modules react-native-maps react-native-reanimated react-native-worklets
+npx expo install react-native-better-clustering react-native-nitro-modules react-native-maps
 ```
-
-`babel-preset-expo` wires up the Worklets plugin automatically.
 
 Add the `react-native-maps` plugin to `app.json`:
 
@@ -93,6 +95,21 @@ Add the `react-native-maps` plugin to `app.json`:
 npx expo prebuild --clean
 npx expo run:ios   # or: npx expo run:android
 ```
+
+### Optional: animated cluster bubbles
+
+With [Reanimated](https://docs.swmansion.com/react-native-reanimated/) installed,
+the default cluster bubbles cross-fade on zoom, and glide: a splitting
+cluster's parts slide out of it and merging clusters slide into one. Follow Reanimated's own
+[installation guide](https://docs.swmansion.com/react-native-reanimated/docs/fundamentals/getting-started/)
+(it also needs `react-native-worklets`), or with Expo:
+
+```bash
+npx expo install react-native-reanimated react-native-worklets
+```
+
+Without it, bubbles appear and disappear without a fade or glide, and development builds
+log a one-time notice unless you pass `clusterFadeInDuration={0}`.
 
 ## Usage
 
@@ -176,17 +193,21 @@ Everything from `react-native-maps` `MapView`, plus:
 | `minZoom`                      | `1`                   | Minimum zoom level                |
 | `maxZoom`                      | `20`                  | Maximum zoom level for clustering |
 | `clusteringEnabled`            | `true`                | Toggle clustering                 |
-| `spiralEnabled`                | `true`                | Spider layout at max zoom         |
+| `spiralEnabled`                | `true`                | Spread markers that share a location into a spiral |
+| `spiderfyMinZoom`              | `19`                  | Camera zoom from which they spread without a press |
+| `spiderfyMaxLeaves`            | `50`                  | Most markers a cluster spiderfies into; larger ones stay a bubble |
 | `spiderLineColor`              | `#FF0000`             | Color of spider connector lines   |
 | `clusterColor`                 | `#0F52FF`             | Default cluster bubble color (GMI brand blue) |
 | `clusterTextColor`             | `#FFFFFF`             | Default cluster label color       |
-| `animationEnabled`             | `true`                | Animate cluster changes (iOS)     |
+| `animationEnabled`             | `true`                | Fade and glide cluster bubbles on zoom |
 | `onClusterPress`               | —                     | `(cluster, markers) => void`      |
+| `onError`                      | throws during render  | `(error) => void` — native index build failed or an option is invalid |
 | `renderCluster`                | —                     | Custom cluster renderer           |
 | `preserveClusterPressBehavior` | `false`               | Skip auto `fitToCoordinates`      |
 | `superClusterRef`              | —                     | Access the underlying engine      |
 | `width` / `height`             | window size           | Seed map dimensions before layout |
 | `clusterUpdateIntervalMs`      | `100`                 | Min interval (ms) between cluster updates while moving; `0` = only on settle |
+| `clusterRenderMargin`          | `100`                 | How far outside the map (pt) cluster bubbles still render; `Infinity` = every cluster found |
 
 
 Per-marker opt-out: `<Marker cluster={false} ... />`.
@@ -208,7 +229,7 @@ Per-marker opt-out: `<Marker cluster={false} ... />`.
 
 ## Roadmap
 
-Today this library solves **clustering compute** — the C++ engine indexes 10k+ points and returns viewport clusters off the JS thread. Visible markers are still rendered through `react-native-maps` `<Marker>` components, which becomes the UI-thread bottleneck when hundreds of annotations are on screen at once.
+Today this library moves **clustering compute** to C++: `MapView` builds the index on a background thread, and each viewport query is a synchronous native call from the JS thread. Visible markers are still rendered through `react-native-maps` `<Marker>` components, which becomes the UI-thread bottleneck when hundreds of annotations are on screen at once.
 
 The long-term goal is to remove that ceiling entirely.
 
@@ -226,13 +247,24 @@ A **native clustered map view** that draws annotations in a single native pass i
 | Image `<Marker>` + pooling (Tier 1) | ~200–400 |
 | Native clustered map view (Tier 2) | **1000+** |
 
-Tier 2 is the reason this library exists beyond a faster supercluster port: **render as many markers as you need without FPS collapse.** The compat API stays unchanged; rendering moves under the hood.
+Tier 2 is the reason this library exists beyond a native supercluster port: **render as many markers as you need without FPS collapse.** The compat API stays unchanged; rendering moves under the hood.
 
 Track progress in [GitHub Issues](https://github.com/gmi-software/react-native-better-clustering/issues).
 
 ## Example app
 
-A minimal full-screen map with ~2,000 randomly scattered markers across Poland — default green cluster bubbles and standard map pins, modeled on the [react-native-map-clustering demo](https://github.com/tomekvenits/react-native-map-clustering).
+A menu of scenarios that exercise real-world usage. A dev HUD on each one shows JS FPS, mounted markers, marker mounts and engine builds, and the datasets are seeded, so every run sees the same markers.
+
+| Scenario | What it exercises |
+| --- | --- |
+| Basic | 2,000 static markers across Poland |
+| Parent state | A selection and a visible list from `onMarkersChange={setState}` with inline children, plus a 2 Hz parent re-render |
+| Live data | Appending and removing markers, on demand or one per second |
+| Co-located markers | Spiderfy from zoom 19 or on press; 1,000 markers at one spot stay a bubble |
+| Antimeridian | Markers on both sides of ±180° |
+| 10k / 50k markers | Large datasets, with the time to first markers |
+| Custom `renderCluster` | Clusters drawn by the app |
+| `clusteringEnabled` toggle | Clustering turned off and on with the map mounted |
 
 ```bash
 cd example
@@ -265,14 +297,15 @@ See the [docs](https://gmi-software.github.io/react-native-better-clustering/doc
 | Map is blank on Android  | Add a Google Maps API key. See [platform setup](https://gmi-software.github.io/react-native-better-clustering/docs/setup/installation). |
 | New Architecture errors  | Confirm New Architecture is enabled and rebuild.                                                                                        |
 | Does not work in Expo Go | Use a [development build](https://docs.expo.dev/develop/development-builds/introduction/).                                              |
-| Markers flicker on zoom  | Memoize marker components; give each point a stable `id`.                                                                               |
+| `native ClusterEngine module is not available` | Rebuild the native app after installing (`pod install` / `npx expo prebuild --clean`). See [troubleshooting](https://gmi-software.github.io/react-native-better-clustering/docs/troubleshooting#the-native-clusterengine-module-is-not-available). |
+| Markers flicker on zoom  | Give each `Marker` a stable `key` (not the array index); memoize marker components.                                                     |
 
 
 More in [troubleshooting](https://gmi-software.github.io/react-native-better-clustering/docs/troubleshooting).
 
 ## Contributing
 
-See [CONTRIBUTING.md](./CONTRIBUTING.md).
+See [CONTRIBUTING.md](./CONTRIBUTING.md). Releases are published from CI — see [RELEASING.md](./RELEASING.md). Report vulnerabilities privately — see [SECURITY.md](./SECURITY.md).
 
 ```bash
 bun install

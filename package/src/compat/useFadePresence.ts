@@ -32,6 +32,10 @@ export interface PresenceEntry<T> {
  * when `exitDurationMs <= 0`).
  *
  * Re-adding a key before its timer fires cancels the exit and revives the entry.
+ * When {@linkcode exitDurationMs} grows, pending exits restart with the new
+ * duration, so an exit animation that starts late (a bubble held while the map
+ * moved begins its fade when it settles) can finish; a shorter duration leaves
+ * them as they are.
  */
 export function useFadePresence<T>(
   items: ReadonlyArray<PresenceItem<T>>,
@@ -39,9 +43,9 @@ export function useFadePresence<T>(
 ): Array<PresenceEntry<T>> {
   const [, forceRender] = useReducer((count: number) => count + 1, 0)
   const entriesRef = useRef<Map<string, PresenceItem<T>>>(new Map())
-  const timersRef = useRef<Map<string, ReturnType<typeof setTimeout>>>(
-    new Map()
-  )
+  const timersRef = useRef<
+    Map<string, { timer: ReturnType<typeof setTimeout>; durationMs: number }>
+  >(new Map())
 
   const output: Array<PresenceEntry<T>> = []
   const currentKeys = new Set<string>()
@@ -70,9 +74,9 @@ export function useFadePresence<T>(
     for (const item of items) {
       keysInItems.add(item.key)
       entries.set(item.key, { key: item.key, data: item.data })
-      const pendingTimer = timers.get(item.key)
-      if (pendingTimer != null) {
-        clearTimeout(pendingTimer)
+      const pending = timers.get(item.key)
+      if (pending != null) {
+        clearTimeout(pending.timer)
         timers.delete(item.key)
       }
     }
@@ -81,30 +85,34 @@ export function useFadePresence<T>(
       if (keysInItems.has(key)) {
         continue
       }
+      const pending = timers.get(key)
       if (exitDurationMs <= 0) {
-        const pendingTimer = timers.get(key)
-        if (pendingTimer != null) {
-          clearTimeout(pendingTimer)
+        if (pending != null) {
+          clearTimeout(pending.timer)
           timers.delete(key)
         }
         entries.delete(key)
         continue
       }
-      if (!timers.has(key)) {
-        const timer = setTimeout(() => {
-          timers.delete(key)
-          entriesRef.current.delete(key)
-          forceRender()
-        }, exitDurationMs)
-        timers.set(key, timer)
+      if (pending != null) {
+        if (pending.durationMs >= exitDurationMs) {
+          continue
+        }
+        clearTimeout(pending.timer)
       }
+      const timer = setTimeout(() => {
+        timers.delete(key)
+        entriesRef.current.delete(key)
+        forceRender()
+      }, exitDurationMs)
+      timers.set(key, { timer, durationMs: exitDurationMs })
     }
   }, [items, exitDurationMs])
 
   useEffect(() => {
     const timers = timersRef.current
     return () => {
-      for (const timer of timers.values()) {
+      for (const { timer } of timers.values()) {
         clearTimeout(timer)
       }
       timers.clear()

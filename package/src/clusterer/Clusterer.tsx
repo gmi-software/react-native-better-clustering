@@ -22,6 +22,13 @@ export interface ClustererProps<P extends AnyProps = AnyProps> {
   options?: SuperclusterOptions
   /** Render function invoked for each visible point or cluster. */
   renderItem: (feature: PointFeature<P> | ClusterFeature<P>) => ReactElement
+  /**
+   * Called when the native index fails to build. Without it, the error is
+   * thrown during render, so the nearest error boundary catches it.
+   *
+   * @see `UseClustererOptions.onError`
+   */
+  onError?: (error: Error) => void
 }
 
 /**
@@ -35,8 +42,12 @@ export function Clusterer<P extends AnyProps = AnyProps>({
   mapDimensions,
   options,
   renderItem,
+  onError,
 }: ClustererProps<P>): ReactElement {
-  const [clusters] = useClusterer(data, mapDimensions, region, options)
+  const [clusters] = useClusterer(data, mapDimensions, region, {
+    ...options,
+    onError,
+  })
 
   const rendered = useMemo(
     () => clusters.map(renderItem),

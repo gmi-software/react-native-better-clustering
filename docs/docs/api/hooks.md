@@ -36,17 +36,52 @@ const [clusters, supercluster] = useClusterer(
 | `data` | `PointFeature[]` | GeoJSON points (memoize with `useMemo`) |
 | `mapDimensions` | `{ width, height }` | Map view size in pixels |
 | `region` | `MapRegion` | Current map region |
-| `options` | `SuperclusterOptions` | `radius`, `minZoom`, `maxZoom`, `minPoints`, `extent`, `nodeSize`, `clusterProperties` |
+| `options` | `UseClustererOptions` | `radius`, `minZoom`, `maxZoom`, `minPoints`, `extent`, `nodeSize`, `clusterProperties`, `viewportTileSize`, `onError` |
 
 Cluster features include `properties.getExpansionRegion()` for zoom-on-tap.
 
-The hook destroys the underlying `Supercluster` engine on unmount. Index
+Zoomed in past `maxZoom`, the hook returns every point on its own, as
+react-native-clusterer does (see [Above `maxZoom`](./engine.md#above-maxzoom)):
+markers at the same coordinate then sit on top of each other. The bundled
+`MapView` keeps them clustered and spreads them out instead.
+
+The hook destroys the underlying `Supercluster` engine on unmount, which frees
+its native index right away instead of at the next garbage collection. Index
 building runs asynchronously via `loadAsync()` so large datasets (10k+ points)
-do not block the JS thread. Clusters stay empty until loading finishes; check
-`supercluster.isLoaded` before calling query methods directly.
+do not block the JS thread. Clusters stay empty until the first build has
+loaded; check `supercluster.isLoaded` before calling query methods directly.
+
+The index is rebuilt only when the points' coordinates, their order, or a
+`clusterProperties` source value changes:
+
+- A new `data` array with the same content keeps the index and the returned
+  `features` array. Leaf queries (`getLeaves`, `getChildren`) return the newest
+  feature objects, so changed properties show up there without a rebuild.
+  Point features already in `features` keep their identity until the region
+  changes.
+- When the content does change, the hook keeps returning the previous clusters
+  while the new index builds, then swaps to the new engine and destroys the old
+  one. A `supercluster` reference you hold goes stale after that swap; use the
+  one the hook returns.
+
+If a build fails — most often because the native module is missing from the
+app binary, or because an option is outside its
+[valid values](./types.md#valid-values) — the hook throws the error during render, so the nearest error
+boundary (and LogBox in development) shows it. Pass `onError` to handle it
+yourself instead: the hook then keeps returning the clusters from the last
+successful build (`[]` before the first). Builds superseded by newer data or
+interrupted by unmount are never reported.
+
+```tsx
+const [clusters] = useClusterer(geoJsonPoints, dimensions, region, {
+  radius: 40,
+  onError: (error) => reportToCrashlytics(error),
+})
+```
 
 > **Memoize `data`:** build GeoJSON features with `coordsToGeoJSONFeature` inside
-> `useMemo`. Inline arrays rebuild the full C++ index on every render.
+> `useMemo`. Inline arrays no longer rebuild the C++ index, but each render
+> still compares every point against the previous array.
 
 ## `stabilizeClusterFeatures`
 

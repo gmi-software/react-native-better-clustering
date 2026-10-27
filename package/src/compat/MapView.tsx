@@ -11,8 +11,6 @@ import React, {
 } from 'react'
 import {
   Dimensions,
-  LayoutAnimation,
-  Platform,
   StyleSheet,
   View,
   type LayoutAnimationConfig,
@@ -31,16 +29,29 @@ import type {
   PointFeature,
 } from '../geojson/types'
 import { isClusterFeature } from '../geojson'
-import { Supercluster, type SuperclusterOptions } from '../engine/Supercluster'
-import { DEFAULT_MAX_ZOOM, DEFAULT_MIN_ZOOM } from '../engine/defaults'
-import { clusterZoomFromRegion } from '../engine/geometry'
-import { useClusterer } from '../hooks/useClusterer'
-import ClusterMarker from './ClusterMarker'
+import { Supercluster } from '../engine/Supercluster'
 import {
-  computeClusterLayoutSignature,
+  DEFAULT_MAX_ZOOM,
+  DEFAULT_MIN_ZOOM,
+  GEO_VIEWPORT_TILE_SIZE,
+} from '../engine/defaults'
+import { cameraZoomFromRegion, clusterZoomFromRegion } from '../engine/geometry'
+import {
+  useClusterIndex,
+  type ClusterIndexOptions,
+} from '../hooks/useClusterIndex'
+import ClusterMarker from './ClusterMarker'
+import { nearestWithin, screenScaleOf, type LatLng } from './glide'
+import {
+  bboxToFitCoordinates,
+  elementKey,
   isMarker,
+  markerElementOf,
   markerToGeoJSONFeature,
+  sortByKey,
 } from './helpers'
+import { reanimated, warnFadeUnavailable } from './reanimated'
+import { featuresNearView } from './nearView'
 import { renderSpiderClusterMarkers } from './renderSpiderClusterMarkers'
 import { useFadePresence } from './useFadePresence'
 import {
@@ -60,32 +71,41 @@ const { width: WINDOW_WIDTH, height: WINDOW_HEIGHT } = Dimensions.get('window')
  */
 const noop = () => {}
 
+/**
+ * Marker features share an index only while each keeps its child index, so a
+ * feature's `properties.index` keeps pointing at its own element in the latest
+ * children without a rebuild (a child inserted before the markers shifts them).
+ */
+function isSameMarkerFeature(previous: PointFeature, next: PointFeature) {
+  return previous.properties.index === next.properties.index
+}
+
+/**
+ * Longest a bubble removed while the map moves stays on screen, opaque; never
+ * longer than the fade. Covers the few frames MapKit takes to show the
+ * annotations that replace it, and matches the default recompute interval, so
+ * at that interval at most one extra bubble generation is mounted. A shorter
+ * `clusterUpdateIntervalMs` can keep more.
+ */
+const MOVING_EXIT_HOLD_MS = 100
+
+/**
+ * How far, in cluster radii, a bubble may glide from the bubble it split from
+ * or into the bubble it merged into. A zoom step spreads a cluster's parts
+ * over about two radii; past this it fades in place.
+ */
+const GLIDE_REACH_RADII = 4
+
+function latLngOf(feature: ClusterFeature): LatLng {
+  const [longitude, latitude] = feature.geometry.coordinates
+  return { latitude, longitude }
+}
+
 const DEFAULT_EDGE_PADDING: EdgePadding = {
   top: 50,
   left: 50,
   right: 50,
   bottom: 50,
-}
-
-/**
- * Shorter than `LayoutAnimation.Presets.spring` (700ms overshoot) and tuned for
- * cluster bubble create/update/delete instead of a generic full-tree relayout.
- * Override via `layoutAnimationConf`.
- */
-const DEFAULT_LAYOUT_ANIMATION: LayoutAnimationConfig = {
-  duration: 200,
-  create: {
-    type: LayoutAnimation.Types.easeInEaseOut,
-    property: LayoutAnimation.Properties.opacity,
-  },
-  update: {
-    type: LayoutAnimation.Types.easeInEaseOut,
-    property: LayoutAnimation.Properties.scaleXY,
-  },
-  delete: {
-    type: LayoutAnimation.Types.easeInEaseOut,
-    property: LayoutAnimation.Properties.opacity,
-  },
 }
 
 /**
@@ -144,6 +164,15 @@ export interface ClusteredMapViewProps extends Omit<
   ) => void
   /** Called whenever visible markers/clusters change. */
   onMarkersChange?: (markers: Array<PointFeature | ClusterFeature>) => void
+  /**
+   * Called when the native cluster index fails to build, for example because
+   * the app was not rebuilt after installing the library. Markers from an
+   * earlier successful build keep showing.
+   *
+   * Without it, the error is thrown during render, so the nearest error
+   * boundary (and LogBox in development) shows it.
+   */
+  onError?: (error: Error) => void
   /** When `true`, cluster press does not auto-zoom (caller handles expansion). */
   preserveClusterPressBehavior?: boolean
   /** Toggle clustering without unmounting the map. @default `true` */
@@ -156,8 +185,31 @@ export interface ClusteredMapViewProps extends Omit<
   superClusterRef?: MutableRefObject<Supercluster | null>
   /** Callback ref for the underlying `react-native-maps` map instance. */
   mapRef?: (map: MapView | null) => void
-  /** When `true`, overlapping markers spiderfy on cluster press. */
+  /**
+   * When `true`, a cluster whose markers zooming can't separate (they share a
+   * location) spreads them into a spiral: from
+   * {@linkcode ClusteredMapViewProps.spiderfyMinZoom spiderfyMinZoom}, or at
+   * any zoom when pressed.
+   *
+   * @default `true`
+   */
   spiralEnabled?: boolean
+  /**
+   * Camera zoom from which clusters that can't split spiderfy without being
+   * pressed. Matches react-native-map-clustering.
+   *
+   * @default `19`
+   */
+  spiderfyMinZoom?: number
+  /**
+   * Most markers a cluster spiderfies into. A larger cluster of overlapping
+   * markers stays a cluster bubble; pressing it still calls
+   * {@linkcode ClusteredMapViewProps.onClusterPress onClusterPress} with every
+   * marker, so the app can list them instead.
+   *
+   * @default `50`
+   */
+  spiderfyMaxLeaves?: number
   /** Line color for spiderfied connector lines. */
   spiderLineColor?: string
   /** Custom renderer for cluster markers. */
@@ -168,9 +220,20 @@ export interface ClusteredMapViewProps extends Omit<
   selectedClusterId?: string | number
   /** Background color for the selected cluster. */
   selectedClusterColor?: string
-  /** Animate cluster implode/explode on zoom (iOS only). @default `true` */
+  /**
+   * Animates the default cluster bubbles on zoom: they fade in and out, and
+   * on a zoom step a cluster's parts glide out of it and merging clusters
+   * glide into one. See {@linkcode clusterFadeInDuration}. @default `true`
+   */
   animationEnabled?: boolean
-  /** LayoutAnimation preset/config used when `animationEnabled` (iOS only). */
+  /**
+   * Accepted for react-native-map-clustering compatibility and ignored.
+   *
+   * @deprecated `LayoutAnimation` cannot animate map markers on the New
+   * Architecture, which this library requires: markers are native map
+   * annotations outside React Native's layout. Use
+   * {@linkcode clusterFadeInDuration} to tune the bubble fade.
+   */
   layoutAnimationConf?: LayoutAnimationConfig
   /**
    * Fade-in duration (ms) for cluster bubbles when they (re)mount on zoom, which
@@ -178,6 +241,21 @@ export interface ClusteredMapViewProps extends Omit<
    * on both iOS and Android to the default cluster markers; ignored when
    * {@linkcode animationEnabled} is `false` or a custom {@linkcode renderCluster}
    * is provided. Set to `0` to disable.
+   *
+   * Bubbles cross-fade when the map settles. While it moves, new bubbles
+   * appear at once and removed ones stay for up to 100 ms (never longer than
+   * this duration) before they go, so a continuous zoom leaves no gaps; at
+   * the default {@linkcode clusterUpdateIntervalMs} at most one extra
+   * generation of bubbles stays mounted.
+   *
+   * It also times the glide: when a zoom step splits a cluster, the new
+   * bubbles start at its place and glide to theirs, a bubble whose cluster
+   * moves slides there, and merging bubbles glide into the one that takes
+   * them in (while the map moves, within the 100 ms they stay). Pans and data
+   * changes only fade.
+   *
+   * Needs `react-native-reanimated`, an optional peer dependency: without it
+   * the bubbles do not fade or glide, and development builds warn once.
    *
    * @default `250`
    */
@@ -195,6 +273,20 @@ export interface ClusteredMapViewProps extends Omit<
    * @default `100`
    */
   clusterUpdateIntervalMs?: number
+  /**
+   * How far outside the map, in points, cluster bubbles still render. The
+   * clusters are found, and reported to {@linkcode onMarkersChange}, for the
+   * region plus half its size on each side, as react-native-map-clustering
+   * does; only rendering stops at this margin. Markers are not affected.
+   *
+   * A smaller margin mounts fewer native annotations on each zoom step, which
+   * keeps the UI thread free for the bubbles' fade and glide; a larger one
+   * leaves fewer bubbles to appear at the edges during a fast pan. Pass
+   * `Infinity` to render every cluster found.
+   *
+   * @default `100`
+   */
+  clusterRenderMargin?: number
 }
 
 /** Data retained per default cluster bubble so it can be cross-faded out. */
@@ -246,6 +338,7 @@ const CompatMapView = forwardRef(function CompatMapView(
     onClusterPress = noop,
     onRegionChangeComplete = noop,
     onMarkersChange = noop,
+    onError,
     preserveClusterPressBehavior = false,
     clusteringEnabled = true,
     clusterColor = '#0F52FF',
@@ -254,13 +347,17 @@ const CompatMapView = forwardRef(function CompatMapView(
     selectedClusterId,
     selectedClusterColor = '#FF5722',
     animationEnabled = true,
-    layoutAnimationConf = DEFAULT_LAYOUT_ANIMATION,
+    // Kept out of `restProps`, so it is not passed on to the native map.
+    layoutAnimationConf: _layoutAnimationConf,
     clusterFadeInDuration = 250,
     tracksViewChanges = false,
     width,
     height,
     clusterUpdateIntervalMs = 100,
+    clusterRenderMargin = 100,
     spiralEnabled = true,
+    spiderfyMinZoom = 19,
+    spiderfyMaxLeaves = 50,
     spiderLineColor = '#FF0000',
     renderCluster,
     superClusterRef,
@@ -280,12 +377,14 @@ const CompatMapView = forwardRef(function CompatMapView(
     details: Details
   } | null>(null)
   // `true` between the first `onRegionChange` and `onRegionChangeComplete` of a
-  // gesture. While moving we suppress cross-fade exit ghosts (see
-  // `effectiveFadeOut`) so a continuous zoom does not stack multiple bubble
+  // gesture. While moving, removed bubbles only linger briefly (see
+  // `bubbleExitMs`) so a continuous zoom does not stack multiple bubble
   // generations and saturate the JS thread.
   const [isMapMoving, setIsMapMoving] = useState(false)
+  // Mirrors `isMapMoving` so the per-frame `onRegionChange` sets it only once
+  // per gesture: React bails out of an equal update only after rendering again.
+  const isMapMovingRef = useRef(false)
   const regionThrottleStateRef = useRef(createThrottleRegionSyncState())
-  const clusterLayoutSignatureRef = useRef('')
   const [mapDimensions, setMapDimensions] = useState(() => ({
     width: width ?? WINDOW_WIDTH,
     height: height ?? WINDOW_HEIGHT,
@@ -356,7 +455,7 @@ const CompatMapView = forwardRef(function CompatMapView(
     onMapReady?.()
   }, [onMapReady])
 
-  const clustererOptions = useMemo<SuperclusterOptions>(
+  const clustererOptions = useMemo<ClusterIndexOptions>(
     () => ({
       radius,
       maxZoom,
@@ -364,47 +463,121 @@ const CompatMapView = forwardRef(function CompatMapView(
       minPoints,
       extent,
       nodeSize,
+      // react-native-map-clustering calls `GeoViewport.viewport` without a tile
+      // size, so it gets geo-viewport's 256 default. Matching it keeps the
+      // drop-in swap rendering the same clusters at the same region.
+      viewportTileSize: GEO_VIEWPORT_TILE_SIZE,
+      // Past maxZoom, markers that share a location would turn into a stack
+      // of markers; spiderfy spreads their cluster out instead.
+      stopAtMaxZoom: true,
+      onError,
     }),
-    [radius, maxZoom, minZoom, minPoints, extent, nodeSize]
+    [radius, maxZoom, minZoom, minPoints, extent, nodeSize, onError]
   )
 
-  const [clusters, supercluster] = useClusterer(
+  const { clusters, supercluster, isCurrent } = useClusterIndex(
     markerFeatures,
     mapDimensions,
     currentRegion,
-    clustererOptions
+    clustererOptions,
+    isSameMarkerFeature
   )
 
-  const clusterLayoutSignature = useMemo(
-    () => computeClusterLayoutSignature(clusters),
-    [clusters]
-  )
-  clusterLayoutSignatureRef.current = clusterLayoutSignature
+  // Callbacks are read through refs, so a new callback identity alone never
+  // fires them: `onMarkersChange={setState}` with inline children would loop.
+  const onMarkersChangeRef = useRef(onMarkersChange)
+  const onRegionChangeCompleteRef = useRef(onRegionChangeComplete)
+  useEffect(() => {
+    onMarkersChangeRef.current = onMarkersChange
+    onRegionChangeCompleteRef.current = onRegionChangeComplete
+  })
 
   // `clusters` is the single source of truth for what is visible in the current
   // region. Reuse it for `onMarkersChange` instead of querying the engine again
   // (the previous `visibleFeatures` recomputed the exact same set, doubling the
   // synchronous JSI round-trips on every region change). It is stabilized, so
-  // this fires only when the visible set actually changes.
+  // this fires only when the visible set actually changes, and not before the
+  // first index has loaded.
   useEffect(() => {
-    onMarkersChange(clusters)
-  }, [clusters, onMarkersChange])
+    if (supercluster.isLoaded) {
+      onMarkersChangeRef.current(clusters)
+    }
+  }, [clusters, supercluster])
 
+  // The zoom `clusters` are queried at, so it must use the same tile size as
+  // `clustererOptions`. A pressed spider collapses when it changes, which is
+  // exactly when the cluster it belongs to can be replaced.
   const currentZoom = useMemo(
-    () => clusterZoomFromRegion(currentRegion, mapDimensions, minZoom, maxZoom),
+    () =>
+      clusterZoomFromRegion(
+        currentRegion,
+        mapDimensions,
+        minZoom,
+        maxZoom,
+        GEO_VIEWPORT_TILE_SIZE
+      ),
     [currentRegion, mapDimensions, minZoom, maxZoom]
   )
 
-  const isAtMaxZoom = currentZoom >= maxZoom
+  const spiderfyByZoom =
+    spiralEnabled &&
+    cameraZoomFromRegion(currentRegion, mapDimensions) >= spiderfyMinZoom
 
-  const clusterFadeIn = animationEnabled ? clusterFadeInDuration : 0
+  // Read through a ref by the press handler, so the handler keeps one identity
+  // across zooms and the `ClusterMarker` memo holds.
+  const currentZoomRef = useRef(currentZoom)
+  useEffect(() => {
+    currentZoomRef.current = currentZoom
+  })
 
-  // Cross-fade exit ghosts are only kept around once the gesture settles. While
-  // the map is actively moving we drop removed bubbles immediately (duration 0):
-  // at a ~100ms recompute cadence, a 250ms exit would keep 2-3 bubble
+  // A cluster spiderfied by a press, until the zoom changes.
+  const [pressedSpider, setPressedSpider] = useState<{
+    supercluster: Supercluster
+    clusterId: number
+    zoom: number
+  } | null>(null)
+  const pressedSpiderId =
+    pressedSpider != null &&
+    pressedSpider.supercluster === supercluster &&
+    pressedSpider.zoom === currentZoom
+      ? pressedSpider.clusterId
+      : null
+
+  // Spiderfying is the only way to tell these markers apart: zooming never
+  // splits the cluster within the index's zoom range.
+  const canSpiderfy = useCallback(
+    (cluster: ClusterFeature) => {
+      const { cluster_id: clusterId, point_count: pointCount } =
+        cluster.properties
+      // A `NaN` cap fails `<=`, so it disables spiderfy rather than the cap.
+      return (
+        spiralEnabled &&
+        pointCount <= spiderfyMaxLeaves &&
+        supercluster.getClusterExpansionZoom(clusterId) > maxZoom
+      )
+    },
+    [spiralEnabled, spiderfyMaxLeaves, supercluster, maxZoom]
+  )
+
+  // Without Reanimated the bubbles cannot fade, so drop both durations: an exit
+  // ghost that cannot fade out would sit on top of its replacements instead.
+  const fadeRequested =
+    animationEnabled && clusterFadeInDuration > 0 && renderCluster == null
+  const clusterFadeIn = fadeRequested && reanimated ? clusterFadeInDuration : 0
+
+  useEffect(() => {
+    if (fadeRequested && !reanimated) {
+      warnFadeUnavailable()
+    }
+  }, [fadeRequested])
+
+  // Removed bubbles cross-fade out once the gesture settles. While the map is
+  // moving, a 250ms exit at a ~100ms recompute cadence would keep 2-3 bubble
   // generations mounted at once, which is what dragged the JS thread to ~30fps
-  // on continuous zoom-out.
-  const effectiveFadeOut = isMapMoving ? 0 : clusterFadeIn
+  // on continuous zoom-out, so they only stay for `MOVING_EXIT_HOLD_MS`.
+  const bubbleExitMs = isMapMoving
+    ? Math.min(clusterFadeIn, MOVING_EXIT_HOLD_MS)
+    : clusterFadeIn
 
   useEffect(() => {
     if (superClusterRef) {
@@ -428,19 +601,33 @@ const CompatMapView = forwardRef(function CompatMapView(
   const handleClusterPress = useCallback(
     (cluster: ClusterFeature) => {
       const clusterId = cluster.properties.cluster_id
-      const leaves = supercluster.getAllLeaves(clusterId)
+      // Reading every leaf is what makes a press on a large cluster slow, so
+      // only an `onClusterPress` the app passed pays for it.
+      const reportPress = () => {
+        if (onClusterPress !== noop) {
+          onClusterPress(cluster, supercluster.getAllLeaves(clusterId))
+        }
+      }
 
       if (preserveClusterPressBehavior) {
-        onClusterPress(cluster, leaves)
+        reportPress()
         return
       }
 
-      const coordinates = leaves.map((leaf) => {
-        const [longitude, latitude] = leaf.geometry.coordinates
-        return { latitude, longitude }
-      })
+      // Fitting to markers that share a location changes nothing, so spread
+      // them out in place.
+      if (canSpiderfy(cluster)) {
+        setPressedSpider({
+          supercluster,
+          clusterId,
+          zoom: currentZoomRef.current,
+        })
+        reportPress()
+        return
+      }
 
-      if (coordinates.length > 0) {
+      const bounds = supercluster.getClusterBounds(clusterId)
+      if (bounds != null) {
         const map = mapRef.current
         const canFitToCoordinates =
           isMapReady &&
@@ -449,17 +636,18 @@ const CompatMapView = forwardRef(function CompatMapView(
           mapDimensions.height > 0
 
         if (canFitToCoordinates) {
-          map?.fitToCoordinates(coordinates, { edgePadding })
+          map?.fitToCoordinates(bboxToFitCoordinates(bounds), { edgePadding })
         } else {
           map?.animateToRegion(cluster.properties.getExpansionRegion(), 300)
         }
       }
 
-      onClusterPress(cluster, leaves)
+      reportPress()
     },
     [
       supercluster,
       preserveClusterPressBehavior,
+      canSpiderfy,
       onClusterPress,
       edgePadding,
       isMapReady,
@@ -482,7 +670,10 @@ const CompatMapView = forwardRef(function CompatMapView(
 
   const handleRegionChange = useCallback(
     (region: Region, details: Details) => {
-      setIsMapMoving(true)
+      if (!isMapMovingRef.current) {
+        isMapMovingRef.current = true
+        setIsMapMoving(true)
+      }
       // Keep clusters in sync while the map moves, but throttle recomputation so
       // pinch/pan does not trigger a full re-cluster on every native frame.
       scheduleThrottledRegionSync(
@@ -500,28 +691,13 @@ const CompatMapView = forwardRef(function CompatMapView(
     (region: Region, details: Details) => {
       // Gesture settled: re-enable cross-fade so the final cluster transition
       // animates, while intermediate frames during the move stayed instant.
+      isMapMovingRef.current = false
       setIsMapMoving(false)
       flushThrottledRegionSync(
         region,
         syncCurrentRegion,
         regionThrottleStateRef.current
       )
-
-      const mapRegion = toMapRegion(region)
-      const nextSignature =
-        clusteringEnabled && supercluster.isLoaded
-          ? computeClusterLayoutSignature(
-              supercluster.getClustersFromRegion(mapRegion, mapDimensions)
-            )
-          : clusterLayoutSignatureRef.current
-
-      if (
-        animationEnabled &&
-        Platform.OS === 'ios' &&
-        nextSignature !== clusterLayoutSignatureRef.current
-      ) {
-        LayoutAnimation.configureNext(layoutAnimationConf)
-      }
 
       // Defer notifying the consumer until `clusters` is recomputed for the
       // settled region, so we reuse that single computation instead of querying
@@ -530,14 +706,7 @@ const CompatMapView = forwardRef(function CompatMapView(
       // no `onRegionChangeComplete` callback was provided).
       pendingRegionChangeRef.current = { region, details }
     },
-    [
-      animationEnabled,
-      clusteringEnabled,
-      layoutAnimationConf,
-      mapDimensions,
-      supercluster,
-      syncCurrentRegion,
-    ]
+    [syncCurrentRegion]
   )
 
   // `currentRegion` is a fresh object on every settle, so this runs once per
@@ -548,19 +717,67 @@ const CompatMapView = forwardRef(function CompatMapView(
       return
     }
     pendingRegionChangeRef.current = null
-    onRegionChangeComplete(pending.region, pending.details, clusters)
-  }, [currentRegion, clusters, onRegionChangeComplete])
+    onRegionChangeCompleteRef.current(pending.region, pending.details, clusters)
+  }, [currentRegion, clusters])
 
-  const shouldSpiderCluster = useCallback(
-    (clusterId: number) => {
-      if (!spiralEnabled || !isAtMaxZoom) {
-        return false
+  // Leaves of the clusters that spiderfy. `clusters` keeps its identity across
+  // pans and equal re-renders, so those never query the engine again; stale
+  // leaf objects are fine because `markerFor` resolves them by child index.
+  const spiderLeaves = useMemo(() => {
+    const leavesByClusterId = new Map<number, PointFeature[]>()
+    if (!spiderfyByZoom && pressedSpiderId == null) {
+      return leavesByClusterId
+    }
+
+    for (const feature of clusters) {
+      if (!isClusterFeature(feature)) {
+        continue
       }
+      const clusterId = feature.properties.cluster_id
+      if (
+        (spiderfyByZoom || clusterId === pressedSpiderId) &&
+        canSpiderfy(feature)
+      ) {
+        leavesByClusterId.set(clusterId, supercluster.getAllLeaves(clusterId))
+      }
+    }
+    return leavesByClusterId
+  }, [clusters, supercluster, spiderfyByZoom, pressedSpiderId, canSpiderfy])
 
-      return supercluster.getClusterExpansionZoom(clusterId) >= maxZoom
-    },
-    [spiralEnabled, isAtMaxZoom, supercluster, maxZoom]
-  )
+  // Spider spacing is fixed on screen, so it depends on the zoom. `null` while
+  // nothing spiderfies, so ordinary zooms never re-render every marker.
+  const { longitudeDelta: regionLongitudeDelta } = currentRegion
+  const spiderLongitudePerPoint = useMemo(() => {
+    if (
+      spiderLeaves.size === 0 ||
+      !(regionLongitudeDelta > 0) ||
+      !(mapDimensions.width > 0)
+    ) {
+      return null
+    }
+    return regionLongitudeDelta / mapDimensions.width
+  }, [spiderLeaves, regionLongitudeDelta, mapDimensions.width])
+
+  // Clusters far outside the map are not rendered (see `clusterRenderMargin`).
+  // Kept as the same array while the clusters it holds stay the same, so a
+  // pan that changes none of them re-renders nothing below.
+  const nearClustersRef = useRef<GeoJSONFeature[]>(clusters)
+  const nearClusters = useMemo(() => {
+    const near = featuresNearView(
+      clusters,
+      currentRegion,
+      mapDimensions,
+      clusterRenderMargin
+    )
+    const previous = nearClustersRef.current
+    return near.length === previous.length &&
+      near.every((feature, index) => feature === previous[index])
+      ? previous
+      : near
+  }, [clusters, currentRegion, mapDimensions, clusterRenderMargin])
+  useEffect(() => {
+    nearClustersRef.current = nearClusters
+  })
 
   // Split rendering: everything except the default cluster bubbles is rendered
   // immediately, while the default bubbles go through `useFadePresence` so a
@@ -576,12 +793,37 @@ const CompatMapView = forwardRef(function CompatMapView(
       }
     }
 
-    for (const feature of clusters) {
+    // While a rebuild is pending, `clusters` still describe the previous
+    // children: render those features' own elements until the index lands.
+    const markerFor = (feature: PointFeature): ReactNode => {
+      if (!isCurrent) {
+        return markerElementOf(feature) ?? null
+      }
+      const index = feature.properties.index
+      return typeof index === 'number' ? propsChildren[index] : null
+    }
+
+    // A cluster is keyed by its smallest leaf, which it keeps across zoom
+    // levels and rebuilds while it only gains or loses other leaves, so its
+    // bubble updates one native marker instead of removing and re-adding it.
+    // Until a props-only change swaps in the newest features, the leaf is the
+    // previous object, whose child index is the same by construction. With no
+    // element for the leaf (mid-rebuild), it falls back to the engine id.
+    const clusterKeyOf = (cluster: ClusterFeature): string => {
+      const minLeaf = supercluster.getClusterMinLeaf(cluster)
+      const element = minLeaf == null ? null : markerFor(minLeaf)
+      return React.isValidElement(element) && element.key != null
+        ? `cluster:${element.key}`
+        : `cluster-${cluster.id}`
+    }
+
+    for (const feature of nearClusters) {
       if (!isClusterFeature(feature)) {
-        const index = feature.properties.index
-        const child = typeof index === 'number' ? propsChildren[index] : null
+        // Keeps the key `Children.toArray` gave it, so each marker stays one
+        // React instance when others are inserted or removed before it.
+        const child = markerFor(feature)
         if (isMarker(child)) {
-          immediate.push(React.cloneElement(child, { key: `marker-${index}` }))
+          immediate.push(child)
         }
         continue
       }
@@ -589,19 +831,21 @@ const CompatMapView = forwardRef(function CompatMapView(
       const cluster = feature as ClusterFeature
       const clusterId = cluster.properties.cluster_id
 
-      if (shouldSpiderCluster(clusterId)) {
+      const leaves = spiderLeaves.get(clusterId)
+      if (leaves != null && spiderLongitudePerPoint != null) {
         immediate.push(
           ...renderSpiderClusterMarkers(
             cluster,
-            propsChildren,
-            supercluster,
+            leaves,
+            markerFor,
+            spiderLongitudePerPoint,
             spiderLineColor
           )
         )
         continue
       }
 
-      const clusterKey = `cluster-${cluster.id}`
+      const clusterKey = clusterKeyOf(cluster)
       const selected =
         selectedClusterId != null &&
         String(clusterId) === String(selectedClusterId)
@@ -637,10 +881,14 @@ const CompatMapView = forwardRef(function CompatMapView(
       })
     }
 
-    return { immediateMarkers: immediate, clusterBubbleItems: bubbles }
+    return {
+      immediateMarkers: sortByKey(immediate, elementKey),
+      clusterBubbleItems: bubbles,
+    }
   }, [
     clusteringEnabled,
-    clusters,
+    nearClusters,
+    isCurrent,
     propsChildren,
     handleClusterPress,
     clusterColor,
@@ -650,31 +898,100 @@ const CompatMapView = forwardRef(function CompatMapView(
     selectedClusterColor,
     renderCluster,
     tracksViewChanges,
-    shouldSpiderCluster,
     supercluster,
+    spiderLeaves,
+    spiderLongitudePerPoint,
     spiderLineColor,
   ])
 
-  const clusterBubbleEntries = useFadePresence(
-    clusterBubbleItems,
-    effectiveFadeOut
-  )
+  // Sorted after `useFadePresence`, which lists exiting bubbles last: an
+  // exiting bubble keeps its place too, so it fades out instead of blinking.
+  const presentBubbles = useFadePresence(clusterBubbleItems, bubbleExitMs)
+  const clusterBubbleEntries = sortByKey(presentBubbles, (entry) => entry.key)
 
+  // Where bubbles glide, judged against the bubbles of the last commit. Only a
+  // zoom step glides bubbles in or out: zooming in, a new bubble starts at
+  // the one it split from; zooming out, a bubble that goes slides into the one
+  // that took it in. A pan or a data change only fades, so a bubble coming
+  // into view never flies out of a neighbour.
+  const placedBubblesRef = useRef<{
+    zoom: number
+    positions: Map<string, LatLng>
+  }>({ zoom: currentZoom, positions: new Map() })
+  // Where each exiting bubble glides, fixed when it starts to go.
+  const exitGlidesRef = useRef<Map<string, LatLng | undefined>>(new Map())
+  const placedBubbles = placedBubblesRef.current
+  const zoomStep = Math.sign(currentZoom - placedBubbles.zoom)
+  const screenScale =
+    clusterFadeIn > 0 && zoomStep !== 0
+      ? screenScaleOf(currentRegion, mapDimensions)
+      : null
+  const glideReach = GLIDE_REACH_RADII * radius
+  const bubblePositions = new Map<string, LatLng>()
+  for (const { key, data, exiting } of clusterBubbleEntries) {
+    if (!exiting) {
+      bubblePositions.set(key, latLngOf(data.feature))
+    }
+  }
+  const exitGlides = new Map<string, LatLng | undefined>()
+  const glideFromOf = (key: string, position: LatLng) =>
+    zoomStep > 0 && screenScale != null && !placedBubbles.positions.has(key)
+      ? nearestWithin(
+          position,
+          placedBubbles.positions.values(),
+          screenScale,
+          glideReach
+        )
+      : undefined
+  const glideToOf = (key: string, position: LatLng) => {
+    const glide = exitGlidesRef.current.has(key)
+      ? exitGlidesRef.current.get(key)
+      : zoomStep < 0 && screenScale != null
+        ? nearestWithin(
+            position,
+            bubblePositions.values(),
+            screenScale,
+            glideReach
+          )
+        : undefined
+    exitGlides.set(key, glide)
+    return glide
+  }
+
+  useEffect(() => {
+    placedBubblesRef.current = { zoom: currentZoom, positions: bubblePositions }
+    exitGlidesRef.current = exitGlides
+  })
+
+  // Bubbles that mount while the map moves appear at once, so the bubble they
+  // replace does not leave a gap when it goes. Only exiting bubbles see the
+  // fade-out change between moving (`0`: stay opaque until dropped) and
+  // settled, so starting or ending a gesture re-renders no other bubble;
+  // `appearInstantly` is read only when a bubble mounts.
+  // An exiting bubble glides for as long as it stays: the fade when settled,
+  // the hold while the map moves.
   const clusterBubbleMarkers = clusterBubbleEntries.map(
-    ({ key, data, exiting }) => (
-      <ClusterMarker
-        key={key}
-        feature={data.feature}
-        onPress={handleClusterPress}
-        clusterColor={data.clusterColor}
-        clusterTextColor={data.clusterTextColor}
-        clusterFontFamily={data.clusterFontFamily}
-        tracksViewChanges={data.tracksViewChanges}
-        fadeInDuration={clusterFadeIn}
-        fadeOutDuration={effectiveFadeOut}
-        exiting={exiting}
-      />
-    )
+    ({ key, data, exiting }) => {
+      const position = latLngOf(data.feature)
+      return (
+        <ClusterMarker
+          key={key}
+          feature={data.feature}
+          onPress={handleClusterPress}
+          clusterColor={data.clusterColor}
+          clusterTextColor={data.clusterTextColor}
+          clusterFontFamily={data.clusterFontFamily}
+          tracksViewChanges={data.tracksViewChanges}
+          fadeInDuration={clusterFadeIn}
+          fadeOutDuration={exiting && isMapMoving ? 0 : clusterFadeIn}
+          appearInstantly={isMapMoving}
+          exiting={exiting}
+          glideFrom={exiting ? undefined : glideFromOf(key, position)}
+          glideTo={exiting ? glideToOf(key, position) : undefined}
+          glideDuration={exiting ? bubbleExitMs : clusterFadeIn}
+        />
+      )
+    }
   )
 
   return (

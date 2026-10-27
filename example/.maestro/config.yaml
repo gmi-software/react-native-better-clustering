@@ -1,0 +1,3 @@
+# Runs every flow in this directory (subflows/ only holds shared steps).
+flows:
+  - '*'

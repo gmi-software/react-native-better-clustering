@@ -25,6 +25,8 @@ Pod::Spec.new do |s|
   s.source_files = [
     "cpp/ClusterEngineCore.hpp",
     "cpp/GeoUtils.hpp",
+    "cpp/InputValidation.hpp",
+    "cpp/ThreadSafeClusterEngine.hpp",
     "cpp/HybridClusterEngine.hpp",
     "cpp/HybridClusterEngine.cpp",
   ]

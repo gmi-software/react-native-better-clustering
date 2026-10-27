@@ -1,0 +1,19 @@
+appId: com.nitromapcluster.example
+name: Basic
+---
+- runFlow:
+    file: subflows/open-scenario.yaml
+    env:
+      SCENARIO: basic
+- extendedWaitUntil:
+    visible:
+      id: hud-engine-builds
+      text: 'Engine builds: 1'
+    timeout: 30000
+- assertVisible:
+    id: hud-markers-mounted
+    text: 'Markers mounted: \d+'
+- tapOn:
+    id: back
+- assertVisible:
+    id: scenario-menu

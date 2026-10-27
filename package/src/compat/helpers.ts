@@ -1,6 +1,5 @@
 import React from 'react'
-import { isClusterFeature } from '../geojson'
-import type { ClusterFeature, PointFeature } from '../geojson/types'
+import type { BBox, PointFeature } from '../geojson/types'
 
 /**
  * Whether a React child is a clusterable `react-native-maps` `Marker`.
@@ -33,11 +32,20 @@ export type MarkerFeatureProperties = Record<string, unknown> & {
   index: number
 }
 
+/** The `Marker` element each marker-derived feature was created from. */
+const markerElements = new WeakMap<
+  PointFeature,
+  React.ReactElement<MarkerLikeProps>
+>()
+
 /**
  * Converts a `Marker` child into a GeoJSON point for the cluster engine.
  *
- * Preserves marker props (except `coordinate` and `children`) on `properties`
- * and stores the child index for later React reconciliation.
+ * Preserves marker props on `properties` and stores the child index for later
+ * React reconciliation. Leaves out `coordinate`, `children`, and the props that
+ * name cluster properties (`cluster`, `cluster_id`, `point_count_abbreviated`,
+ * `getExpansionRegion`), so a marker such as `<Marker cluster>` is never
+ * mistaken for a cluster by `isClusterFeature`.
  *
  * @see {@linkcode isMarker}
  */
@@ -45,14 +53,22 @@ export function markerToGeoJSONFeature(
   marker: React.ReactElement<MarkerLikeProps>,
   index: number
 ): PointFeature<MarkerFeatureProperties> {
-  const { coordinate, children: _children, ...rest } = marker.props
+  const {
+    coordinate,
+    children: _children,
+    cluster: _cluster,
+    cluster_id: _clusterId,
+    point_count_abbreviated: _pointCountAbbreviated,
+    getExpansionRegion: _getExpansionRegion,
+    ...rest
+  } = marker.props
   const properties: MarkerFeatureProperties = {
     ...rest,
     point_count: 0,
     index,
   }
 
-  return {
+  const feature: PointFeature<MarkerFeatureProperties> = {
     type: 'Feature',
     geometry: {
       type: 'Point',
@@ -60,27 +76,62 @@ export function markerToGeoJSONFeature(
     },
     properties,
   }
+  markerElements.set(feature, marker)
+  return feature
 }
 
 /**
- * Stable fingerprint of visible clusters/markers for layout-animation gating.
+ * The `Marker` element a feature was created from by
+ * {@linkcode markerToGeoJSONFeature}, or `undefined` for any other feature.
  *
- * Includes cluster id, point count, and coordinates so implode/explode and
- * bubble resize transitions run only when the visible set actually changes.
+ * Lets features from a previous children array render their own element
+ * while the index for the current children is still building.
  */
-export function computeClusterLayoutSignature(
-  features: Array<PointFeature | ClusterFeature>
-): string {
-  return features
-    .map((feature) => {
-      const [longitude, latitude] = feature.geometry.coordinates
+export function markerElementOf(
+  feature: PointFeature
+): React.ReactElement<MarkerLikeProps> | undefined {
+  return markerElements.get(feature)
+}
 
-      if (isClusterFeature(feature)) {
-        return `c:${feature.properties.cluster_id}:${feature.properties.point_count}:${latitude}:${longitude}`
-      }
+/**
+ * A copy of `items` ordered by `keyOf`, so markers that stay on screen keep
+ * their order among the map's children whatever order the engine returns them
+ * in.
+ *
+ * Fabric removes and re-inserts a child that changes place among its siblings,
+ * and react-native-maps turns that into removing and re-adding the native
+ * annotation: a marker whose relative order changes blinks out for a frame or
+ * more. The engine's order changes with the zoom, so on every zoom step most
+ * markers that stayed would blink at once.
+ */
+export function sortByKey<T>(
+  items: ReadonlyArray<T>,
+  keyOf: (item: T) => string
+): T[] {
+  return items
+    .map((item) => ({ item, key: keyOf(item) }))
+    .sort((a, b) => (a.key < b.key ? -1 : a.key > b.key ? 1 : 0))
+    .map(({ item }) => item)
+}
 
-      const index = feature.properties.index
-      return `p:${index}:${latitude}:${longitude}`
-    })
-    .join('|')
+/** The React key of a rendered child, for {@linkcode sortByKey}. */
+export function elementKey(node: React.ReactNode): string {
+  return React.isValidElement(node) && node.key != null ? node.key : ''
+}
+
+/**
+ * Coordinates for `fitToCoordinates` that fit `bbox`: its corners with its
+ * centre between them. Google Maps grows the fitted box point by point, each
+ * time the shorter way round the globe, so the corners alone would fit the
+ * other side of the world for a box wider than 180° of longitude.
+ */
+export function bboxToFitCoordinates([west, south, east, north]: BBox): Array<{
+  latitude: number
+  longitude: number
+}> {
+  return [
+    { latitude: south, longitude: west },
+    { latitude: (south + north) / 2, longitude: (west + east) / 2 },
+    { latitude: north, longitude: east },
+  ]
 }

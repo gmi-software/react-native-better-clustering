@@ -18,6 +18,12 @@ export interface EngineClusterNode {
   parentId: number
   /** Index into the loaded point array for leaf nodes. */
   pointIndex: number
+  /**
+   * Smallest point id among this node's leaves; its own {@linkcode id} for a
+   * point. A cluster keeps it across zoom levels and rebuilds while it only
+   * gains or loses other leaves, so it can key the cluster's marker.
+   */
+  minLeafId: number
   /** Aggregated numeric values, one per configured {@linkcode ReducerKind}. */
   values: number[]
 }

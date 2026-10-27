@@ -1,74 +1,103 @@
 #pragma once
 
 #include "GeoUtils.hpp"
+#include "InputValidation.hpp"
 #include <vector>
 #include <cstdint>
 #include <cstring>
-#include <unordered_map>
 #include <algorithm>
 #include <cmath>
 #include <limits>
+#include <optional>
+#include <utility>
 
 namespace margelo::nitro::nitromapcluster {
 
-// Static KD-tree over 2D points, kdbush-style: a flat permutation of point
-// ids (`_ids`) is recursively partitioned in place on alternating axes. Query
-// and build mirror each other exactly — same pivot `(left+right)/2`, same
-// alternating axis — which is what makes range/within correct.
+// Static KD-tree over 2D points, kdbush-style: a flat array of items is
+// recursively partitioned in place on alternating axes. Query and build mirror
+// each other exactly — same pivot `(left+right)/2`, same alternating axis —
+// which is what makes range/within correct. Each item carries its coordinates,
+// so a query reads the array in order instead of jumping through an index.
 class KDTree {
 public:
+  struct Item {
+    double x;
+    double y;
+    // What range/within return for this point: the caller's own index.
+    int32_t index;
+  };
+
   KDTree() = default;
 
-  void build(const std::vector<double>& xs, const std::vector<double>& ys, int nodeSize) {
-    _xs = xs;
-    _ys = ys;
+  void build(std::vector<Item> items, int nodeSize) {
+    _items = std::move(items);
     _nodeSize = nodeSize > 0 ? nodeSize : 1;
-    _ids.clear();
-    _ids.reserve(xs.size());
-    for (size_t i = 0; i < xs.size(); i++) {
-      _ids.push_back(static_cast<int32_t>(i));
-    }
-    if (!_ids.empty()) {
-      sortKD(0, static_cast<int32_t>(_ids.size()) - 1, 0);
+    if (!_items.empty()) {
+      sortKD(0, static_cast<int32_t>(_items.size()) - 1, 0);
     }
   }
 
   void range(double minX, double minY, double maxX, double maxY, std::vector<int32_t>& result) const {
     result.clear();
-    if (_ids.empty()) return;
-    rangeRecurse(0, static_cast<int32_t>(_ids.size()) - 1, 0, minX, minY, maxX, maxY, result);
+    if (_items.empty()) return;
+    rangeRecurse(0, static_cast<int32_t>(_items.size()) - 1, 0, minX, minY, maxX, maxY, result);
   }
 
   void within(double x, double y, double radius, std::vector<int32_t>& result) const {
     result.clear();
-    if (_ids.empty()) return;
-    withinRecurse(0, static_cast<int32_t>(_ids.size()) - 1, 0, x, y, radius, result);
+    if (_items.empty()) return;
+    withinRecurse(0, static_cast<int32_t>(_items.size()) - 1, 0, x, y, radius * radius, radius, result);
   }
 
   size_t memoryBytes() const {
-    return _xs.capacity() * sizeof(double)
-         + _ys.capacity() * sizeof(double)
-         + _ids.capacity() * sizeof(int32_t);
+    return _items.capacity() * sizeof(Item);
   }
 
 private:
-  std::vector<double> _xs;
-  std::vector<double> _ys;
-  std::vector<int32_t> _ids;
+  // Collects a range query's hits in a leaf and appends them to the result in
+  // batches. A push_back per hit is a function call wherever the inliner
+  // keeps it out of line (GCC 13 on x86-64 does in the core benchmark), and
+  // the call then costs more than the test itself. A viewport leaf often
+  // hits most of its points; a `within` leaf hits a few, so it keeps
+  // push_back, which a batch per leaf would cost more than it saves.
+  class LeafHits {
+  public:
+    explicit LeafHits(std::vector<int32_t>& result) : _result(result) {}
+
+    void add(int32_t index) {
+      _hits[_count++] = index;
+      if (_count == kCapacity) flush();
+    }
+
+    void flush() {
+      if (_count > 0) {
+        _result.insert(_result.end(), _hits, _hits + _count);
+        _count = 0;
+      }
+    }
+
+  private:
+    static constexpr int32_t kCapacity = 64;
+    std::vector<int32_t>& _result;
+    int32_t _hits[kCapacity];
+    int32_t _count = 0;
+  };
+
+  std::vector<Item> _items;
   int32_t _nodeSize = 64;
 
   void sortKD(int32_t left, int32_t right, int32_t axis) {
     if (right - left <= _nodeSize) return;
 
     const int32_t mid = (left + right) >> 1;
-    std::nth_element(
-      _ids.begin() + left,
-      _ids.begin() + mid,
-      _ids.begin() + right + 1,
-      [&](int32_t a, int32_t b) {
-        return axis == 0 ? _xs[a] < _xs[b] : _ys[a] < _ys[b];
-      }
-    );
+    const auto first = _items.begin() + left;
+    const auto nth = _items.begin() + mid;
+    const auto last = _items.begin() + right + 1;
+    if (axis == 0) {
+      std::nth_element(first, nth, last, [](const Item& a, const Item& b) { return a.x < b.x; });
+    } else {
+      std::nth_element(first, nth, last, [](const Item& a, const Item& b) { return a.y < b.y; });
+    }
 
     sortKD(left, mid - 1, axis ^ 1);
     sortKD(mid + 1, right, axis ^ 1);
@@ -78,27 +107,25 @@ private:
                     double minX, double minY, double maxX, double maxY,
                     std::vector<int32_t>& result) const {
     if (right - left <= _nodeSize) {
+      LeafHits hits(result);
       for (int32_t i = left; i <= right; i++) {
-        const int32_t idx = _ids[i];
-        const double x = _xs[idx];
-        const double y = _ys[idx];
-        if (x >= minX && x <= maxX && y >= minY && y <= maxY) {
-          result.push_back(idx);
+        const Item& item = _items[i];
+        if (item.x >= minX && item.x <= maxX && item.y >= minY && item.y <= maxY) {
+          hits.add(item.index);
         }
       }
+      hits.flush();
       return;
     }
 
     const int32_t mid = (left + right) >> 1;
-    const int32_t midIdx = _ids[mid];
-    const double x = _xs[midIdx];
-    const double y = _ys[midIdx];
+    const Item& item = _items[mid];
 
-    if (x >= minX && x <= maxX && y >= minY && y <= maxY) {
-      result.push_back(midIdx);
+    if (item.x >= minX && item.x <= maxX && item.y >= minY && item.y <= maxY) {
+      result.push_back(item.index);
     }
 
-    const double coord = axis == 0 ? x : y;
+    const double coord = axis == 0 ? item.x : item.y;
     const double lo = axis == 0 ? minX : minY;
     const double hi = axis == 0 ? maxX : maxY;
 
@@ -111,48 +138,46 @@ private:
   }
 
   void withinRecurse(int32_t left, int32_t right, int32_t axis,
-                     double x, double y, double radius,
+                     double x, double y, double r2, double radius,
                      std::vector<int32_t>& result) const {
-    const double r2 = radius * radius;
-
     if (right - left <= _nodeSize) {
       for (int32_t i = left; i <= right; i++) {
-        const int32_t idx = _ids[i];
-        const double dx = _xs[idx] - x;
-        const double dy = _ys[idx] - y;
+        const Item& item = _items[i];
+        const double dx = item.x - x;
+        const double dy = item.y - y;
         if (dx * dx + dy * dy <= r2) {
-          result.push_back(idx);
+          result.push_back(item.index);
         }
       }
       return;
     }
 
     const int32_t mid = (left + right) >> 1;
-    const int32_t midIdx = _ids[mid];
-    const double midX = _xs[midIdx];
-    const double midY = _ys[midIdx];
-    const double dx = midX - x;
-    const double dy = midY - y;
+    const Item& item = _items[mid];
+    const double dx = item.x - x;
+    const double dy = item.y - y;
 
     if (dx * dx + dy * dy <= r2) {
-      result.push_back(midIdx);
+      result.push_back(item.index);
     }
 
-    const double coord = axis == 0 ? midX : midY;
+    const double coord = axis == 0 ? item.x : item.y;
     const double q = axis == 0 ? x : y;
 
     if (q - radius <= coord) {
-      withinRecurse(left, mid - 1, axis ^ 1, x, y, radius, result);
+      withinRecurse(left, mid - 1, axis ^ 1, x, y, r2, radius, result);
     }
     if (q + radius >= coord) {
-      withinRecurse(mid + 1, right, axis ^ 1, x, y, radius, result);
+      withinRecurse(mid + 1, right, axis ^ 1, x, y, r2, radius, result);
     }
   }
 };
 
 class ClusterEngineCore {
 public:
+  /** Throws `std::invalid_argument` for an invalid config, leaving the engine unchanged. */
   void setOptions(const ClusterEngineConfig& options) {
+    validateClusterEngineConfig(options);
     _options = options;
     resetDerivedState();
   }
@@ -207,11 +232,8 @@ public:
   }
 
   void build() {
-    _resultTrees.clear();
-    _clustersByZoom.clear();
-    _nodeById.clear();
-    _childrenByParent.clear();
-    _nextClusterId = static_cast<int32_t>(_points.size());
+    resetDerivedState();
+    _firstClusterId = firstFreeClusterId();
 
     if (_points.empty()) {
       _built = true;
@@ -224,10 +246,13 @@ public:
     }
 
     const size_t np = _options.reducers.size();
+    const size_t pointCount = _points.size();
 
-    std::vector<ClusterNode> current;
-    current.reserve(_points.size());
-    for (size_t i = 0; i < _points.size(); i++) {
+    // Every point and cluster lives in `_nodes` exactly once, as it was
+    // created: points first, in `_points` order, then clusters in the order
+    // they form. Everything else refers to a node by its index there.
+    _nodes.reserve(pointCount);
+    for (size_t i = 0; i < pointCount; i++) {
       ClusterNode node;
       node.id = _points[i].id;
       node.x = _points[i].x;
@@ -237,6 +262,7 @@ public:
       node.pointIndex = _points[i].id;
       node.isCluster = false;
       node.zoom = _options.maxZoom + 1;
+      node.minLeafId = node.id;
       if (np > 0) {
         node.values.assign(np, 0.0);
         const auto& v = _points[i].values;
@@ -244,120 +270,137 @@ public:
           node.values[k] = v[k];
         }
       }
-      _nodeById[node.id] = node;
-      current.push_back(std::move(node));
+      _nodes.push_back(std::move(node));
     }
+    _childOffsets.push_back(0);
 
-    // maxZoom+1 is the clustering input but is never queried directly
-    // (getClusters clamps zoom to [minZoom, maxZoom]), so it isn't stored.
+    // The nodes at the level being clustered, in the order supercluster walks
+    // them, and the zoom each node was last processed at. supercluster marks a
+    // node by lowering its `zoom`; the mark lives here so that `_nodes` keeps
+    // each node's creation zoom, which getClusterExpansionZoom() starts from.
+    std::vector<int32_t> current(pointCount);
+    for (size_t i = 0; i < pointCount; i++) {
+      current[i] = static_cast<int32_t>(i);
+    }
+    std::vector<int32_t> processedAt(pointCount, _options.maxZoom + 1);
+
+    // maxZoom+1 is the clustering input. getClusters answers it from the
+    // maxZoom tree (see pointsInBounds), so its own tree is only kept if
+    // maxZoom turns out to hold the very same nodes.
+    KDTree inputTree = buildTree(current);
+
+    const int32_t levels = _options.maxZoom - _options.minZoom + 1;
+    _treeByZoom.assign(static_cast<size_t>(levels), -1);
+    // No reallocation, so `tree` below stays valid while the next one is added.
+    _trees.reserve(static_cast<size_t>(levels));
+
+    std::vector<int32_t> next;
+    std::vector<int32_t> neighbors;
+
     for (int32_t z = _options.maxZoom; z >= _options.minZoom; z--) {
-      const double r = _options.radius / zoomScale(static_cast<double>(z), _options.extent);
+      const double r = clusterRadiusAtZoom(_options.radius, static_cast<double>(z));
+      const size_t slot = static_cast<size_t>(z - _options.minZoom);
+      // The tree over `current`: the one getClusters() queries at z + 1.
+      const KDTree& tree = z == _options.maxZoom ? inputTree : _trees[_treeByZoom[slot + 1]];
 
-      std::vector<double> xs, ys;
-      xs.reserve(current.size());
-      ys.reserve(current.size());
-      for (const auto& n : current) {
-        xs.push_back(n.x);
-        ys.push_back(n.y);
-      }
-
-      // Build-time tree over the clustering input (`current`). Only used by the
-      // `within` neighbourhood queries below, so it stays local to this scope.
-      KDTree tree;
-      tree.build(xs, ys, _options.nodeSize);
-
-      std::vector<ClusterNode> next;
+      next.clear();
       next.reserve(current.size());
-      std::vector<int32_t> neighbors;
 
-      // supercluster-faithful pass: walk nodes in order, mark each by lowering
-      // its `zoom` to the current level once processed, and only fold in
-      // neighbours that haven't been processed yet at this level.
-      for (size_t i = 0; i < current.size(); i++) {
-        if (current[i].zoom <= z) continue;
-        current[i].zoom = z;
+      // supercluster-faithful pass: walk nodes in order, mark each once
+      // processed at this level, and only fold in neighbours that haven't been
+      // processed yet at this level.
+      for (const int32_t index : current) {
+        if (processedAt[index] <= z) continue;
+        processedAt[index] = z;
 
-        tree.within(current[i].x, current[i].y, r, neighbors);
+        const double originX = _nodes[index].x;
+        const double originY = _nodes[index].y;
+        tree.within(originX, originY, r, neighbors);
 
-        const int32_t numPointsOrigin = current[i].count;
+        const int32_t numPointsOrigin = _nodes[index].count;
         int32_t numPoints = numPointsOrigin;
-        for (int32_t nb : neighbors) {
-          if (current[nb].zoom > z) numPoints += current[nb].count;
+        for (const int32_t nb : neighbors) {
+          if (processedAt[nb] > z) numPoints += _nodes[nb].count;
         }
 
         if (numPoints > numPointsOrigin && numPoints >= _options.minPoints) {
-          double wx = current[i].x * numPointsOrigin;
-          double wy = current[i].y * numPointsOrigin;
+          double wx = originX * numPointsOrigin;
+          double wy = originY * numPointsOrigin;
 
           ClusterNode cluster;
-          cluster.id = _nextClusterId++;
+          cluster.id = _firstClusterId + static_cast<int32_t>(_nodes.size() - pointCount);
           cluster.count = numPoints;
           cluster.parentId = -1;
           cluster.pointIndex = -1;
           cluster.isCluster = true;
           cluster.zoom = z;
+          cluster.minLeafId = _nodes[index].minLeafId;
           if (np > 0) {
             // Seed the accumulator with the origin node's values, then fold.
-            cluster.values = current[i].values;
+            cluster.values = _nodes[index].values;
             cluster.values.resize(np, 0.0);
           }
 
-          linkChild(cluster.id, current[i].id);
+          linkChild(cluster.id, index);
 
-          for (int32_t nb : neighbors) {
-            if (current[nb].zoom <= z) continue;
-            current[nb].zoom = z;
-            const int32_t np2 = current[nb].count;
-            wx += current[nb].x * np2;
-            wy += current[nb].y * np2;
+          for (const int32_t nb : neighbors) {
+            if (processedAt[nb] <= z) continue;
+            processedAt[nb] = z;
+            const ClusterNode& child = _nodes[nb];
+            const int32_t np2 = child.count;
+            wx += child.x * np2;
+            wy += child.y * np2;
+            cluster.minLeafId = std::min(cluster.minLeafId, child.minLeafId);
             for (size_t k = 0; k < np; k++) {
-              const double v = k < current[nb].values.size()
-                ? current[nb].values[k]
+              const double v = k < child.values.size()
+                ? child.values[k]
                 : reducerSeed(_options.reducers[k]);
               cluster.values[k] = reducerApply(_options.reducers[k], cluster.values[k], v);
             }
-            linkChild(cluster.id, current[nb].id);
+            linkChild(cluster.id, nb);
           }
 
           cluster.x = wx / numPoints;
           cluster.y = wy / numPoints;
-          _nodeById[cluster.id] = cluster;
-          next.push_back(std::move(cluster));
+          next.push_back(static_cast<int32_t>(_nodes.size()));
+          _childOffsets.push_back(static_cast<int32_t>(_childNodes.size()));
+          processedAt.push_back(z);
+          _nodes.push_back(std::move(cluster));
         } else {
           // The origin survives unclustered at this level.
-          _nodeById[current[i].id] = current[i];
-          next.push_back(current[i]);
+          next.push_back(index);
 
           // Mark (but don't cluster) any mergeable neighbours so they aren't
           // reprocessed; they survive individually at this level too.
           if (numPoints > 1) {
-            for (int32_t nb : neighbors) {
-              if (current[nb].zoom <= z) continue;
-              current[nb].zoom = z;
-              _nodeById[current[nb].id] = current[nb];
-              next.push_back(current[nb]);
+            for (const int32_t nb : neighbors) {
+              if (processedAt[nb] <= z) continue;
+              processedAt[nb] = z;
+              next.push_back(nb);
             }
           }
         }
       }
 
-      _clustersByZoom[z] = std::move(next);
-      current = _clustersByZoom[z];
-
-      // Result tree over the clusters at this zoom, indexed 1:1 with
-      // `_clustersByZoom[z]`. This is what getClusters() range-queries.
-      std::vector<double> rxs, rys;
-      rxs.reserve(current.size());
-      rys.reserve(current.size());
-      for (const auto& n : current) {
-        rxs.push_back(n.x);
-        rys.push_back(n.y);
+      // A level that merged nothing holds the same nodes in the same order as
+      // the one above it, so it gets the same tree; sparse data skips most of
+      // the high zooms this way. Otherwise the level gets a tree of its own,
+      // which getClusters() range-queries and the next level clusters over.
+      if (next == current) {
+        if (z == _options.maxZoom) {
+          _trees.push_back(std::move(inputTree));
+          _treeByZoom[slot] = static_cast<int32_t>(_trees.size() - 1);
+        } else {
+          _treeByZoom[slot] = _treeByZoom[slot + 1];
+        }
+      } else {
+        _trees.push_back(buildTree(next));
+        _treeByZoom[slot] = static_cast<int32_t>(_trees.size() - 1);
       }
-      KDTree resultTree;
-      resultTree.build(rxs, rys, _options.nodeSize);
-      _resultTrees[z] = std::move(resultTree);
+      std::swap(current, next);
     }
 
+    indexPointIds();
     _built = true;
   }
 
@@ -365,14 +408,20 @@ public:
     std::vector<ClusterNode> result;
     if (!_built || _points.empty()) return result;
 
+    // Accepts the bbox a map region produces as-is, e.g. west 170, east 190
+    // around the antimeridian. The ranges are disjoint, so no node is
+    // collected twice.
+    const NormalizedViewport bounds = normalizeViewport(viewport);
+
     if (!_options.clusteringEnabled) {
       result.reserve(_points.size());
       for (size_t i = 0; i < _points.size(); i++) {
         const PointData& p = _points[i];
-        if (p.latitude > viewport.north || p.latitude < viewport.south) continue;
-        const bool inLng = viewport.west <= viewport.east
-          ? (p.longitude >= viewport.west && p.longitude <= viewport.east)
-          : (p.longitude >= viewport.west || p.longitude <= viewport.east);
+        if (p.latitude > bounds.north || p.latitude < bounds.south) continue;
+        bool inLng = false;
+        for (int r = 0; r < bounds.rangeCount; r++) {
+          inLng = inLng || (p.longitude >= bounds.ranges[r].west && p.longitude <= bounds.ranges[r].east);
+        }
         if (!inLng) continue;
 
         ClusterNode node;
@@ -384,48 +433,50 @@ public:
         node.pointIndex = p.id;
         node.isCluster = false;
         node.zoom = 0;
+        node.minLeafId = p.id;
         node.values = p.values;
         result.push_back(std::move(node));
       }
       return result;
     }
 
+    // As supercluster's _limitZoom: any zoom above maxZoom is maxZoom + 1,
+    // the clustering input, where every point stands on its own.
     const int32_t z = static_cast<int32_t>(clamp(
       std::floor(viewport.zoom),
       static_cast<double>(_options.minZoom),
-      static_cast<double>(_options.maxZoom)
+      static_cast<double>(_options.maxZoom) + 1.0
     ));
 
-    auto it = _clustersByZoom.find(z);
-    if (it == _clustersByZoom.end()) return result;
-    auto treeIt = _resultTrees.find(z);
-    if (treeIt == _resultTrees.end()) return result;
-
-    const std::vector<ClusterNode>& nodes = it->second;
-    const KDTree& tree = treeIt->second;
+    // maxZoom + 1 has no tree of its own: it is read from maxZoom's (see
+    // pointsInBounds).
+    const bool pointsOnly = z > _options.maxZoom;
+    const size_t slot = static_cast<size_t>((pointsOnly ? _options.maxZoom : z) - _options.minZoom);
+    if (slot >= _treeByZoom.size()) return result;
+    const KDTree& tree = _trees[_treeByZoom[slot]];
 
     // Y grows southward (latToY is monotonically decreasing in latitude), so
     // north maps to the smaller Y and south to the larger Y.
-    const double minY = latToY(viewport.north, _options.extent);
-    const double maxY = latToY(viewport.south, _options.extent);
+    const double minY = latToY(bounds.north, _options.extent);
+    const double maxY = latToY(bounds.south, _options.extent);
 
     std::vector<int32_t> idxBuf;
+    // appendAtLevel is called from this loop only: with a second call site
+    // GCC 13 stops inlining it, and every returned node pays for a call.
     auto collect = [&](double minX, double maxX) {
-      tree.range(minX, minY, maxX, maxY, idxBuf);
+      if (pointsOnly) {
+        pointsInBounds(tree, minX, minY, maxX, maxY, idxBuf);
+      } else {
+        tree.range(minX, minY, maxX, maxY, idxBuf);
+      }
       result.reserve(result.size() + idxBuf.size());
       for (int32_t idx : idxBuf) {
-        result.push_back(nodes[idx]);
+        appendAtLevel(result, _nodes[idx], z);
       }
     };
 
-    if (viewport.west <= viewport.east) {
-      collect(lngToX(viewport.west, _options.extent), lngToX(viewport.east, _options.extent));
-    } else {
-      // Antimeridian crossing: the viewport wraps past 180°, so split into
-      // [west, 180°] and [-180°, east]. The two X ranges are disjoint, so no
-      // node is collected twice.
-      collect(lngToX(viewport.west, _options.extent), lngToX(180.0, _options.extent));
-      collect(lngToX(-180.0, _options.extent), lngToX(viewport.east, _options.extent));
+    for (int r = 0; r < bounds.rangeCount; r++) {
+      collect(lngToX(bounds.ranges[r].west, _options.extent), lngToX(bounds.ranges[r].east, _options.extent));
     }
 
     return result;
@@ -435,15 +486,15 @@ public:
     std::vector<ClusterNode> result;
     if (!_built) return result;
 
-    auto childrenIt = _childrenByParent.find(clusterId);
-    if (childrenIt == _childrenByParent.end()) return result;
+    const int32_t index = findNode(clusterId);
+    if (index < 0 || !_nodes[index].isCluster) return result;
 
-    result.reserve(childrenIt->second.size());
-    for (int32_t childId : childrenIt->second) {
-      auto nodeIt = _nodeById.find(childId);
-      if (nodeIt != _nodeById.end()) {
-        result.push_back(nodeIt->second);
-      }
+    const size_t cluster = static_cast<size_t>(index) - _points.size();
+    const int32_t begin = _childOffsets[cluster];
+    const int32_t end = _childOffsets[cluster + 1];
+    result.reserve(static_cast<size_t>(end - begin));
+    for (int32_t i = begin; i < end; i++) {
+      result.push_back(_nodes[_childNodes[i]]);
     }
     return result;
   }
@@ -452,20 +503,18 @@ public:
     std::vector<ClusterNode> result;
     if (!_built) return result;
 
-    if (_nodeById.find(clusterId) == _nodeById.end()) return result;
+    const int32_t root = findNode(clusterId);
+    if (root < 0) return result;
 
     std::vector<int32_t> stack;
-    stack.push_back(clusterId);
+    stack.push_back(root);
     int32_t skipped = 0;
 
     const bool unlimited = limit <= 0;
     while (!stack.empty() && (unlimited || static_cast<int32_t>(result.size()) < limit)) {
-      const int32_t id = stack.back();
+      const int32_t index = stack.back();
       stack.pop_back();
-
-      auto nodeIt = _nodeById.find(id);
-      if (nodeIt == _nodeById.end()) continue;
-      const ClusterNode& node = nodeIt->second;
+      const ClusterNode& node = _nodes[index];
 
       if (!node.isCluster) {
         if (skipped < offset) {
@@ -474,33 +523,74 @@ public:
           result.push_back(node);
         }
       } else {
-        auto childrenIt = _childrenByParent.find(id);
-        if (childrenIt != _childrenByParent.end()) {
-          for (auto it = childrenIt->second.rbegin(); it != childrenIt->second.rend(); ++it) {
-            stack.push_back(*it);
-          }
+        const size_t cluster = static_cast<size_t>(index) - _points.size();
+        for (int32_t i = _childOffsets[cluster + 1] - 1; i >= _childOffsets[cluster]; i--) {
+          stack.push_back(_childNodes[i]);
         }
       }
     }
     return result;
   }
 
+  // The box getLeaves() would span, without collecting the leaves: a cluster
+  // press needs four numbers, not every point. A point id spans its own point;
+  // an id that is no node, or an index not built yet, has no box.
+  std::optional<LeafBounds> getClusterBounds(int32_t clusterId) const {
+    if (!_built) return std::nullopt;
+
+    const int32_t root = findNode(clusterId);
+    if (root < 0) return std::nullopt;
+
+    LeafBounds bounds{
+      -std::numeric_limits<double>::infinity(),
+      std::numeric_limits<double>::infinity(),
+      -std::numeric_limits<double>::infinity(),
+      std::numeric_limits<double>::infinity(),
+    };
+    std::vector<int32_t> stack;
+    stack.push_back(root);
+
+    while (!stack.empty()) {
+      const size_t index = static_cast<size_t>(stack.back());
+      stack.pop_back();
+
+      // Points come first in `_nodes`, in `_points` order, so a leaf's
+      // coordinates are read where they were loaded, as JS has them.
+      if (index < _points.size()) {
+        const PointData& point = _points[index];
+        bounds.north = std::max(bounds.north, point.latitude);
+        bounds.south = std::min(bounds.south, point.latitude);
+        bounds.east = std::max(bounds.east, point.longitude);
+        bounds.west = std::min(bounds.west, point.longitude);
+      } else {
+        const size_t cluster = index - _points.size();
+        for (int32_t i = _childOffsets[cluster]; i < _childOffsets[cluster + 1]; i++) {
+          stack.push_back(_childNodes[i]);
+        }
+      }
+    }
+    return bounds;
+  }
+
   int32_t getClusterExpansionZoom(int32_t clusterId) const {
     if (!_built) return _options.minZoom;
 
-    auto it = _nodeById.find(clusterId);
-    if (it == _nodeById.end()) return _options.maxZoom;
+    int32_t index = findNode(clusterId);
+    if (index < 0) return _options.maxZoom;
 
-    // Mirrors supercluster: start at the cluster's origin zoom and walk down
-    // single-child chains until the cluster splits into multiple children.
-    int32_t expansionZoom = it->second.zoom;
-    int32_t currentId = clusterId;
+    // Mirrors supercluster: start at the zoom the cluster was created at and
+    // walk down single-child chains until it splits into multiple children.
+    // A cluster created at maxZoom returns maxZoom + 1, where getClusters
+    // returns its points on their own; so does a point id, whose node is
+    // created at maxZoom + 1.
+    int32_t expansionZoom = _nodes[index].zoom;
 
     while (expansionZoom <= _options.maxZoom) {
-      const auto children = getChildren(currentId);
       expansionZoom++;
-      if (children.size() != 1) break;
-      currentId = children.front().id;
+      if (!_nodes[index].isCluster) break;
+      const size_t cluster = static_cast<size_t>(index) - _points.size();
+      if (_childOffsets[cluster + 1] - _childOffsets[cluster] != 1) break;
+      index = _childNodes[_childOffsets[cluster]];
     }
 
     return expansionZoom;
@@ -508,6 +598,15 @@ public:
 
   size_t pointCount() const { return _points.size(); }
   bool isBuilt() const { return _built; }
+  const ClusterEngineConfig& options() const { return _options; }
+
+  /** A copy with the same options and points and no index, ready to `build()`. */
+  ClusterEngineCore withoutIndex() const {
+    ClusterEngineCore copy;
+    copy._options = _options;
+    copy._points = _points;
+    return copy;
+  }
 
   /** Approximate native heap bytes owned by point data, indexes, and cluster graphs. */
   size_t memorySize() const {
@@ -516,35 +615,22 @@ public:
       bytes += point.values.capacity() * sizeof(double);
     }
 
-    for (const auto& [zoom, tree] : _resultTrees) {
+    bytes += _nodes.capacity() * sizeof(ClusterNode);
+    for (const auto& node : _nodes) {
+      bytes += node.values.capacity() * sizeof(double);
+    }
+
+    bytes += _trees.capacity() * sizeof(KDTree);
+    for (const auto& tree : _trees) {
       bytes += tree.memoryBytes();
-      (void)zoom;
     }
 
-    for (const auto& [zoom, nodes] : _clustersByZoom) {
-      bytes += nodes.capacity() * sizeof(ClusterNode);
-      for (const auto& node : nodes) {
-        bytes += node.values.capacity() * sizeof(double);
-      }
-      (void)zoom;
-    }
-
-    for (const auto& [id, node] : _nodeById) {
-      bytes += sizeof(ClusterNode) + node.values.capacity() * sizeof(double);
-      (void)id;
-    }
-
-    for (const auto& [parentId, children] : _childrenByParent) {
-      bytes += children.capacity() * sizeof(int32_t);
-      (void)parentId;
-    }
-
+    bytes += _treeByZoom.capacity() * sizeof(int32_t);
+    bytes += _childOffsets.capacity() * sizeof(int32_t);
+    bytes += _childNodes.capacity() * sizeof(int32_t);
+    bytes += _nodeByPointId.capacity() * sizeof(int32_t);
+    bytes += _sparsePointIds.capacity() * sizeof(std::pair<int32_t, int32_t>);
     bytes += _options.reducers.capacity() * sizeof(AggregationReducer);
-
-    bytes += _resultTrees.bucket_count() * sizeof(void*);
-    bytes += _clustersByZoom.bucket_count() * sizeof(void*);
-    bytes += _nodeById.bucket_count() * sizeof(void*);
-    bytes += _childrenByParent.bucket_count() * sizeof(void*);
 
     return bytes;
   }
@@ -563,8 +649,15 @@ private:
       _points.clear();
     }
     _built = false;
-    _nodeById.clear();
-    _childrenByParent.clear();
+    // Swapped out rather than cleared, so an engine re-pointed at new data
+    // gives the old index's memory back.
+    std::vector<ClusterNode>().swap(_nodes);
+    std::vector<KDTree>().swap(_trees);
+    std::vector<int32_t>().swap(_treeByZoom);
+    std::vector<int32_t>().swap(_childOffsets);
+    std::vector<int32_t>().swap(_childNodes);
+    std::vector<int32_t>().swap(_nodeByPointId);
+    std::vector<std::pair<int32_t, int32_t>>().swap(_sparsePointIds);
   }
 
   bool parseBufferV1(const uint8_t* data, size_t byteLength) {
@@ -649,19 +742,157 @@ private:
     return true;
   }
 
-  void linkChild(int32_t parentId, int32_t childId) {
-    if (parentId < 0 || parentId == childId) return;
-    _nodeById[childId].parentId = parentId;
-    _childrenByParent[parentId].push_back(childId);
+  // Point and cluster ids share one space (findNode, parentId), so the cluster
+  // counter must start above every surviving point id. `_points.size()` is smaller than that
+  // as soon as ingestion drops a point for a non-finite coordinate.
+  int32_t firstFreeClusterId() const {
+    int32_t maxPointId = -1;
+    for (const auto& point : _points) {
+      maxPointId = std::max(maxPointId, point.id);
+    }
+    return maxPointId + 1;
+  }
+
+  KDTree buildTree(const std::vector<int32_t>& indices) const {
+    std::vector<KDTree::Item> items;
+    items.reserve(indices.size());
+    for (const int32_t index : indices) {
+      items.push_back({_nodes[index].x, _nodes[index].y, index});
+    }
+    KDTree tree;
+    tree.build(std::move(items), _options.nodeSize);
+    return tree;
+  }
+
+  void linkChild(int32_t parentId, int32_t childIndex) {
+    _nodes[childIndex].parentId = parentId;
+    _childNodes.push_back(childIndex);
+  }
+
+  // Appends `node` as it stands at level `zoom`: processed at that zoom, and
+  // not yet folded into a parent there. Field by field on purpose: copying
+  // the whole node, or a modified local copy, costs up to half again as many
+  // instructions per result (the `values` vector), and getClusters returns
+  // thousands. Keep the list in step with ClusterNode.
+  static void appendAtLevel(std::vector<ClusterNode>& result, const ClusterNode& node, int32_t zoom) {
+    ClusterNode& out = result.emplace_back();
+    out.id = node.id;
+    out.x = node.x;
+    out.y = node.y;
+    out.count = node.count;
+    out.parentId = -1;
+    out.pointIndex = node.pointIndex;
+    out.isCluster = node.isCluster;
+    out.zoom = zoom;
+    out.minLeafId = node.minLeafId;
+    if (!node.values.empty()) {
+      out.values = node.values;
+    }
+  }
+
+  // The points inside the bounds at level maxZoom + 1, as node indices, given
+  // the maxZoom tree. That level is the maxZoom one with each cluster replaced
+  // by its children, all of them points (a cluster formed at maxZoom folds
+  // input points only), so it is read from the maxZoom tree rather than kept as
+  // a tree of its own. A child lies within r of the point its cluster grew
+  // from, and so does the centroid, so within 2r of the centroid: the tree is
+  // queried with the bounds widened by that, then each point is tested against
+  // the bounds.
+  void pointsInBounds(const KDTree& maxZoomTree, double minX, double minY, double maxX, double maxY,
+                      std::vector<int32_t>& points) const {
+    const double r = clusterRadiusAtZoom(_options.radius, static_cast<double>(_options.maxZoom));
+    // The slack covers rounding: relative in the radius test, and up to an
+    // ulp of `extent` per point summed into a centroid.
+    const double margin = 2.0 * r * (1.0 + 1e-9) +
+      static_cast<double>(_options.extent) * static_cast<double>(_points.size()) *
+        std::numeric_limits<double>::epsilon();
+
+    std::vector<int32_t> nodes;
+    maxZoomTree.range(minX - margin, minY - margin, maxX + margin, maxY + margin, nodes);
+    points.clear();
+    auto addIfInside = [&](int32_t index) {
+      const ClusterNode& point = _nodes[index];
+      if (point.x >= minX && point.x <= maxX && point.y >= minY && point.y <= maxY) {
+        points.push_back(index);
+      }
+    };
+    for (const int32_t index : nodes) {
+      if (!_nodes[index].isCluster) {
+        addIfInside(index);
+        continue;
+      }
+      const size_t cluster = static_cast<size_t>(index) - _points.size();
+      for (int32_t c = _childOffsets[cluster]; c < _childOffsets[cluster + 1]; c++) {
+        addIfInside(_childNodes[c]);
+      }
+    }
+  }
+
+  // Point ids come from the caller. packPoints numbers them 0..count-1, so a
+  // table indexed by id is the usual case; ids too sparse for one are looked
+  // up in a sorted list instead. A repeated id resolves to its last point.
+  void indexPointIds() {
+    const size_t count = _points.size();
+    int32_t minId = std::numeric_limits<int32_t>::max();
+    int32_t maxId = std::numeric_limits<int32_t>::min();
+    for (const auto& point : _points) {
+      minId = std::min(minId, point.id);
+      maxId = std::max(maxId, point.id);
+    }
+
+    if (minId >= 0 && static_cast<size_t>(maxId) < std::max<size_t>(count * 4, 1024)) {
+      _nodeByPointId.assign(static_cast<size_t>(maxId) + 1, -1);
+      for (size_t i = 0; i < count; i++) {
+        _nodeByPointId[static_cast<size_t>(_points[i].id)] = static_cast<int32_t>(i);
+      }
+      return;
+    }
+
+    _sparsePointIds.reserve(count);
+    for (size_t i = 0; i < count; i++) {
+      _sparsePointIds.emplace_back(_points[i].id, static_cast<int32_t>(i));
+    }
+    std::sort(_sparsePointIds.begin(), _sparsePointIds.end());
+  }
+
+  /** The index in `_nodes` of the point or cluster with this id, or -1. */
+  int32_t findNode(int32_t id) const {
+    const int64_t clusterOffset = static_cast<int64_t>(id) - _firstClusterId;
+    const int64_t clusterCount = static_cast<int64_t>(_nodes.size() - _points.size());
+    if (clusterOffset >= 0 && clusterOffset < clusterCount) {
+      return static_cast<int32_t>(static_cast<int64_t>(_points.size()) + clusterOffset);
+    }
+
+    if (!_nodeByPointId.empty()) {
+      return id >= 0 && static_cast<size_t>(id) < _nodeByPointId.size()
+        ? _nodeByPointId[static_cast<size_t>(id)]
+        : -1;
+    }
+
+    // The last entry with this id: pairs sort by id, then by node index.
+    auto it = std::upper_bound(
+      _sparsePointIds.begin(), _sparsePointIds.end(), id,
+      [](int32_t value, const std::pair<int32_t, int32_t>& entry) { return value < entry.first; }
+    );
+    if (it == _sparsePointIds.begin()) return -1;
+    --it;
+    return it->first == id ? it->second : -1;
   }
 
   ClusterEngineConfig _options;
   std::vector<PointData> _points;
-  std::unordered_map<int32_t, KDTree> _resultTrees;
-  std::unordered_map<int32_t, std::vector<ClusterNode>> _clustersByZoom;
-  std::unordered_map<int32_t, ClusterNode> _nodeById;
-  std::unordered_map<int32_t, std::vector<int32_t>> _childrenByParent;
-  int32_t _nextClusterId = 0;
+  // Built by build(): see there.
+  std::vector<ClusterNode> _nodes;
+  // One tree per distinct level; `_treeByZoom[z - minZoom]` picks the one for z.
+  std::vector<KDTree> _trees;
+  std::vector<int32_t> _treeByZoom;
+  // Children of the k-th cluster (`_nodes[_points.size() + k]`):
+  // `_childNodes[_childOffsets[k]]` up to `_childNodes[_childOffsets[k + 1]]`.
+  std::vector<int32_t> _childOffsets;
+  std::vector<int32_t> _childNodes;
+  std::vector<int32_t> _nodeByPointId;
+  std::vector<std::pair<int32_t, int32_t>> _sparsePointIds;
+  int32_t _firstClusterId = 0;
   bool _built = false;
 };
 

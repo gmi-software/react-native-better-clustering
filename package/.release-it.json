@@ -1,19 +1,25 @@
 {
   "git": {
-    "commitMessage": "chore: release v${version}",
     "tagName": "v${version}",
     "requireCleanWorkingDir": true,
     "requireUpstream": false
   },
   "github": {
     "release": true,
-    "releaseName": "v${version}"
+    "releaseName": "v${version}",
+    "tagName": "v${version}"
   },
   "npm": {
-    "publish": true
+    "publish": true,
+    "publishArgs": ["--provenance"],
+    "skipChecks": true
   },
   "hooks": {
-    "before:init": ["bun run build", "bun run test:ci"]
+    "before:init": ["bun run test:ci"]
   },
-  "plugins": {}
+  "plugins": {
+    "@release-it/conventional-changelog": {
+      "preset": "conventionalcommits"
+    }
+  }
 }

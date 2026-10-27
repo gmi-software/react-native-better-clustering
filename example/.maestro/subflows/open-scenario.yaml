@@ -1,0 +1,13 @@
+# Opens scenario `${SCENARIO}` from the menu on a fresh launch.
+appId: com.nitromapcluster.example
+---
+- launchApp:
+    clearState: true
+- scrollUntilVisible:
+    element:
+      id: scenario-${SCENARIO}
+    direction: DOWN
+- tapOn:
+    id: scenario-${SCENARIO}
+- assertVisible:
+    id: back

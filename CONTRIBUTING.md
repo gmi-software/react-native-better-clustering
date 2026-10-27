@@ -9,10 +9,13 @@ Thank you for your interest in contributing to `react-native-better-clustering`!
 - [Development Setup](#development-setup)
 - [Project Structure](#project-structure)
 - [Development Workflow](#development-workflow)
+- [Building the Native Code](#building-the-native-code)
 - [Code Style](#code-style)
 - [Testing](#testing)
 - [Nitro Modules](#nitro-modules)
 - [Pull Request Process](#pull-request-process)
+- [Releasing](#releasing)
+- [Security](#security)
 
 ## Code of Conduct
 
@@ -35,12 +38,12 @@ This project adheres to a [Code of Conduct](CODE_OF_CONDUCT.md). By participatin
 
 ### Prerequisites
 
-- Node.js (v20 or higher)
-- [Bun](https://bun.sh)
+- [Bun](https://bun.sh) — the version pinned in the root `package.json` (`packageManager`); CI reads it from there
+- Node.js 22 or newer (some tools, e.g. `npm pack` in the package checks, run on Node)
 - React Native development environment
 - For iOS: Xcode and CocoaPods
-- For Android: Android Studio and Android SDK
-- Expo CLI (for running the example app)
+- For Android: Android Studio, the Android SDK and the NDK pinned in `package/android/gradle.properties`
+- The example app runs through the Expo CLI (`bunx expo …`); Expo Go is not supported
 
 ### Installation
 
@@ -68,6 +71,18 @@ bunx expo prebuild
 bunx expo run:android
 ```
 
+The app opens on a menu of scenarios, defined in `example/src/scenarios.tsx`. Add one when a bug needs a real map to reproduce.
+
+### End-to-end flows
+
+`example/.maestro/` holds a [Maestro](https://maestro.mobile.dev) flow for each scenario. The flows assert on the dev HUD and on each scenario's status text, not on map annotations. Run them against a Release build: it embeds the JS bundle, while a Debug build opens the dev client launcher first.
+
+```bash
+cd example
+bunx expo run:ios --configuration Release   # or: bunx expo run:android --variant release
+bun run e2e
+```
+
 ## Project Structure
 
 ```
@@ -82,17 +97,64 @@ react-native-better-clustering/
 │   │   └── utils/        # Shared utilities
 │   ├── cpp/              # Shared C++ clustering core (ClusterEngine)
 │   ├── android/          # Android native module (C++ via CMake)
+│   ├── bench/            # Core benchmark and its CI gate (not published)
+│   ├── scripts/          # npm package checks (verify-pack, verify-exports)
+│   ├── test/             # bun test preload (happy-dom)
 │   └── nitrogen/         # Nitrogen-generated bindings (generated, not committed)
 ├── example/              # Expo example app (CNG: ios/ and android/ are generated)
-└── docs/                 # Docusaurus documentation site
+├── docs/                 # Docusaurus documentation site
+├── config/               # Shared tool config (clang-format)
+├── scripts/              # Repo scripts (clang-format)
+└── .github/              # CI workflows, issue/PR templates, CODEOWNERS, Dependabot
 ```
 
 ## Development Workflow
 
-- Generate Nitro bindings: `cd package && bun run specs`
-- Typecheck: `cd package && bun run typecheck`
-- Lint: `bun run lint` (from the repository root)
-- Test: `cd package && bun run test`
+From the repository root:
+
+| Command | What it does |
+| --- | --- |
+| `bun run lint` | ESLint over the whole repo (`--max-warnings 0`) |
+| `bun run format` / `bun run format:check` | Prettier write / check |
+| `bun run format:cpp` | clang-format the C++ sources (local only) |
+| `bun run docs:start` / `bun run docs:build` | Docusaurus dev server / production build |
+
+From `package/`:
+
+| Command | What it does |
+| --- | --- |
+| `bun run specs` | Regenerate the Nitro bindings into `nitrogen/` |
+| `bun run typecheck` | TypeScript over `src` and the tests |
+| `bun run test` | `bun test --isolate` |
+| `bun run build` | react-native-builder-bob → `lib/module` (ESM) + `lib/typescript` |
+| `bun run verify:pack` | Check what `npm pack` would publish |
+| `bun run verify:exports` | Check every `exports` subpath resolves from the packed tarball |
+| `bun run bench` | Benchmark the C++ core → `bench/results/latest.json` ([`package/bench/README.md`](package/bench/README.md)) |
+
+## Building the Native Code
+
+CI compiles only the library targets (see `.github/workflows/native-build.yml`). To reproduce that locally from a clean state:
+
+```bash
+# iOS — builds the react-native-better-clustering pod scheme
+cd example
+bunx expo prebuild --platform ios --clean --no-install
+cd ios && pod install && cd ../..
+xcodebuild build \
+  -workspace example/ios/NitroMapClusterExample.xcworkspace \
+  -scheme react-native-better-clustering \
+  -configuration Debug \
+  -destination 'generic/platform=iOS Simulator' \
+  ARCHS=arm64 ONLY_ACTIVE_ARCH=NO CODE_SIGNING_ALLOWED=NO
+
+# Android — builds the library Gradle module
+cd example
+bunx expo prebuild --platform android --clean --no-install
+cd android
+./gradlew :react-native-better-clustering:assembleDebug -PreactNativeArchitectures=arm64-v8a
+```
+
+The pod scheme only exists after Xcode has loaded the workspace once (`xcodebuild -list` does that). Re-run `pod install` after switching branches.
 
 ## Code Style
 
@@ -105,17 +167,27 @@ react-native-better-clustering/
 - Tests import from `bun:test`. A DOM is provided by happy-dom (`package/test/setup.ts`, preloaded via `package/bunfig.toml`) for hooks and components rendered with `@testing-library/react`.
 - Mock external modules with `mock.module()` **before** importing the module under test, then import it with `await import()`: static imports are evaluated first. Module mocks are process-wide, so mock native/external boundaries (e.g. `react-native-nitro-modules`), not the library's own modules.
 - Test files are typechecked with the rest of the package (`bun run typecheck`).
-- The C++ clustering core has a standalone test:
+- The C++ clustering core has a standalone test. CI runs it under UBSan, so undefined behaviour (such as casting `NaN` to an integer) fails it:
   ```bash
   cd package/cpp
-  c++ -std=c++20 -I. ClusterEngineCore.test.cpp -o cluster_test
+  c++ -std=c++20 -I. -fsanitize=undefined,float-cast-overflow -fno-sanitize-recover=all ClusterEngineCore.test.cpp -o cluster_test
   ./cluster_test
   ```
+- `HybridClusterEngine` (the Nitro object around the core) has a lifetime test that links Nitro's C++ runtime and React Native's JSI from `node_modules`, so it needs `bun install` first. It runs under ASan and UBSan; pass `thread` for TSan. CI does not run it yet:
+  ```bash
+  cd package
+  bun run test:native          # or: bun run test:native thread
+  ```
+
+## Benchmarks
+
+The C++ core has a benchmark with seeded datasets, `cd package && bun run bench`. On pull requests that touch `package/cpp/` or `package/bench/`, the `Bench` workflow compares the engine's instruction counts, allocations and memory with the base branch, comments the results and fails on a regression past the gate. [`package/bench/README.md`](package/bench/README.md) describes the datasets, the metrics, the gate and how to refresh the committed baseline.
 
 ## Nitro Modules
 
 - Specs and types are generated by Nitrogen from `*.nitro.ts` files.
 - After changing any spec or Hybrid Object type, run `cd package && bun run specs`. The output under `package/nitrogen/` is generated and git-ignored — never commit it; CI and `npm pack` regenerate it.
+- `nitrogen` is pinned exactly, because the code it generates sets the oldest `react-native-nitro-modules` an app can build with: today's bindings include `PropNameIDCache.hpp`, so they need Nitro 0.32.0 or newer. Bump `nitrogen` and the `react-native-nitro-modules` devDependency together, then build the generated code against the documented floor. If the floor rises, update the `#error` check in `package/cpp/HybridClusterEngine.hpp` and the floor in `README.md`, `docs/docs/compatibility.md` and `docs/docs/setup/installation.md`.
 
 ## Pull Request Process
 
@@ -127,22 +199,8 @@ react-native-better-clustering/
 
 ## Releasing
 
-From `package/` after manual testing on iOS and Android:
+Releases are cut by maintainers and published from CI with npm provenance — never from a developer machine. See [RELEASING.md](RELEASING.md).
 
-```bash
-bun run build
-bun run test:ci
-bun run release
-```
+## Security
 
-This runs `release-it` (see `.release-it.json`): builds, tests, creates a git tag,
-GitHub release, and publishes to npm. Review `CHANGELOG.md` before releasing.
-
-### Manual test checklist (before first publish)
-
-- [ ] `cd example && bunx expo prebuild --clean`
-- [ ] `bunx expo run:ios` — RNBC tab renders 30k clustered markers; tap cluster zooms; pan/zoom is smooth
-- [ ] `bunx expo run:android` — same, with Google Maps key configured
-- [ ] Verify `cluster={false}` marker stays unclustered; `renderCluster` custom bubble shows
-- [ ] Confirm no `react-native-better-clustering:` errors in Metro logs
-- [ ] `cd package && bun run verify:pack` before `bun run release`
+Please report vulnerabilities privately — see [SECURITY.md](SECURITY.md).

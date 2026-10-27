@@ -9,36 +9,36 @@ sidebar_position: 1
 ## Install packages
 
 ```bash
-npm install react-native-better-clustering react-native-nitro-modules
-```
-
-For map rendering (required):
-
-```bash
-npm install react-native-maps
+npm install react-native-better-clustering react-native-nitro-modules react-native-maps
 cd ios && pod install
 ```
 
-### Reanimated (required)
+| Peer dependency | Version | |
+|-----------------|---------|---|
+| `react-native-maps` | `>=1.20.1` | Required |
+| `react-native-nitro-modules` | `>=0.32.0` | Required |
+| `react-native-reanimated` | `^4.1.0` | Optional, see [Reanimated](#reanimated-optional) |
 
-Cluster bubbles fade in on zoom using [Reanimated](https://docs.swmansion.com/react-native-reanimated/),
-which runs the animation on the UI thread:
+`react-native-nitro-modules` is declared as an *optional* peer dependency, as
+Nitro recommends for libraries, so package managers never install it on their
+own: the app picks the Nitro version. Install it yourself, at 0.32.0 or newer.
+The native build fails on older versions (see
+[Troubleshooting](../troubleshooting.md#nitro-version)).
 
-```bash
-npm install react-native-reanimated react-native-worklets
-cd ios && pod install
-```
+### Reanimated (optional)
 
-In **bare React Native**, add the Worklets Babel plugin (must be last) to `babel.config.js`:
+With [Reanimated](https://docs.swmansion.com/react-native-reanimated/)
+installed, the default cluster bubbles cross-fade on zoom, and a splitting
+cluster's parts glide out of it while merging clusters glide into one, all
+animated on the UI thread (see [`clusterFadeInDuration`](../api/mapview.md)). Install it by
+following Reanimated's own
+[installation guide](https://docs.swmansion.com/react-native-reanimated/docs/fundamentals/getting-started/):
+it needs `react-native-worklets` and, in bare React Native, the Worklets Babel
+plugin.
 
-```js
-module.exports = {
-  presets: ['module:@react-native/babel-preset'],
-  plugins: ['react-native-worklets/plugin'],
-}
-```
-
-With **Expo**, `babel-preset-expo` adds this plugin automatically — no Babel changes needed.
+Without Reanimated, clusters still render: bubbles appear and disappear without
+a fade or glide, and development builds log a one-time notice. Pass
+`clusterFadeInDuration={0}` to opt out of the fade and the notice.
 
 ## New Architecture
 
@@ -50,7 +50,14 @@ Confirm it is enabled and rebuild the native app.
 Use a [development build](https://docs.expo.dev/develop/development-builds/introduction/) — not Expo Go.
 
 ```bash
-npx expo install react-native-better-clustering react-native-nitro-modules react-native-maps react-native-reanimated react-native-worklets
+npx expo install react-native-better-clustering react-native-nitro-modules react-native-maps
+```
+
+For the [cluster fade](#reanimated-optional), add Reanimated as well;
+`babel-preset-expo` configures its Babel plugin:
+
+```bash
+npx expo install react-native-reanimated react-native-worklets
 ```
 
 Add the `react-native-maps` config plugin to `app.json`:

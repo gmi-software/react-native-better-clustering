@@ -1,7 +1,7 @@
 {
   "name": "react-native-better-clustering",
-  "version": "1.0.0",
-  "description": "A faster react-native-map-clustering — same MapView API, C++/Nitro supercluster engine under the hood",
+  "version": "1.1.0",
+  "description": "A drop-in react-native-map-clustering replacement — same MapView API, C++/Nitro supercluster engine under the hood",
   "author": "gmi.software",
   "license": "MIT",
   "homepage": "https://gmi.software/open-source",
@@ -76,12 +76,14 @@
     "*.podspec",
     "react-native.config.js",
     "README.md",
+    "!**/__tests__",
     "!**/*.test.ts",
     "!**/*.test.tsx",
     "!**/*.test.js",
     "!**/*.test.d.ts",
     "!cpp/*.test.cpp",
     "!cpp/cluster_test",
+    "!cpp/thread_test",
     "!cpp/cluster_bench"
   ],
   "scripts": {
@@ -95,9 +97,11 @@
     "test": "bun test --isolate",
     "test:watch": "bun test --watch",
     "test:ci": "bun test --isolate",
+    "test:native": "bash scripts/test-native.sh",
     "verify:pack": "node scripts/verify-pack.mjs",
-    "release": "release-it",
-    "verify:exports": "node scripts/verify-exports.mjs"
+    "verify:exports": "node scripts/verify-exports.mjs",
+    "bench": "node bench/run.mjs",
+    "bench:compare": "node bench/compare.mjs"
   },
   "keywords": [
     "react-native",
@@ -108,14 +112,17 @@
     "supercluster"
   ],
   "publishConfig": {
+    "access": "public",
     "registry": "https://registry.npmjs.org/"
   },
   "devDependencies": {
     "@happy-dom/global-registrator": "^20.14.5",
     "@react-native/eslint-config": "0.85.3",
+    "@release-it/conventional-changelog": "^12.0.2",
     "@testing-library/react": "^16.3.2",
     "@types/bun": "^1.4.2",
     "@types/react": "^19.2.15",
+    "@types/supercluster": "7.1.3",
     "nitrogen": "0.35.9",
     "react": "19.2.3",
     "react-dom": "19.2.3",
@@ -124,19 +131,22 @@
     "react-native-maps": "^1.26.0",
     "react-native-nitro-modules": "0.35.9",
     "react-native-reanimated": "^4.5.0",
-    "release-it": "^19.0.0",
+    "release-it": "^21.1.0",
+    "supercluster": "8.0.1",
     "typescript": "^6.0.3"
   },
   "peerDependencies": {
     "react": "*",
     "react-native": "*",
-    "react-native-maps": "*",
+    "react-native-maps": ">=1.20.1",
     "react-native-nitro-modules": "*",
-    "react-native-reanimated": ">=4.0.0",
-    "react-native-worklets": ">=0.6.0"
+    "react-native-reanimated": "^4.1.0"
   },
   "peerDependenciesMeta": {
-    "react-native-maps": {
+    "react-native-nitro-modules": {
+      "optional": true
+    },
+    "react-native-reanimated": {
       "optional": true
     }
   },

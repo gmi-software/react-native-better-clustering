@@ -1,10 +1,15 @@
 import { describe, expect, it } from 'bun:test'
 
+import type { BBox } from '../geojson/types'
 import type { MapRegion } from '../types'
 
+import { DEFAULT_VIEWPORT_TILE_SIZE, GEO_VIEWPORT_TILE_SIZE } from './defaults'
 import {
+  bboxToRegion,
   bboxToZoom,
+  cameraZoomFromRegion,
   clusterZoomFromRegion,
+  coordinatesToRegion,
   isValidRegion,
   regionToBBox,
   type MapDimensions,
@@ -31,6 +36,29 @@ function assertFiniteBBox(bbox: ReturnType<typeof regionToBBox>): void {
 function assertFiniteZoom(zoom: number): void {
   expect(Number.isFinite(zoom)).toBe(true)
 }
+
+describe('cameraZoomFromRegion', () => {
+  it('inverts the 256-pt tile region a map shows at a camera zoom', () => {
+    for (const zoom of [3, 14, 18.5, 19, 21]) {
+      const longitudeDelta = (360 * MAP_DIMENSIONS.width) / (256 * 2 ** zoom)
+      const region = { ...VALID_REGION, longitudeDelta }
+
+      expect(cameraZoomFromRegion(region, MAP_DIMENSIONS)).toBeCloseTo(zoom, 9)
+    }
+  })
+
+  it('is -Infinity for an invalid region or a map without width', () => {
+    expect(
+      cameraZoomFromRegion(
+        { ...VALID_REGION, longitudeDelta: Number.NaN },
+        MAP_DIMENSIONS
+      )
+    ).toBe(-Infinity)
+    expect(cameraZoomFromRegion(VALID_REGION, { width: 0, height: 800 })).toBe(
+      -Infinity
+    )
+  })
+})
 
 describe('isValidRegion', () => {
   it('accepts a well-formed region', () => {
@@ -179,6 +207,54 @@ describe('clusterZoomFromRegion', () => {
   })
 })
 
+// Pin the tile-size argument (not clustering `extent`): at 256 these match
+// `@mapbox/geo-viewport`'s default; at 512 they must be exactly one level lower.
+const GEO_VIEWPORT_CASES = [
+  {
+    name: 'warsaw',
+    bbox: [20.9, 52.1, 21.2, 52.4] as BBox,
+    geoViewportZoom: 10,
+  },
+  { name: 'region', bbox: [14.1, 49, 24.2, 54.9] as BBox, geoViewportZoom: 5 },
+  {
+    name: 'sf',
+    bbox: [-122.5, 37.7, -122.3, 37.9] as BBox,
+    geoViewportZoom: 11,
+  },
+  {
+    name: 'equator',
+    bbox: [-0.01, -0.01, 0.01, 0.01] as BBox,
+    geoViewportZoom: 14,
+  },
+]
+
+describe('bboxToZoom tile size', () => {
+  const dimensions: MapDimensions = { width: 400, height: 800 }
+
+  it.each(GEO_VIEWPORT_CASES)(
+    'matches geo-viewport at tileSize 256 ($name)',
+    ({ bbox, geoViewportZoom }) => {
+      expect(bboxToZoom(bbox, dimensions, 1, 21, GEO_VIEWPORT_TILE_SIZE)).toBe(
+        geoViewportZoom
+      )
+    }
+  )
+
+  it.each(GEO_VIEWPORT_CASES)(
+    'is exactly one zoom lower at tileSize 512 ($name)',
+    ({ bbox, geoViewportZoom }) => {
+      expect(
+        bboxToZoom(bbox, dimensions, 1, 21, DEFAULT_VIEWPORT_TILE_SIZE)
+      ).toBe(geoViewportZoom - 1)
+    }
+  )
+
+  it('defaults to 512 for react-native-clusterer parity', () => {
+    const { bbox, geoViewportZoom } = GEO_VIEWPORT_CASES[0]!
+    expect(bboxToZoom(bbox, dimensions, 1, 21)).toBe(geoViewportZoom - 1)
+  })
+})
+
 describe('bboxToZoom', () => {
   it('accounts for map height (geo-viewport parity)', () => {
     const polandBBox = [14.1, 49.0, 24.2, 54.9] as const
@@ -191,5 +267,28 @@ describe('bboxToZoom', () => {
     assertFiniteZoom(wideZoom)
     assertFiniteZoom(tallZoom)
     expect(tallZoom).toBeGreaterThan(wideZoom)
+  })
+})
+
+describe('bboxToRegion', () => {
+  const coordinates = [
+    { latitude: 52.2297, longitude: 21.0122 },
+    { latitude: 52.4064, longitude: 16.9252 },
+    { latitude: 50.0647, longitude: 19.945 },
+  ]
+
+  it('returns the region coordinatesToRegion fits to the coordinates it spans', () => {
+    expect(bboxToRegion([16.9252, 50.0647, 21.0122, 52.4064])).toEqual(
+      coordinatesToRegion(coordinates)
+    )
+  })
+
+  it('keeps the minimum delta for a single point', () => {
+    expect(bboxToRegion([21.0122, 52.2297, 21.0122, 52.2297])).toEqual({
+      latitude: 52.2297,
+      longitude: 21.0122,
+      latitudeDelta: 0.001,
+      longitudeDelta: 0.001,
+    })
   })
 })

@@ -84,4 +84,5 @@ lib/
 
 # compiled C++ local binaries
 cpp/cluster_test
+cpp/thread_test
 cpp/cluster_bench

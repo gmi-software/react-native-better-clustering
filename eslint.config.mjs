@@ -66,13 +66,10 @@ export default tseslint.config(
   },
   {
     // Known React Compiler violations: refs read/written during render and a
-    // synchronous setState in an effect. They are refactored by #12 / #13
-    // (useClusterer) and the #5 branch (useFadePresence); drop this override
-    // with those fixes instead of adding files to it.
-    files: [
-      'package/src/hooks/useClusterer.ts',
-      'package/src/compat/useFadePresence.ts',
-    ],
+    // synchronous setState in an effect. They are refactored by the #5 branch
+    // (useFadePresence); drop this override with that fix instead of adding
+    // files to it.
+    files: ['package/src/compat/useFadePresence.ts'],
     rules: {
       'react-hooks/refs': 'off',
       'react-hooks/set-state-in-effect': 'off',
