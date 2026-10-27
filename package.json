@@ -28,14 +28,14 @@
     "react-native-reanimated": "4.5.0",
     "react-native-worklets": "0.10.0",
     "webpack": "5.105.4",
-    "webpackbar": "6.0.1",
-    "@docusaurus/core": "3.9.2",
-    "@docusaurus/bundler": "3.9.2",
-    "@docusaurus/plugin-content-docs": "3.9.2",
-    "@docusaurus/theme-translations": "3.9.2",
-    "@docusaurus/utils": "3.9.2",
-    "@docusaurus/utils-common": "3.9.2",
-    "@docusaurus/utils-validation": "3.9.2"
+    "webpackbar": "7.0.0",
+    "@docusaurus/core": "3.10.2",
+    "@docusaurus/bundler": "3.10.2",
+    "@docusaurus/plugin-content-docs": "3.10.2",
+    "@docusaurus/theme-translations": "3.10.2",
+    "@docusaurus/utils": "3.10.2",
+    "@docusaurus/utils-common": "3.10.2",
+    "@docusaurus/utils-validation": "3.10.2"
   },
   "devDependencies": {
     "@commitlint/cli": "^21.2.3",
