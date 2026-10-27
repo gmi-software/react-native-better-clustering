@@ -8,8 +8,14 @@ const config: Config = {
     "A drop-in react-native-map-clustering replacement — same MapView API, C++ supercluster engine via Nitro.",
   favicon: "img/favicon.svg",
 
+  // The flags `v4: true` meant up to 3.9. Since 3.10 the shortcut also turns
+  // on Docusaurus Faster (needs @docusaurus/faster), drops MDX 1 heading IDs
+  // (`{#id}`, used in troubleshooting.md) and namespaces site storage.
   future: {
-    v4: true,
+    v4: {
+      removeLegacyPostBuildHeadAttribute: true,
+      useCssCascadeLayers: true,
+    },
   },
 
   url: "https://gmi-software.github.io",
