@@ -1,6 +1,5 @@
 // Learn more: https://docs.expo.dev/guides/monorepos/
 const { getDefaultConfig } = require('expo/metro-config')
-const { resolve: resolveRequest } = require('metro-resolver')
 const path = require('path')
 
 const expoPackageRoot = path.dirname(require.resolve('expo/package.json'))
@@ -66,7 +65,8 @@ config.resolver.resolveRequest = (context, moduleName, platform) => {
     return resolveFromExample(moduleName)
   }
 
-  return resolveRequest(context, moduleName, platform)
+  // Metro's own resolver, so no metro-resolver of a different version.
+  return context.resolveRequest(context, moduleName, platform)
 }
 
 module.exports = config
