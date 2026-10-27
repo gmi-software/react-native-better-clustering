@@ -61,7 +61,7 @@ machine:
 - workflows check out with `persist-credentials: false`, and CI never writes to
   git
 
-1.0.0 predates this workflow and was published without provenance; use 1.0.1
+1.0.0 predates this workflow and was published without provenance; use 1.1.0
 or later.
 
 If you believe a published artifact does not match this repository, treat it as

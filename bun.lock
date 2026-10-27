@@ -65,7 +65,7 @@
     },
     "package": {
       "name": "react-native-better-clustering",
-      "version": "1.0.0",
+      "version": "1.1.0",
       "devDependencies": {
         "@happy-dom/global-registrator": "^20.14.5",
         "@react-native/eslint-config": "0.85.3",
