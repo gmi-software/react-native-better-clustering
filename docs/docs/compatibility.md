@@ -34,53 +34,9 @@ sidebar_position: 4
 
 ## Migrate from react-native-map-clustering
 
-The main export **is** the clustered `MapView`.
-`react-native-better-clustering/compat` is a backwards-compatible alias.
-
-```diff
-- import MapView from 'react-native-map-clustering'
-+ import MapView from 'react-native-better-clustering'
-```
-
-Supported props include `radius`, `minPoints`, `minZoom`, `maxZoom`, `extent`,
-`nodeSize`, `clusteringEnabled`, `onClusterPress`, `clusterColor`,
-`clusterTextColor`, `spiralEnabled`, `renderCluster`, and standard
-`react-native-maps` `MapView` props.
-
-### Coming from react-native-map-clustering 3.x
-
-`onRegionChangeComplete` follows react-native-map-clustering 4.x: it receives
-`(region, details, markers)`. 3.x passed `(region, markers)`, so a handler
-written for 3.x now gets the `details` of `react-native-maps` where it expects
-the markers. TypeScript only catches this when the handler's parameters have
-types. Take the markers from the third argument:
-
-```diff
-  <MapView
--   onRegionChangeComplete={(region, markers) => setVisible(markers)}
-+   onRegionChangeComplete={(region, details, markers) => setVisible(markers)}
-  >
-```
-
-In development, `MapView` warns once when the handler declares exactly two
-parameters (a parameter with a default value, and every one after it, does not
-count). A handler that means `(region, details)` can declare the third
-parameter, `(region, details, _markers) => …`, to silence the notice.
-
-### Known fixes over react-native-map-clustering
-
-| Issue | Status |
-|-------|--------|
-| Crash on `NaN` zoom ([#294](https://github.com/tomekvenits/react-native-map-clustering/issues/294)) | Guarded |
-| `Map size can't be 0` on Android ([#285](https://github.com/tomekvenits/react-native-map-clustering/issues/285)) | Layout-aware |
-| `maxZoom` / `spiralEnabled` ignored ([#274](https://github.com/tomekvenits/react-native-map-clustering/issues/274), [#275](https://github.com/tomekvenits/react-native-map-clustering/issues/275)) | Implemented |
-| Unstable clusters on zoom ([#255](https://github.com/tomekvenits/react-native-map-clustering/issues/255)) | Stable references |
-| Per-marker `cluster={false}` ([#297](https://github.com/tomekvenits/react-native-map-clustering/issues/297)) | Supported |
-
-Spiderfy keeps react-native-map-clustering's camera zoom 19 threshold
-(`spiderfyMinZoom`), but only spreads clusters that zooming can't split, caps
-them at `spiderfyMaxLeaves`, and also spreads them in place when pressed. See
-[Markers at the same location](./api/mapview.md#markers-at-the-same-location).
+Change one import; the props and `<Marker>` children carry over. See
+[Migrating from react-native-map-clustering](./migration.md) for the
+differences, and for `onRegionChangeComplete` when you come from 3.x.
 
 ## Migrate from react-native-clusterer
 
@@ -92,7 +48,14 @@ For custom map stacks, use advanced subpaths:
 | `Supercluster` | `/engine` |
 | `isClusterFeature` | `/geojson` |
 
-**Extra:** `clusterProperties` map/reduce aggregation via `/engine`.
+The default zoom range differs: `minZoom` is `1` and `maxZoom` is `20` here,
+where react-native-clusterer uses supercluster's `0` and `16`. Pass both to
+keep the clusters you had.
+
+**Extra:** `clusterProperties` aggregates a numeric point property into each
+cluster with `sum`, `min` or `max` (see
+[`SuperclusterOptions`](./api/types.md#superclusteroptions)). supercluster's
+`map` and `reduce` functions are not supported.
 
 ## supercluster parity
 

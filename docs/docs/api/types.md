@@ -55,7 +55,7 @@ import type {
 | `minPoints` | `2` | Min points to form a cluster |
 | `extent` | `512` | Tile extent used for projection math (see [note](#radius-and-extent)) |
 | `nodeSize` | `64` | KD-tree leaf size |
-| `clusterProperties` | `[]` | Map/reduce aggregation configs |
+| `clusterProperties` | `[]` | Numeric point properties to aggregate into each cluster: `{ source, key?, reduce }`, where `reduce` is `'sum'`, `'min'` or `'max'`. supercluster's `map` and `reduce` functions are not supported |
 | `viewportTileSize` | `extent` | Tile size used to pick a zoom from a map region (see [note](#viewport-tile-size)) |
 
 #### Valid values

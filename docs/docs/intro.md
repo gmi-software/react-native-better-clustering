@@ -19,6 +19,9 @@ same `MapView` + `<Marker>` API, with a **C++ supercluster engine** via
 + import MapView from 'react-native-better-clustering'
 ```
 
+See [Migrating from react-native-map-clustering](./migration.md) for the
+differences.
+
 ## Why C++/Nitro?
 
 react-native-map-clustering builds its supercluster index in JavaScript, on
@@ -40,5 +43,6 @@ Need full control over rendering? Use subpath exports:
 
 - [Quick Start](./quick-start.md) — install and render your first clustered map.
 - [Platform Setup](./setup/installation.md) — peers and prebuild.
+- [Migrating from react-native-map-clustering](./migration.md) — what differs.
 - [MapView API](./api/mapview.md) — props, callbacks, and customization.
 - [Hooks API](./api/hooks.md) — `useClusterer` for custom stacks.

@@ -77,8 +77,10 @@ are supported, plus:
 | `width` / `height` | window size | Seed map dimensions before `onLayout` |
 | `clusterUpdateIntervalMs` | `100` | Minimum interval (ms) between cluster recomputations while the map is moving; `0` recomputes only on settle |
 | `clusterRenderMargin` | `100` | How far outside the map, in points, cluster bubbles still render. Clusters are found, and reported to `onMarkersChange`, for the region plus half its size on each side, as in react-native-map-clustering; only rendering stops at this margin, and markers are not affected. A smaller margin mounts fewer native annotations on each zoom step, which keeps the UI thread free for the bubble fade; a larger one leaves fewer bubbles to appear at the edges during a fast pan. `Infinity` renders every cluster found |
-| `superClusterRef` | — | Ref to access the underlying `Supercluster` engine |
+| `superClusterRef` | — | Receives the [`Supercluster`](./engine.md#supercluster) behind the clusters on screen. It is replaced after each rebuild and `null` while `clusteringEnabled` is `false`; see [`superClusterRef`](../migration.md#superclusterref) |
 | `mapRef` | — | Callback ref to the inner `react-native-maps` instance |
+
+`style` applies to a `View` that wraps the map, and the map fills that view.
 
 `radius`, `minPoints`, `minZoom`, `maxZoom`, `extent` and `nodeSize` must be in
 their [valid ranges](./types.md#valid-values). An invalid one fails like a
@@ -91,7 +93,7 @@ message that names the prop.
 |------|-----------|-------------|
 | `onClusterPress` | `(cluster, markers) => void` | Fired when a cluster is tapped, with every marker in it. The markers are read only when you pass this prop; for a cluster of tens of thousands that read is most of what a press costs. The map fits the cluster's bounds either way |
 | `onMarkersChange` | `(markers) => void` | Fired when visible markers/clusters change: once the first index has loaded, then only when the visible set changes. A re-render with the same marker coordinates does not fire it, so `onMarkersChange={setState}` is safe |
-| `onRegionChangeComplete` | `(region, details, markers) => void` | Extends the maps callback with current markers, in react-native-map-clustering 4.x's order. 3.x passed `(region, markers)`: see [Coming from react-native-map-clustering 3.x](../compatibility.md#coming-from-react-native-map-clustering-3x) |
+| `onRegionChangeComplete` | `(region, details, markers) => void` | Extends the maps callback with current markers, in react-native-map-clustering 4.x's order. 3.x passed `(region, markers)`: see [Coming from react-native-map-clustering 3.x](../migration.md#coming-from-react-native-map-clustering-3x) |
 | `onError` | `(error) => void` | Fired when the native cluster index fails to build, for example because the app was not rebuilt after installing the library. Markers from an earlier successful build keep showing. Without it, the error is thrown during render so an error boundary (and LogBox in development) shows it — see [Troubleshooting](../troubleshooting.md#the-native-clusterengine-module-is-not-available) |
 
 ## Markers at the same location
@@ -114,6 +116,45 @@ only calls `onClusterPress`.
 `maxZoom` stays a cluster however far the map zooms in, and spreads out as
 above. `useClusterer` instead returns its markers on their own there (see
 [Above `maxZoom`](./engine.md#above-maxzoom)).
+
+## Across the antimeridian
+
+When the map spans ±180°, the markers on both sides show. As in supercluster,
+markers on opposite sides never join one cluster.
+
+## Which children are clustered
+
+`MapView` clusters a child when it is an element with its own `coordinate`
+prop and without `cluster={false}`, as react-native-map-clustering does. Arrays are flattened, so several
+`{items.map(…)}` lists can sit side by side. Every other child renders as it
+is, unclustered, and so does each marker inside it:
+
+```tsx
+<MapView>
+  {/* Clustered: each child is an element with a `coordinate` prop. */}
+  {shops.map((shop) => (
+    <Marker key={shop.id} coordinate={shop.location} />
+  ))}
+  {cafes.map((cafe) => (
+    <CafeMarker key={cafe.id} coordinate={cafe.location} cafe={cafe} />
+  ))}
+
+  {/* Not clustered: neither the Fragment nor `<ParkPin>` has a `coordinate` prop. */}
+  <>
+    {stations.map((station) => (
+      <Marker key={station.id} coordinate={station.location} />
+    ))}
+  </>
+  {parks.map((park) => (
+    <ParkPin key={park.id} park={park} />
+  ))}
+</MapView>
+```
+
+A component such as `CafeMarker` is clustered by its `coordinate` prop and
+renders as itself when it stands alone, so it must render a `Marker` at that
+coordinate. Spiderfy passes it a new `coordinate`. Give every marker a stable
+`key` (see [Markers flicker on zoom](../troubleshooting.md#markers-flicker-on-zoom)).
 
 ## Per-marker opt-out
 

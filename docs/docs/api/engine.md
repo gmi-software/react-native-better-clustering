@@ -22,13 +22,50 @@ import { packPoints } from 'react-native-better-clustering/utils'
 ```
 
 For GeoJSON input and supercluster-compatible helpers, prefer
-[`Supercluster`](./types.md#superclusteroptions) (used internally by
+[`Supercluster`](#supercluster) (used internally by
 [`useClusterer`](./hooks.md)). Reach for `createClusterEngine()` only when you
 need direct buffer control.
 
 `createClusterEngine()`, `Supercluster.load()` and `Supercluster.loadAsync()`
 throw if the native module is missing from the app binary; the error says how to
 rebuild (see [Troubleshooting](../troubleshooting.md#the-native-clusterengine-module-is-not-available)).
+
+## `Supercluster`
+
+A GeoJSON wrapper around the engine, with the query methods of
+[supercluster](https://github.com/mapbox/supercluster). `MapView` hands it to
+`superClusterRef`, and `useClusterer` returns it.
+
+```tsx
+import { Supercluster } from 'react-native-better-clustering/engine'
+
+const index = new Supercluster({ radius: 40, maxZoom: 16 })
+await index.loadAsync(points) // GeoJSON point features
+const clusters = index.getClusters([-180, -85, 180, 85], 2)
+index.destroy()
+```
+
+| Member | Description |
+|--------|-------------|
+| `new Supercluster(options?)` | Takes [`SuperclusterOptions`](./types.md#superclusteroptions), read once |
+| `load(points)` | Builds the index on the JS thread. Once per instance |
+| `loadAsync(points)` | Builds the index on a background thread and resolves to the instance. Once per instance |
+| `isLoaded` | Whether the index has finished building and the instance is not destroyed |
+| `getClusters(bbox, zoom)` | Points and clusters in a `[west, south, east, north]` bbox at a zoom, as in supercluster; above `maxZoom`, every point on its own (see [Above `maxZoom`](#above-maxzoom)) |
+| `getClustersFromRegion(region, mapDimensions)` | The same for a map region and its size in points, at the zoom picked with `viewportTileSize`. `[]` until loaded |
+| `getChildren(clusterId)` | A cluster's direct children |
+| `getLeaves(clusterId, limit = 10, offset = 0)` | A cluster's points, paginated. A `limit` of `Infinity` or `0` returns all |
+| `getAllLeaves(clusterId, offset = 0)` | Every point in a cluster |
+| `getClusterExpansionZoom(clusterId)` | The zoom at which a cluster splits into its children |
+| `getClusterBounds(clusterId)` | The `[west, south, east, north]` bbox of a cluster's points, without reading them |
+| `getClusterExpansionRegion(clusterId)` | A map region that fits a cluster's points |
+| `destroy()` | Frees the native index. Safe to call twice; later queries throw |
+
+Cluster features also carry `properties.getExpansionRegion()`. The query
+methods other than `getClustersFromRegion` throw until the index has loaded,
+and every query throws after `destroy()`. Unlike supercluster, there is no
+`getTile`, and `load` or `loadAsync` can be called only once per instance:
+create a new one for new points.
 
 ## Lifecycle
 
@@ -147,7 +184,8 @@ engine.isBuilt // false: build again for nextBuffer
 ## Native memory
 
 The index lives in native memory, which grows with the number of points (the
-core benchmark puts 100k points spread over the world at about 43 MB). The JS garbage
+[core benchmark](https://github.com/gmi-software/react-native-better-clustering/tree/main/package/bench)
+puts 100k points spread over the world at about 43 MB). The JS garbage
 collector does not see that memory, so an engine you drop is freed only when the
 collector happens to run, and engines discarded on every data refresh can pile
 up.

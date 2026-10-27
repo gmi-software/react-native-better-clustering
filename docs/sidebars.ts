@@ -5,6 +5,7 @@ const sidebars: SidebarsConfig = {
     'intro',
     'quick-start',
     'setup/installation',
+    'migration',
     {
       type: 'category',
       label: 'API Reference',
@@ -17,6 +18,7 @@ const sidebars: SidebarsConfig = {
         'api/engine',
       ],
     },
+    'performance',
     'troubleshooting',
     'compatibility',
   ],

@@ -46,10 +46,12 @@ markers at the same coordinate then sit on top of each other. The bundled
 `MapView` keeps them clustered and spreads them out instead.
 
 The hook destroys the underlying `Supercluster` engine on unmount, which frees
-its native index right away instead of at the next garbage collection. Index
-building runs asynchronously via `loadAsync()` so large datasets (10k+ points)
-do not block the JS thread. Clusters stay empty until the first build has
-loaded; check `supercluster.isLoaded` before calling query methods directly.
+its native index right away instead of at the next garbage collection. The
+index builds on a background thread via `loadAsync()`; comparing the points
+with the previous ones and packing them for the engine still run on the JS
+thread (see [Performance model](../performance.md)). Clusters stay empty until
+the first build has loaded; check `supercluster.isLoaded` before calling query
+methods directly.
 
 The index is rebuilt only when the points' coordinates, their order, or a
 `clusterProperties` source value changes:

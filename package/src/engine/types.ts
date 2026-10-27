@@ -4,7 +4,9 @@ import type { ReducerKind } from '../specs/ReducerKind'
 export type { ReducerKind }
 
 /**
- * Declarative cluster property aggregation (supercluster map/reduce equivalent).
+ * Declarative cluster property aggregation: the sum, minimum or maximum of a
+ * numeric point property. supercluster's `map` and `reduce` functions are not
+ * supported.
  *
  * Configured through {@linkcode SuperclusterOptions.clusterProperties}.
  *
