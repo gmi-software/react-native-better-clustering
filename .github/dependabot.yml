@@ -33,14 +33,9 @@ updates:
     # Dependabot applies it with the npm rule: `dependencies` and
     # `optionalDependencies` are production, everything else development.
     groups:
-      # Reanimated refuses to pod install next to a Worklets minor it does not
-      # support, so the two only ever move together.
-      reanimated:
-        patterns:
-          - react-native-reanimated
-          - react-native-worklets
       # The docs site. Its @docusaurus/* packages are pinned together through
-      # the root `overrides`, so they move as one reviewed bump.
+      # the root `overrides`, so they move as one reviewed bump. Dependabot
+      # cannot edit `overrides`: move them by hand in its pull request.
       docusaurus:
         patterns:
           - '@docusaurus/*'
@@ -76,6 +71,25 @@ updates:
       - dependency-name: react-native-nitro-modules
       - dependency-name: nitrogen
       - dependency-name: react-native-maps
+      # React refuses to render next to a react-dom of any other version.
+      - dependency-name: react-dom
+      # The root `overrides` pin Reanimated and Worklets, which Dependabot
+      # cannot edit, so its bumps never install. Each Reanimated minor also
+      # supports only a few React Native minors (4.7 needs 0.86) and a single
+      # Worklets minor: the pair moves with React Native.
+      - dependency-name: react-native-reanimated
+      - dependency-name: react-native-worklets
+      # These share React Native's version and move with it.
+      - dependency-name: '@react-native/*'
+      # Expo SDK 56 expects ~5.7; `npx expo install --fix` moves it.
+      - dependency-name: react-native-safe-area-context
+        update-types:
+          - 'version-update:semver-minor'
+          - 'version-update:semver-major'
+      # The JS fake engine stands in for react-native-map-clustering, which
+      # depends on supercluster ^8. Version 9 changes coordinate precision.
+      - dependency-name: supercluster
+        update-types: ['version-update:semver-major']
       # A new major of an Expo package belongs to the next Expo SDK. Moving to
       # it is an SDK upgrade (`npx expo install --fix`), not a single bump.
       - dependency-name: expo
