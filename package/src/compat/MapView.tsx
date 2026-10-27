@@ -51,6 +51,7 @@ import {
   sortByKey,
 } from './helpers'
 import { reanimated, warnFadeUnavailable } from './reanimated'
+import { warnTwoParameterRegionChangeComplete } from './regionChangeComplete'
 import { featuresNearView } from './nearView'
 import { renderSpiderClusterMarkers } from './renderSpiderClusterMarkers'
 import { useFadePresence } from './useFadePresence'
@@ -156,7 +157,12 @@ export interface ClusteredMapViewProps extends Omit<
   edgePadding?: EdgePadding
   /** Called when a cluster is pressed with the cluster and its leaf markers. */
   onClusterPress?: (cluster: ClusterFeature, markers: PointFeature[]) => void
-  /** Called when the map region settles, with visible clustered markers. */
+  /**
+   * Called when the map region settles, with visible clustered markers. The
+   * arguments follow react-native-map-clustering 4.x; 3.x passed
+   * `(region, markers)`, so development builds warn once about a handler
+   * that declares two parameters.
+   */
   onRegionChangeComplete?: (
     region: Region,
     details: Details,
@@ -491,6 +497,10 @@ const CompatMapView = forwardRef(function CompatMapView(
     onMarkersChangeRef.current = onMarkersChange
     onRegionChangeCompleteRef.current = onRegionChangeComplete
   })
+
+  useEffect(() => {
+    warnTwoParameterRegionChangeComplete(onRegionChangeComplete)
+  }, [onRegionChangeComplete])
 
   // `clusters` is the single source of truth for what is visible in the current
   // region. Reuse it for `onMarkersChange` instead of querying the engine again

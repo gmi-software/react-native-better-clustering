@@ -34,6 +34,8 @@ Built with [Nitro Modules](https://nitro.margelo.com/) for native clustering.
 
 That is it. Your `<Marker>` children, cluster props, and `react-native-maps` options keep working — the cluster index is now built in C++ on a background thread instead of in JavaScript on the JS thread.
 
+Coming from react-native-map-clustering **3.x**? `onRegionChangeComplete` receives `(region, details, markers)`, as in 4.x, not `(region, markers)`: take the markers from the third argument. Development builds warn once about a handler that declares two parameters. See [Coming from 3.x](https://gmi-software.github.io/react-native-better-clustering/docs/compatibility#coming-from-react-native-map-clustering-3x).
+
 ## Why switch?
 
 

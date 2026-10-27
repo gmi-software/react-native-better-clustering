@@ -78,6 +78,10 @@ Change one import — props and `<Marker>` children stay the same:
 + import MapView from 'react-native-better-clustering'
 ```
 
+Coming from 3.x? `onRegionChangeComplete` receives `(region, details, markers)`,
+as in 4.x, not `(region, markers)`. See
+[Coming from react-native-map-clustering 3.x](./compatibility.md#coming-from-react-native-map-clustering-3x).
+
 ## Custom map stack
 
 If you render your own `react-native-maps` `MapView` and only need cluster
