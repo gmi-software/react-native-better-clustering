@@ -71,6 +71,10 @@ const { width: WINDOW_WIDTH, height: WINDOW_HEIGHT } = Dimensions.get('window')
  */
 const noop = () => {}
 
+function defaultClusterAccessibilityLabel(count: number): string {
+  return `Cluster of ${count} markers`
+}
+
 /**
  * Marker features share an index only while each keeps its child index, so a
  * feature's `properties.index` keeps pointing at its own element in the latest
@@ -216,6 +220,17 @@ export interface ClusteredMapViewProps extends Omit<
   renderCluster?: (cluster: RenderClusterProps) => React.ReactElement
   /** Font family for default cluster labels. */
   clusterFontFamily?: string
+  /**
+   * Accessibility label for a default cluster bubble, from the number of
+   * markers in it. It is passed to the bubble's `Marker` with the `button`
+   * role. react-native-maps 1.27 does not forward either to the native map
+   * annotation yet, so screen readers may still announce the map's own
+   * marker label. Ignored when a custom
+   * {@linkcode ClusteredMapViewProps.renderCluster renderCluster} is provided.
+   *
+   * @default (count) => `Cluster of ${count} markers`
+   */
+  clusterAccessibilityLabel?: (count: number) => string
   /** Highlights a selected cluster id. */
   selectedClusterId?: string | number
   /** Background color for the selected cluster. */
@@ -295,6 +310,7 @@ interface ClusterBubbleData {
   clusterColor: string
   clusterTextColor: string
   clusterFontFamily?: string
+  accessibilityLabel: string
   tracksViewChanges: boolean
 }
 
@@ -344,6 +360,7 @@ const CompatMapView = forwardRef(function CompatMapView(
     clusterColor = '#0F52FF',
     clusterTextColor = '#FFFFFF',
     clusterFontFamily,
+    clusterAccessibilityLabel = defaultClusterAccessibilityLabel,
     selectedClusterId,
     selectedClusterColor = '#FF5722',
     animationEnabled = true,
@@ -876,6 +893,9 @@ const CompatMapView = forwardRef(function CompatMapView(
           clusterColor: effectiveClusterColor,
           clusterTextColor,
           clusterFontFamily,
+          accessibilityLabel: clusterAccessibilityLabel(
+            cluster.properties.point_count
+          ),
           tracksViewChanges,
         },
       })
@@ -894,6 +914,7 @@ const CompatMapView = forwardRef(function CompatMapView(
     clusterColor,
     clusterTextColor,
     clusterFontFamily,
+    clusterAccessibilityLabel,
     selectedClusterId,
     selectedClusterColor,
     renderCluster,
@@ -981,6 +1002,7 @@ const CompatMapView = forwardRef(function CompatMapView(
           clusterColor={data.clusterColor}
           clusterTextColor={data.clusterTextColor}
           clusterFontFamily={data.clusterFontFamily}
+          accessibilityLabel={data.accessibilityLabel}
           tracksViewChanges={data.tracksViewChanges}
           fadeInDuration={clusterFadeIn}
           fadeOutDuration={exiting && isMapMoving ? 0 : clusterFadeIn}

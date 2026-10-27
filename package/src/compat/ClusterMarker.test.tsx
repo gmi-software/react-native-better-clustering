@@ -341,6 +341,39 @@ describe('ClusterMarker redraw', () => {
   })
 })
 
+describe('ClusterMarker accessibility', () => {
+  beforeEach(() => {
+    markerProps.length = 0
+  })
+
+  it('announces a plain bubble as a button with its marker count', () => {
+    render(<ClusterMarker {...baseProps()} />)
+
+    expect(markerProps.at(-1)).toMatchObject({
+      accessibilityLabel: 'Cluster of 12 markers',
+      accessibilityRole: 'button',
+    })
+  })
+
+  it('announces a fading bubble the same way', () => {
+    render(<ClusterMarker {...baseProps({ fadeInDuration: 250 })} />)
+
+    expect(markerProps.at(-1)).toHaveProperty('animatedProps')
+    expect(markerProps.at(-1)).toMatchObject({
+      accessibilityLabel: 'Cluster of 12 markers',
+      accessibilityRole: 'button',
+    })
+  })
+
+  it('uses the label it is given', () => {
+    render(
+      <ClusterMarker {...baseProps({ accessibilityLabel: '12 Standorte' })} />
+    )
+
+    expect(markerProps.at(-1)?.accessibilityLabel).toBe('12 Standorte')
+  })
+})
+
 describe('areClusterMarkerPropsEqual', () => {
   it('returns true when feature and stable onPress reference are unchanged', () => {
     const onPress = jest.fn()
@@ -405,6 +438,16 @@ describe('areClusterMarkerPropsEqual', () => {
         baseProps({ onPress }),
         baseProps({ onPress, glideTo: glideTo(1) })
       )
+    ).toBe(false)
+  })
+
+  it('returns false when accessibilityLabel changes', () => {
+    const props = baseProps({ accessibilityLabel: 'Cluster of 12 markers' })
+    expect(
+      areClusterMarkerPropsEqual(props, {
+        ...props,
+        accessibilityLabel: '12 Standorte',
+      })
     ).toBe(false)
   })
 
