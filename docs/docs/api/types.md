@@ -19,7 +19,8 @@ import type {
 options (`radius`, `minPoints`, `onClusterPress`, `renderCluster`, etc.).
 
 `RenderClusterProps` is passed to `renderCluster` — a `ClusterFeature` plus
-`onPress`, `clusterColor`, `clusterTextColor`, and `tracksViewChanges`.
+`onPress`, `clusterColor`, `clusterTextColor`, `clusterFontFamily`, and
+`tracksViewChanges`.
 
 ## GeoJSON types (`/geojson`)
 
