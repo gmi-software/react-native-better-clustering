@@ -59,6 +59,10 @@ export class Supercluster<P extends AnyProps = AnyProps> {
   private engine: ClusterEngine | null = null
   private loadedFeatures: PointFeature<P>[] = []
   private readonly minLeafIndices = new WeakMap<ClusterFeature<P>, number>()
+  private readonly featureIds = new WeakMap<
+    PointFeature<P> | ClusterFeature<P>,
+    number
+  >()
   private destroyed = false
   private building = false
   private readonly options: Required<SuperclusterOptions>
@@ -361,6 +365,25 @@ export class Supercluster<P extends AnyProps = AnyProps> {
   }
 
   /**
+   * Engine id of a point or cluster: a point's index in the loaded points, or
+   * a cluster's `cluster_id`. Unique among the features this instance
+   * returns and the same in every query, so unlike a point's coordinates and
+   * `id`, it tells apart co-located points that have no `id`.
+   *
+   * @internal `useClusterer` and the compat `MapView` key features by it.
+   * @throws For a feature this instance did not return.
+   */
+  getFeatureId(feature: PointFeature<P> | ClusterFeature<P>): number {
+    const id = this.featureIds.get(feature)
+    if (id == null) {
+      throw new Error(
+        'react-native-better-clustering: getFeatureId() got a feature this Supercluster instance did not return.'
+      )
+    }
+    return id
+  }
+
+  /**
    * {@linkcode BBox} that every leaf in a cluster spans, as
    * `[west, south, east, north]`. The native engine walks the cluster and hands
    * JS four numbers however many points it holds, where
@@ -452,10 +475,14 @@ export class Supercluster<P extends AnyProps = AnyProps> {
   private engineFeatureToGeoJSON(
     feature: EngineClusterNode
   ): PointFeature<P> | ClusterFeature<P> {
-    if (feature.isCluster) {
-      return this.toClusterFeature(feature)
-    }
+    const geoJSON = feature.isCluster
+      ? this.toClusterFeature(feature)
+      : this.toPointFeature(feature)
+    this.featureIds.set(geoJSON, feature.id)
+    return geoJSON
+  }
 
+  private toPointFeature(feature: EngineClusterNode): PointFeature<P> {
     const original = this.loadedFeatures[feature.pointIndex]
     if (original != null) {
       return original

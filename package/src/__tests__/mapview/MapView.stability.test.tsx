@@ -17,7 +17,14 @@ import {
 import { act, render } from '@testing-library/react'
 import React, { StrictMode, useState } from 'react'
 
-import { CENTER, CITY_ZOOM, GROUP, SINGLES, type TestPoint } from './fixtures'
+import {
+  CENTER,
+  CITY_ZOOM,
+  GROUP,
+  SAME_SPOT,
+  SINGLES,
+  type TestPoint,
+} from './fixtures'
 import {
   Marker,
   clusterLabels,
@@ -494,6 +501,46 @@ describe('MapView marker keys (#28)', () => {
 
     expect(unmountsSince(start)).toEqual(['x0'])
     expect(retargetsSince(start)).toEqual([])
+  })
+})
+
+describe('MapView co-located markers (#95)', () => {
+  it('keeps both of two co-located markers after a pan changes the visible set', async () => {
+    const consoleError = spyOn(console, 'error').mockImplementation(() => {})
+    try {
+      const region = regionAt(CENTER, CITY_ZOOM)
+      const { container } = render(
+        <Map
+          points={[...SAME_SPOT.slice(0, 2), ...SINGLES]}
+          minPoints={3}
+          initialRegion={region}
+        />
+      )
+      await flush()
+      expect(renderedMarkerIds(container)).toEqual([
+        's0',
+        's1',
+        's2',
+        'same0',
+        'same1',
+      ])
+
+      await settleRegion({ ...region, longitude: region.longitude + 0.03 })
+
+      expect(renderedMarkerIds(container)).toEqual([
+        's0',
+        's1',
+        'same0',
+        'same1',
+      ])
+      expect(
+        consoleError.mock.calls.some((call) =>
+          String(call[0]).includes('same key')
+        )
+      ).toBe(false)
+    } finally {
+      consoleError.mockRestore()
+    }
   })
 })
 
