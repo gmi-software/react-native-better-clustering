@@ -40,6 +40,8 @@ lib/
 
 # Core benchmark reports written by `bun run bench`
 package/bench/results/
+# bench/js/run.mjs writes its bundle entry here and removes it.
+package/.bench-js-entry-*.ts
 
 # Nitro bindings, generated from package/src/specs by `bun run specs`
 # (runs on install via the package's `prepare` script, and before publishing)

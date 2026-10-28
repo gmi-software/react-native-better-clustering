@@ -101,7 +101,9 @@
     "verify:pack": "node scripts/verify-pack.mjs",
     "verify:exports": "node scripts/verify-exports.mjs",
     "bench": "node bench/run.mjs",
-    "bench:compare": "node bench/compare.mjs"
+    "bench:compare": "node bench/compare.mjs",
+    "bench:js": "node bench/js/run.mjs",
+    "bench:js:compare": "node bench/js/compare.mjs"
   },
   "keywords": [
     "react-native",
