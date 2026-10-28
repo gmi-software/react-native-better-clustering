@@ -168,22 +168,28 @@ describe('MapView region updates', () => {
 })
 
 describe('MapView refs', () => {
-  it('exposes the loaded Supercluster through superClusterRef, and null when clustering is off', async () => {
-    const superClusterRef = createRef() as MutableRefObject<InstanceType<
+  function createSuperClusterRef() {
+    return createRef() as MutableRefObject<InstanceType<
       typeof Supercluster
     > | null>
-    const { rerender, unmount } = render(
-      <Map superClusterRef={superClusterRef} />
-    )
-    // The first index is still building on the background thread.
+  }
+
+  it('leaves superClusterRef null until the first index has loaded', async () => {
+    const superClusterRef = createSuperClusterRef()
+    render(<Map superClusterRef={superClusterRef} />)
     expect(superClusterRef.current).toBeNull()
+
     await flush()
+    expect(superClusterRef.current).toBeInstanceOf(Supercluster)
+    expect(superClusterRef.current!.isLoaded).toBe(true)
+  })
 
+  it('moves superClusterRef to the rebuilt Supercluster after a coordinate change', async () => {
+    const superClusterRef = createSuperClusterRef()
+    const { rerender } = render(<Map superClusterRef={superClusterRef} />)
+    await flush()
     const instance = superClusterRef.current
-    expect(instance).toBeInstanceOf(Supercluster)
-    expect(instance!.isLoaded).toBe(true)
 
-    // Moving a marker rebuilds the index.
     const moved = [
       ...GROUP,
       ...SINGLES.map((point, index) =>
@@ -192,24 +198,33 @@ describe('MapView refs', () => {
     ]
     rerender(<Map superClusterRef={superClusterRef} points={moved} />)
     await flush()
+
     const rebuilt = superClusterRef.current
     expect(rebuilt).toBeInstanceOf(Supercluster)
     expect(rebuilt).not.toBe(instance)
     expect(() => rebuilt!.getClusters([-180, -85, 180, 85], 1)).not.toThrow()
+  })
+
+  it('sets superClusterRef to null while clustering is off', async () => {
+    const superClusterRef = createSuperClusterRef()
+    const { rerender } = render(<Map superClusterRef={superClusterRef} />)
+    await flush()
 
     rerender(
-      <Map
-        superClusterRef={superClusterRef}
-        points={moved}
-        clusteringEnabled={false}
-      />
+      <Map superClusterRef={superClusterRef} clusteringEnabled={false} />
     )
     await flush()
     expect(superClusterRef.current).toBeNull()
 
-    rerender(<Map superClusterRef={superClusterRef} points={moved} />)
+    rerender(<Map superClusterRef={superClusterRef} />)
     await flush()
     expect(superClusterRef.current?.isLoaded).toBe(true)
+  })
+
+  it('clears superClusterRef on unmount', async () => {
+    const superClusterRef = createSuperClusterRef()
+    const { unmount } = render(<Map superClusterRef={superClusterRef} />)
+    await flush()
 
     unmount()
     expect(superClusterRef.current).toBeNull()
