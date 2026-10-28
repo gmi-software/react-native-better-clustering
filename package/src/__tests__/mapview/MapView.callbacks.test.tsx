@@ -172,17 +172,48 @@ describe('MapView refs', () => {
     const superClusterRef = createRef() as MutableRefObject<InstanceType<
       typeof Supercluster
     > | null>
-    const { rerender } = render(<Map superClusterRef={superClusterRef} />)
+    const { rerender, unmount } = render(
+      <Map superClusterRef={superClusterRef} />
+    )
+    // The first index is still building on the background thread.
+    expect(superClusterRef.current).toBeNull()
     await flush()
 
     const instance = superClusterRef.current
     expect(instance).toBeInstanceOf(Supercluster)
     expect(instance!.isLoaded).toBe(true)
 
+    // Moving a marker rebuilds the index: the ref moves to the new engine
+    // once it has loaded, never to the destroyed one.
+    const moved = [
+      ...GROUP,
+      ...SINGLES.map((point, index) =>
+        index === 0 ? { ...point, latitude: point.latitude + 0.01 } : point
+      ),
+    ]
+    rerender(<Map superClusterRef={superClusterRef} points={moved} />)
+    await flush()
+    const rebuilt = superClusterRef.current
+    expect(rebuilt).toBeInstanceOf(Supercluster)
+    expect(rebuilt).not.toBe(instance)
+    expect(rebuilt!.isLoaded).toBe(true)
+    expect(() => rebuilt!.getClusters([-180, -85, 180, 85], 1)).not.toThrow()
+
     rerender(
-      <Map superClusterRef={superClusterRef} clusteringEnabled={false} />
+      <Map
+        superClusterRef={superClusterRef}
+        points={moved}
+        clusteringEnabled={false}
+      />
     )
     await flush()
+    expect(superClusterRef.current).toBeNull()
+
+    rerender(<Map superClusterRef={superClusterRef} points={moved} />)
+    await flush()
+    expect(superClusterRef.current?.isLoaded).toBe(true)
+
+    unmount()
     expect(superClusterRef.current).toBeNull()
   })
 

@@ -76,13 +76,15 @@ not a supercluster instance. It has supercluster's query methods
 no `getTile`, and it changes at different times:
 
 - The index builds on a background thread. Until the first build has loaded,
-  `current` is an engine whose `isLoaded` is `false`, and its query methods
-  throw.
+  `current` is `null`, so check it before you query.
 - When markers are added, removed, moved or reordered, the previous engine
   keeps serving queries until the new index has loaded. Then `current` is
   replaced and the previous engine destroyed, so read `superClusterRef.current`
   when you query instead of keeping the instance: a destroyed one throws.
-- With `clusteringEnabled={false}`, `current` is `null`.
+- With `clusteringEnabled={false}`, and after the map unmounts, `current` is
+  `null`.
+
+Whenever `current` is not `null`, it is loaded and ready to query.
 
 ## Known fixes over react-native-map-clustering
 

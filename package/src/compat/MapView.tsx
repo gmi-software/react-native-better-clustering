@@ -196,7 +196,12 @@ export interface ClusteredMapViewProps extends Omit<
   clusterColor?: string
   /** Default cluster label color. */
   clusterTextColor?: string
-  /** Receives the internal {@linkcode Supercluster} instance for imperative queries. */
+  /**
+   * Receives the loaded {@linkcode Supercluster} for imperative queries:
+   * `null` until the first index has loaded and while clustering is off.
+   * Replaced (and the previous one destroyed) after each rebuild, so read
+   * `current` when querying instead of keeping the instance.
+   */
   superClusterRef?: MutableRefObject<Supercluster | null>
   /** Callback ref for the underlying `react-native-maps` map instance. */
   mapRef?: (map: MapView | null) => void
@@ -611,9 +616,17 @@ const CompatMapView = forwardRef(function CompatMapView(
     ? Math.min(clusterFadeIn, MOVING_EXIT_HOLD_MS)
     : clusterFadeIn
 
+  // Only a loaded engine is exposed: the placeholder before the first load
+  // throws on every query, and an engine is destroyed once it is replaced or
+  // the map unmounts, so the cleanup clears the ref first.
   useEffect(() => {
-    if (superClusterRef) {
-      superClusterRef.current = clusteringEnabled ? supercluster : null
+    if (!superClusterRef) {
+      return
+    }
+    superClusterRef.current =
+      clusteringEnabled && supercluster.isLoaded ? supercluster : null
+    return () => {
+      superClusterRef.current = null
     }
   }, [superClusterRef, supercluster, clusteringEnabled])
 
