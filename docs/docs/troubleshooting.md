@@ -11,6 +11,15 @@ sidebar_position: 3
 Configure a **Google Maps API key** for `react-native-maps` (Expo plugin or
 `AndroidManifest.xml`). Ensure the key has "Maps SDK for Android" enabled.
 
+## Android crashes with "API key not found"
+
+The manifest has no `com.google.android.geo.API_KEY`. With Expo, pass the key
+to the `react-native-maps` plugin as `androidGoogleMapsApiKey` (the plugin
+ignores `googleMapsApiKey`), then run `npx expo prebuild --clean`. On Expo
+SDK 53 and 54, whose `react-native-maps` 1.20.1 has no plugin, set
+`expo.android.config.googleMaps.apiKey` instead. See
+[Installation](./setup/installation.md#expo).
+
 ## "New Architecture" errors
 
 This library is a Nitro module and requires React Native's New Architecture.

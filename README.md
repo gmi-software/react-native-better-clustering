@@ -87,11 +87,16 @@ Add the `react-native-maps` plugin to `app.json`:
 {
   "expo": {
     "plugins": [
-      ["react-native-maps", { "googleMapsApiKey": "YOUR_GOOGLE_MAPS_API_KEY" }]
+      [
+        "react-native-maps",
+        { "androidGoogleMapsApiKey": "YOUR_GOOGLE_MAPS_API_KEY" }
+      ]
     ]
   }
 }
 ```
+
+Without `androidGoogleMapsApiKey`, Android apps crash when a map mounts. iOS uses Apple Maps; add `iosGoogleMapsApiKey` only if you render with `provider={PROVIDER_GOOGLE}`. The plugin needs `react-native-maps` 1.22.0 or newer (Expo SDK 55+); on SDK 53 and 54, set the key without it as described in [Platform Setup](https://gmi-software.github.io/react-native-better-clustering/docs/setup/installation#expo).
 
 ```bash
 npx expo prebuild --clean
