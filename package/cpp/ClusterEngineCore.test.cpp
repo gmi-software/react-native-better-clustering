@@ -80,6 +80,63 @@ static void testGetLeavesPagination() {
   assert(offset.size() == 2);
 }
 
+// An offset skips whole sub-clusters by their count. Every page of a large,
+// nested cluster must still be the same slice of the full leaf order.
+static void testGetLeavesPaginationOfLargeCluster() {
+  ClusterEngineCore engine;
+  ClusterEngineConfig config;
+  config.minPoints = 2;
+  config.maxZoom = 16;
+  engine.setOptions(config);
+
+  const int32_t count = 3000;
+  std::vector<int32_t> ids(count);
+  std::vector<double> lats(count);
+  std::vector<double> lngs(count);
+  uint32_t seed = 12345;
+  const auto next = [&seed] {
+    seed = seed * 1664525u + 1013904223u;
+    return static_cast<double>(seed >> 8) / static_cast<double>(1u << 24);
+  };
+  for (int32_t i = 0; i < count; i++) {
+    ids[i] = i;
+    lats[i] = 52.0 + next() * 0.5;
+    lngs[i] = 21.0 + next() * 0.5;
+  }
+  engine.setPoints(ids.data(), lats.data(), lngs.data(), static_cast<size_t>(count));
+  engine.build();
+
+  const auto clusters = engine.getClusters({53.0, 51.0, 22.0, 20.0, 0.0});
+  const auto top = std::max_element(clusters.begin(), clusters.end(), [](const ClusterNode& a, const ClusterNode& b) {
+    return a.count < b.count;
+  });
+  assert(top != clusters.end() && top->isCluster && top->count > 1000);
+  const auto children = engine.getChildren(top->id);
+  assert(std::any_of(children.begin(), children.end(), [](const ClusterNode& c) { return c.isCluster && c.count > 10; }));
+
+  const auto all = engine.getLeaves(top->id, 0, 0);
+  assert(static_cast<int32_t>(all.size()) == top->count);
+
+  const auto expectSlice = [&](int32_t limit, int32_t offset) {
+    const auto page = engine.getLeaves(top->id, limit, offset);
+    const int32_t begin = std::clamp(offset, 0, top->count);
+    const int32_t end = limit <= 0 ? top->count : std::min(top->count, begin + limit);
+    assert(static_cast<int32_t>(page.size()) == end - begin);
+    for (int32_t i = 0; i < end - begin; i++) {
+      assert(page[i].id == all[begin + i].id);
+    }
+  };
+
+  for (int32_t offset = -1; offset <= top->count + 1; offset++) {
+    expectSlice(7, offset);
+  }
+  for (const int32_t limit : {0, 1, 10, 100, 1000}) {
+    for (const int32_t offset : {0, 1, 9, 10, 500, top->count - 10, top->count - 1, top->count}) {
+      expectSlice(limit, offset);
+    }
+  }
+}
+
 static void testPropertyAggregationSumMinMax() {
   ClusterEngineCore engine;
   ClusterEngineConfig config;
@@ -1351,6 +1408,7 @@ static void testInvalidOptionsNameTheOption() {
 int main() {
   testGetLeavesReturnsAllPointsInCluster();
   testGetLeavesPagination();
+  testGetLeavesPaginationOfLargeCluster();
   testPropertyAggregationSumMinMax();
   testBufferV2Aggregation();
   testPointIndexPreservesOriginalInputIndex();
