@@ -73,11 +73,15 @@ function toError(error: unknown): Error {
  *   only other properties change, leaves are refreshed without a rebuild.
  * - Double-buffers: the previous engine keeps serving queries until its
  *   replacement has loaded, and is destroyed after the commit that retires it.
+ * - Runs one build at a time. A build that newer data overtakes still replaces
+ *   the active engine once it loads, and then the newest array builds, so data
+ *   that changes faster than a build loads still moves the index forward.
  * - Reuses feature identities across equivalent queries of the same engine,
  *   never across engines, so a rendered cluster's `getExpansionRegion` always
  *   resolves on a live engine.
  * - Reports a failed build to `options.onError`, or throws it during render
- *   when there is none. Builds that were superseded or unmounted stay silent.
+ *   when there is none. Builds that newer data overtook, or that settle after
+ *   unmount, stay silent.
  *
  * @param isSameFeature - Extra equality a caller needs to share an index, on
  *   top of coordinates and `clusterProperties` inputs.
@@ -145,9 +149,52 @@ export function useClusterIndex<P extends AnyProps = AnyProps>(
 
   const [active, setActive] = useState<ActiveIndex<P> | null>(null)
 
+  // Everything a build depends on. Only `clusterPropertiesKey` is not a
+  // number, so keeping it last keeps different inputs apart.
+  const buildKey = [
+    version,
+    radius,
+    minZoom,
+    maxZoom,
+    minPoints,
+    extent,
+    nodeSize,
+    viewportTileSize,
+    clusterPropertiesKey,
+  ].join('|')
+
+  // Builds run one at a time. They settle after the render that started them,
+  // so what they need to know about later renders lives in refs.
+  const mountedRef = useRef(false)
+  const buildingRef = useRef(false)
+  /** The inputs of the build started last. */
+  const startedKeyRef = useRef<string | null>(null)
+  /** The newest inputs, which a settling build compares its own against. */
+  const latestKeyRef = useRef(buildKey)
+  // Bumped when a build settles, so the effect below can start the next one.
+  const [settledBuilds, setSettledBuilds] = useState(0)
+
   useEffect(() => {
-    let cancelled = false
-    let activated = false
+    mountedRef.current = true
+    return () => {
+      mountedRef.current = false
+      // Unmounted or hidden: the `active` cleanup destroys the active engine,
+      // so build again if this shows again, unless a running build lands then.
+      if (!buildingRef.current) {
+        startedKeyRef.current = null
+      }
+    }
+  }, [])
+
+  useEffect(() => {
+    latestKeyRef.current = buildKey
+    // Inputs that change during a build wait for it, then build from the
+    // newest array, skipping the ones in between.
+    if (buildingRef.current || startedKeyRef.current === buildKey) {
+      return
+    }
+    startedKeyRef.current = buildKey
+    buildingRef.current = true
     const next = new Supercluster<P>({
       radius,
       minZoom,
@@ -161,14 +208,28 @@ export function useClusterIndex<P extends AnyProps = AnyProps>(
 
     next.loadAsync(indexed).then(
       () => {
-        if (!cancelled) {
-          activated = true
-          setActive({ supercluster: next, version })
+        buildingRef.current = false
+        // Unmounted or hidden: build again if this shows again.
+        if (!mountedRef.current) {
+          startedKeyRef.current = null
+          next.destroy()
+          return
         }
+        // Lands even when newer inputs have arrived: it is still newer than
+        // the active engine, which the `active` cleanup then destroys.
+        setActive({ supercluster: next, version })
+        setSettledBuilds((count) => count + 1)
       },
       (error: unknown) => {
-        // Superseded or unmounted: a newer build reports its own failure.
-        if (cancelled) {
+        buildingRef.current = false
+        next.destroy()
+        // Unmounted or overtaken: a newer build reports its own failure.
+        if (!mountedRef.current) {
+          startedKeyRef.current = null
+          return
+        }
+        if (latestKeyRef.current !== buildKey) {
+          setSettledBuilds((count) => count + 1)
           return
         }
         // Whatever index is active keeps serving queries.
@@ -181,28 +242,10 @@ export function useClusterIndex<P extends AnyProps = AnyProps>(
         }
       }
     )
-
-    return () => {
-      cancelled = true
-      // Once active, the engine belongs to the effect below.
-      if (!activated) {
-        next.destroy()
-      }
-    }
-    // Keep option properties as individual dependencies in case "options" is inline.
+    // `buildKey` covers every option, so a new inline `options` object never
+    // starts a build. Running again for a settled build starts the next one.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [
-    indexed,
-    version,
-    radius,
-    minZoom,
-    maxZoom,
-    minPoints,
-    extent,
-    nodeSize,
-    clusterPropertiesKey,
-    viewportTileSize,
-  ])
+  }, [indexed, buildKey, settledBuilds])
 
   // Destroy a retired engine only after the commit that stopped rendering it:
   // handlers from the previous commit may still query it until then.

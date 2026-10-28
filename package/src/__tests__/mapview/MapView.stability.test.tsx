@@ -28,9 +28,11 @@ import {
 import {
   Marker,
   clusterLabels,
+  fakeClusterEngineBuilds,
   fakeClusterEngineStats,
   flush,
   harnessControls,
+  landHeldBuild,
   mapState,
   mountLog,
   opacityAnimations,
@@ -198,6 +200,30 @@ describe('MapView index rebuilds (#12, #13)', () => {
 
     await flush()
     expect(renderedMarkerIds(container)).toEqual(['s0', 's1', 's2', 'x0'])
+  })
+
+  it('moves a marker whose updates arrive faster than the index builds', async () => {
+    const vehicleAt = (step: number): TestPoint => ({
+      ...EXTRA,
+      latitude: EXTRA.latitude + step * 0.001,
+    })
+    const { container, rerender } = render(
+      <Map points={[...SINGLES, vehicleAt(0)]} />
+    )
+    await flush()
+    fakeClusterEngineBuilds.hold = true
+
+    // Each build lands only after the next update has arrived.
+    for (let step = 1; step <= 4; step++) {
+      rerender(<Map points={[...SINGLES, vehicleAt(step)]} />)
+      if (step > 1) {
+        await landHeldBuild()
+      }
+    }
+
+    const vehicle = renderedMarkers(container).find(({ id }) => id === 'x0')
+    expect(vehicle?.latitude).toBeGreaterThan(vehicleAt(0).latitude)
+    expect(fakeClusterEngineBuilds.held).toHaveLength(1)
   })
 
   it('#12: a marker inserted at the start does not shift the markers shown while rebuilding', async () => {
