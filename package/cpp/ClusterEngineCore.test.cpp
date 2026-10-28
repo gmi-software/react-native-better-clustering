@@ -1,5 +1,5 @@
 // Standalone sanity test for ClusterEngineCore getLeaves/indexes.
-// Compile: c++ -std=c++20 -I. -fsanitize=undefined,float-cast-overflow -fno-sanitize-recover=all ClusterEngineCore.test.cpp -o cluster_test && ./cluster_test
+// Compile: c++ -std=c++20 -I. -fsanitize=address,undefined,float-cast-overflow -fno-sanitize-recover=all ClusterEngineCore.test.cpp -o cluster_test && ./cluster_test
 
 #include "ClusterEngineCore.hpp"
 #include <algorithm>
@@ -451,6 +451,71 @@ static void testInvalidBufferRejected() {
   std::vector<uint8_t> truncated = {4, 0, 0, 0, 1, 0, 0, 0};
   assert(!engine.setPointsFromBuffer(truncated.data(), truncated.size()));
   assert(engine.pointCount() == 0);
+}
+
+// The record count and the property count come from the buffer, so the size
+// check must not multiply them: `count * 20` wraps a 32-bit size_t (as on
+// armeabi-v7a) from a 4-byte count, and `count * stride` wraps even a 64-bit
+// one once numProps is large.
+static void testBufferSizeOverflowRejected() {
+  ClusterEngineCore engine;
+  ClusterEngineConfig config;
+  config.minPoints = 2;
+  engine.setOptions(config);
+
+  // 0x0CCCCCCD * 20 = 2^32 + 4.
+  const uint8_t v1[] = {0xCD, 0xCC, 0xCC, 0x0C, 0, 0, 0, 0};
+  assert(!engine.setPointsFromBuffer(v1, sizeof(v1)));
+  assert(engine.pointCount() == 0);
+
+  // 12 + 1380655685 * (20 + 1670107204 * 8) = 2^64 + 16, which a 64-bit
+  // size_t wraps to exactly this buffer's 16 bytes.
+  std::vector<uint8_t> v2(16, 0);
+  const uint32_t header[] = {ClusterEngineCore::kBufferMagicV2, 1380655685u, 1670107204u};
+  std::memcpy(v2.data(), header, sizeof(header));
+  assert(!engine.setPointsFromBuffer(v2.data(), v2.size()));
+  assert(engine.pointCount() == 0);
+
+  // numProps alone overflowing the stride.
+  const uint32_t wide[] = {ClusterEngineCore::kBufferMagicV2, 1u, 0xFFFFFFFFu};
+  assert(!engine.setPointsFromBuffer(reinterpret_cast<const uint8_t*>(wide), sizeof(wide)));
+}
+
+// Cluster ids continue from the largest point id, so a point id that leaves no
+// room for them would overflow int32. packPoints writes ids below the count.
+static void testBufferPointIdsLeaveRoomForClusterIds() {
+  ClusterEngineCore engine;
+  ClusterEngineConfig config;
+  config.minPoints = 2;
+  engine.setOptions(config);
+
+  auto buffer = [](std::vector<int32_t> ids) {
+    std::vector<uint8_t> buf(4 + ids.size() * 20, 0);
+    const uint32_t count = static_cast<uint32_t>(ids.size());
+    std::memcpy(buf.data(), &count, 4);
+    for (size_t i = 0; i < ids.size(); i++) {
+      const double lat = 52.0;
+      const double lng = 21.0 + static_cast<double>(i) * 1e-5;
+      std::memcpy(buf.data() + 4 + i * 20, &ids[i], 4);
+      std::memcpy(buf.data() + 8 + i * 20, &lat, 8);
+      std::memcpy(buf.data() + 16 + i * 20, &lng, 8);
+    }
+    return buf;
+  };
+
+  const int32_t max = std::numeric_limits<int32_t>::max();
+  auto rejected = buffer({0, max});
+  assert(!engine.setPointsFromBuffer(rejected.data(), rejected.size()));
+  assert(engine.pointCount() == 0);
+
+  // The largest id that still leaves room for one cluster per point.
+  auto accepted = buffer({-7, max - 2});
+  assert(engine.setPointsFromBuffer(accepted.data(), accepted.size()));
+  engine.build();
+  const auto nodes = engine.getClusters({90.0, -90.0, 180.0, -180.0, 0.0});
+  assert(nodes.size() == 1 && nodes.front().isCluster);
+  assert(nodes.front().id == max - 1);
+  assert(engine.getLeaves(nodes.front().id, 0, 0).size() == 2);
 }
 
 static void testMemorySizeReflectsNativeAllocations() {
@@ -1405,6 +1470,113 @@ static void testInvalidOptionsNameTheOption() {
   engine.setOptions(toClusterEngineConfig(fullRange));
 }
 
+// Seeded random buffers, valid and corrupted (truncated, bit-flipped, with
+// rewritten counts, and with non-finite coordinates, negative, duplicate and
+// extreme ids), fed to setPointsFromBuffer. Under ASan and UBSan (the compile
+// line at the top of this file) any read past the buffer or overflow fails it;
+// on its own it checks that the engine either rejects a buffer or indexes it
+// consistently.
+static void testBufferFuzz() {
+  uint32_t state = 0x9E3779B9u;
+  auto next = [&state] { return parityRandom(state); };
+  auto chance = [&next](uint32_t percent) { return next() % 100u < percent; };
+
+  const int iterations = 10000;
+  int clustered = 0;
+  for (int iteration = 0; iteration < iterations; iteration++) {
+    const bool v2 = chance(50);
+    const uint32_t count = next() % 48u;
+    const uint32_t numProps = v2 ? next() % 4u : 0u;
+
+    std::vector<uint8_t> buf;
+    auto pushU32 = [&buf](uint32_t v) {
+      for (int b = 0; b < 4; b++) buf.push_back(static_cast<uint8_t>((v >> (b * 8)) & 0xFF));
+    };
+    auto pushF64 = [&buf](double v) {
+      uint8_t tmp[8];
+      std::memcpy(tmp, &v, 8);
+      buf.insert(buf.end(), tmp, tmp + 8);
+    };
+    auto randomDouble = [&]() -> double {
+      switch (next() % 16u) {
+        case 0: return std::numeric_limits<double>::quiet_NaN();
+        case 1: return std::numeric_limits<double>::infinity();
+        case 2: return -std::numeric_limits<double>::infinity();
+        case 3: return 1e300;
+        case 4: return -1e-300;
+        default: return -200.0 + static_cast<double>(next() % 4000001u) / 10000.0;
+      }
+    };
+
+    if (v2) pushU32(ClusterEngineCore::kBufferMagicV2);
+    pushU32(count);
+    if (v2) pushU32(numProps);
+    for (uint32_t i = 0; i < count; i++) {
+      uint32_t id = i;
+      if (chance(2)) {
+        const uint32_t extremes[] = {0u, 1u, 0x7FFFFFFFu, 0x80000000u, 0xFFFFFFFFu};
+        id = chance(50) ? extremes[next() % 5u] : next();
+      }
+      pushU32(id);
+      // Mostly valid coordinates, so most buffers reach clustering.
+      pushF64(chance(85) ? -80.0 + static_cast<double>(next() % 1600001u) / 10000.0 : randomDouble());
+      pushF64(chance(85) ? -180.0 + static_cast<double>(next() % 3600001u) / 10000.0 : randomDouble());
+      for (uint32_t k = 0; k < numProps; k++) pushF64(randomDouble());
+    }
+
+    if (chance(20)) buf.resize(next() % (buf.size() + 1));
+    if (chance(20)) {
+      // The count, or in v2 the count or numProps.
+      const size_t at = v2 ? 4 + 4 * (next() % 2u) : 0;
+      const uint32_t v = next();
+      if (buf.size() >= at + 4) std::memcpy(buf.data() + at, &v, 4);
+    }
+    if (chance(20) && !buf.empty()) {
+      for (uint32_t flips = 1 + next() % 8u; flips > 0; flips--) {
+        buf[next() % buf.size()] ^= static_cast<uint8_t>(1u << (next() % 8u));
+      }
+    }
+
+    ClusterEngineCore engine;
+    ClusterEngineConfig config;
+    config.minZoom = 0;
+    config.maxZoom = static_cast<int32_t>(next() % 21u);
+    config.radius = 10.0 + static_cast<double>(next() % 90u);
+    config.minPoints = 2 + static_cast<int32_t>(next() % 3u);
+    config.clusteringEnabled = chance(85);
+    const AggregationReducer reducers[] = {AggregationReducer::Sum, AggregationReducer::Min, AggregationReducer::Max};
+    for (uint32_t k = next() % 4u; k > 0; k--) config.reducers.push_back(reducers[next() % 3u]);
+    engine.setOptions(config);
+
+    // A copy sized exactly, so ASan sees a read one byte past the end.
+    std::vector<uint8_t> exact(buf.begin(), buf.end());
+    if (!engine.setPointsFromBuffer(exact.data(), exact.size())) {
+      assert(engine.pointCount() == 0);
+      continue;
+    }
+
+    engine.build();
+    if (engine.pointCount() > 1 && config.clusteringEnabled) clustered++;
+    for (const int32_t z : {config.minZoom, config.maxZoom, config.maxZoom + 1}) {
+      const auto nodes = engine.getClusters({90.0, -90.0, 180.0, -180.0, static_cast<double>(z)});
+      size_t total = 0;
+      for (const auto& node : nodes) {
+        total += static_cast<size_t>(node.count);
+        if (!node.isCluster) continue;
+        assert(engine.getLeaves(node.id, 0, 0).size() == static_cast<size_t>(node.count));
+        assert(engine.getClusterBounds(node.id).has_value());
+        const int32_t expansion = engine.getClusterExpansionZoom(node.id);
+        assert(expansion > node.zoom || expansion > config.maxZoom);
+        (void)engine.getChildren(node.id);
+      }
+      assert(total == engine.pointCount());
+    }
+  }
+  // About half the buffers are corrupted on purpose and rejected; the rest must
+  // get through, or the fuzz only exercises rejection.
+  assert(clustered > iterations / 3);
+}
+
 int main() {
   testGetLeavesReturnsAllPointsInCluster();
   testGetLeavesPagination();
@@ -1419,6 +1591,8 @@ int main() {
   testClusterBoundsSpanTheLeaves();
   testClusterBoundsUseClampedLatitudes();
   testInvalidBufferRejected();
+  testBufferSizeOverflowRejected();
+  testBufferPointIdsLeaveRoomForClusterIds();
   testMemorySizeReflectsNativeAllocations();
   testMinLeafIdIsTheSmallestLeafAtEveryZoom();
   testSuperclusterParity();
@@ -1437,6 +1611,7 @@ int main() {
   testBoundaryLeafOffsets();
   testBoundaryOptions();
   testInvalidOptionsNameTheOption();
+  testBufferFuzz();
   std::printf("ClusterEngineCore tests passed.\n");
   return 0;
 }
