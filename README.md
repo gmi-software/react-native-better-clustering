@@ -4,7 +4,7 @@
 
 **Your `react-native-maps` screen freezes with thousands of markers? Change one import.**
 
-A drop-in replacement for **[react-native-map-clustering](https://github.com/tomekvenits/react-native-map-clustering)** — same API, same `react-native-maps` workflow, but the cluster index is built in **C++ via [Nitro](https://nitro.margelo.com/)** on a background thread, not in JavaScript on the JS thread.
+A drop-in replacement for **[react-native-map-clustering](https://github.com/tomekvenits/react-native-map-clustering)**. Same API, same `react-native-maps` workflow, but the cluster index is built in **C++ via [Nitro](https://nitro.margelo.com/)** on a background thread, not in JavaScript on the JS thread.
 
 [![npm version](https://img.shields.io/npm/v/react-native-better-clustering.svg)](https://www.npmjs.com/package/react-native-better-clustering)
 [![npm downloads](https://img.shields.io/npm/dw/react-native-better-clustering.svg)](https://www.npmjs.com/package/react-native-better-clustering)
@@ -18,7 +18,7 @@ A drop-in replacement for **[react-native-map-clustering](https://github.com/tom
 </div>
 
 <div align="center">
-  <img src="./docs/static/img/demo.gif" alt="Clustering demo — pan and zoom with 2,000 markers" width="360" />
+  <img src="./docs/static/img/demo.gif" alt="Clustering demo: pan and zoom with 2,000 markers" width="360" />
 </div>
 
 ## Benchmark
@@ -38,7 +38,7 @@ The same app, the same markers, the same cluster bubble, both libraries with the
 - **Re-renders.** With the same markers as new inline children, react-native-map-clustering rebuilds its index on every render. This library keeps the index and every mounted marker.
 - **Zoom.** react-native-map-clustering queries four times the screen's area; at zoom 8 it renders about 3–4× as many markers and bubbles, most of them off screen.
 
-Measured on the iOS Simulator (iPhone 17 Pro, Apple M5 Pro) against the 1.1.0 release candidate, which runs faster than a phone: compare the libraries, not the absolute times. The [full results](./example/bench/results/ios-simulator-2026-10-14/README.md) include memory, zoom and cluster presses — including where this library is slower: after a cluster press, the camera settles about 0.45 s later.
+Measured on the iOS Simulator (iPhone 17 Pro, Apple M5 Pro) against the 1.1.0 release candidate, which runs faster than a phone: compare the libraries, not the absolute times. The [full results](./example/bench/results/ios-simulator-2026-10-14/README.md) include memory, zoom and cluster presses. They also show where this library is slower: after a cluster press, the camera settles about 0.45 s later.
 
 ## Migration
 
@@ -61,7 +61,7 @@ That is it. Your `<Marker>` children, cluster props, and `react-native-maps` opt
 | Per-marker `cluster={false}` ([#297](https://github.com/tomekvenits/react-native-map-clustering/issues/297))                                                                                       | Supported                                 |
 
 > [!CAUTION]
-> Bugs in `react-native-maps` itself (ghost markers on Android, navigation crashes) may still occur — this library replaces clustering, not the map renderer.
+> Bugs in `react-native-maps` itself (ghost markers on Android, navigation crashes) may still occur. This library replaces clustering, not the map renderer.
 
 ## Installation
 
@@ -118,11 +118,11 @@ Give each `Marker` a stable `key`, not the array index. `<Marker cluster={false}
 
 ## Contributing
 
-See [CONTRIBUTING.md](./CONTRIBUTING.md) for the setup, checks and docs workflow. Releases are published from CI — see [RELEASING.md](./RELEASING.md). Report vulnerabilities privately — see [SECURITY.md](./SECURITY.md).
+See [CONTRIBUTING.md](./CONTRIBUTING.md) for the setup, checks and docs workflow. Releases are published from CI, see [RELEASING.md](./RELEASING.md). Report vulnerabilities privately, see [SECURITY.md](./SECURITY.md).
 
 ## License
 
-MIT — see [LICENSE](./LICENSE).
+MIT, see [LICENSE](./LICENSE).
 
 ---
 

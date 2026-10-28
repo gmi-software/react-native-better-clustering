@@ -76,7 +76,7 @@ instead, pass `onError`; the map then renders without the clustered markers.
 
 ## It doesn't work in Expo Go
 
-Correct — native modules require a
+Correct: native modules require a
 [development build](https://docs.expo.dev/develop/development-builds/introduction/).
 Run `npx expo prebuild --clean` and build the app.
 
@@ -141,8 +141,8 @@ area, so pressing one zooms in less.
 
 ## Some markers never appear on the map
 
-Points whose `latitude` or `longitude` is not a finite number — `undefined`,
-`null`, or `NaN` — cannot be projected, so they are skipped when the index is
+Points whose `latitude` or `longitude` is not a finite number (`undefined`,
+`null`, or `NaN`) cannot be projected, so they are skipped when the index is
 built. This is common with data straight from an API, where a missing field
 turns into `undefined`.
 
@@ -152,7 +152,7 @@ offending indices:
 ```
 react-native-better-clustering: skipped 2 of 480 points with non-finite
 coordinates (index 17, 291). Check those points for undefined, null, or NaN
-latitude/longitude — they will not appear on the map.
+latitude/longitude: they will not appear on the map.
 ```
 
 Filter or repair those points before loading them:
@@ -170,4 +170,4 @@ const usablePoints = useMemo(
 
 Out-of-range values behave differently: a latitude beyond ±85.05 or a longitude
 beyond ±180 is **clamped** to the Web Mercator limits rather than skipped, so
-such a marker still renders — just at the edge of the projection.
+such a marker still renders, just at the edge of the projection.

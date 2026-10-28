@@ -6,7 +6,7 @@ sidebar_position: 1
 
 # MapView
 
-The main export — a clustered `MapView` with the same API as
+The main export: a clustered `MapView` with the same API as
 [react-native-map-clustering](https://github.com/tomekvenits/react-native-map-clustering).
 
 ```tsx
@@ -65,21 +65,21 @@ are supported, plus:
 | `spiderLineColor` | `#FF0000` | Color of spider connector lines |
 | `clusterColor` | `#0F52FF` | Default cluster bubble color (GMI brand blue) |
 | `clusterTextColor` | `#FFFFFF` | Default cluster label color |
-| `clusterFontFamily` | — | Font family for the cluster count label; also passed to `renderCluster` |
+| `clusterFontFamily` | None | Font family for the cluster count label; also passed to `renderCluster` |
 | `clusterAccessibilityLabel` | ``(count) => `Cluster of ${count} markers` `` | Accessibility label for a default cluster bubble, passed to its `Marker` with the `button` role. Screen readers do not announce it yet: see [Accessibility](#accessibility) |
 | `animationEnabled` | `true` | Fade and glide the default cluster bubbles on zoom (iOS + Android); see `clusterFadeInDuration` |
-| `layoutAnimationConf` | — | Deprecated and ignored, accepted for react-native-map-clustering compatibility. `LayoutAnimation` cannot animate map markers on the New Architecture: they are native map annotations outside React Native's layout. Tune the fade with `clusterFadeInDuration` |
+| `layoutAnimationConf` | None | Deprecated and ignored, accepted for react-native-map-clustering compatibility. `LayoutAnimation` cannot animate map markers on the New Architecture: they are native map annotations outside React Native's layout. Tune the fade with `clusterFadeInDuration` |
 | `clusterFadeInDuration` | `250` | Cross-fade duration (ms) for default cluster bubbles on zoom: new bubbles fade in while removed ones linger and fade out, eliminating the blink from native annotations being added/removed (iOS + Android). Driven by Reanimated on the UI thread; without the optional `react-native-reanimated` peer, bubbles do not fade and removed ones disappear at once. Bubbles cross-fade when the map settles; during an active pinch/pan, new bubbles appear at once and removed ones stay for up to 100 ms (never longer than this duration) before they go, so a continuous zoom leaves no gaps; at the default `clusterUpdateIntervalMs` at most one extra generation of bubbles stays mounted. It also times the glide: on a zoom step, a splitting cluster's new bubbles start at its place and glide to theirs, a bubble whose cluster moves slides there, and merging bubbles glide into the one that takes them in (while the map moves, within the 100 ms they stay); pans and data changes only fade. Gated by `animationEnabled`; ignored with a custom `renderCluster`. Set to `0` to disable |
 | `tracksViewChanges` | `false` | Forwarded to default cluster markers |
 | `edgePadding` | 50px each side | Padding for `fitToCoordinates` on cluster press |
 | `preserveClusterPressBehavior` | `false` | Skip auto `fitToCoordinates` on cluster press |
-| `selectedClusterId` | — | Highlight a cluster by id |
+| `selectedClusterId` | None | Highlight a cluster by id |
 | `selectedClusterColor` | `#FF5722` | Color when cluster is selected |
 | `width` / `height` | window size | Seed map dimensions before `onLayout` |
 | `clusterUpdateIntervalMs` | `100` | Minimum interval (ms) between cluster recomputations while the map is moving; `0` recomputes only on settle |
 | `clusterRenderMargin` | `100` | How far outside the map, in points, cluster bubbles still render. Clusters are found, and reported to `onMarkersChange`, for the region plus half its size on each side, as in react-native-map-clustering; only rendering stops at this margin, and markers are not affected. A smaller margin mounts fewer native annotations on each zoom step, which keeps the UI thread free for the bubble fade; a larger one leaves fewer bubbles to appear at the edges during a fast pan. `Infinity` renders every cluster found |
-| `superClusterRef` | — | Receives the loaded [`Supercluster`](./engine.md#supercluster) behind the clusters on screen, or `null`. It is replaced after each rebuild and the previous engine destroyed, so read `current` when you query instead of keeping it; see [`superClusterRef`](../migration.md#superclusterref) |
-| `mapRef` | — | Callback ref to the inner `react-native-maps` instance |
+| `superClusterRef` | None | Receives the loaded [`Supercluster`](./engine.md#supercluster) behind the clusters on screen, or `null`. It is replaced after each rebuild and the previous engine destroyed, so read `current` when you query instead of keeping it; see [`superClusterRef`](../migration.md#superclusterref) |
+| `mapRef` | None | Callback ref to the inner `react-native-maps` instance |
 
 `style` applies to a `View` that wraps the map, and the map fills that view.
 
@@ -95,7 +95,7 @@ message that names the prop.
 | `onClusterPress` | `(cluster, markers) => void` | Fired when a cluster is tapped, with every marker in it. The markers are read only when you pass this prop; for a cluster of tens of thousands that read is most of what a press costs. The map fits the cluster's bounds either way |
 | `onMarkersChange` | `(markers) => void` | Fired when visible markers/clusters change: once the first index has loaded, then only when the visible set changes. A re-render with the same marker coordinates does not fire it, so `onMarkersChange={setState}` is safe |
 | `onRegionChangeComplete` | `(region, details, markers) => void` | Extends the maps callback with current markers, in react-native-map-clustering 4.x's order. 3.x passed `(region, markers)`: see [Coming from react-native-map-clustering 3.x](../migration.md#coming-from-react-native-map-clustering-3x) |
-| `onError` | `(error) => void` | Fired when the native cluster index fails to build, for example because the app was not rebuilt after installing the library. Markers from an earlier successful build keep showing. Without it, the error is thrown during render so an error boundary (and LogBox in development) shows it — see [Troubleshooting](../troubleshooting.md#the-native-clusterengine-module-is-not-available) |
+| `onError` | `(error) => void` | Fired when the native cluster index fails to build, for example because the app was not rebuilt after installing the library. Markers from an earlier successful build keep showing. Without it, the error is thrown during render so an error boundary (and LogBox in development) shows it. See [Troubleshooting](../troubleshooting.md#the-native-clusterengine-module-is-not-available) |
 
 ## Markers at the same location
 

@@ -18,7 +18,7 @@ import type {
 `ClusteredMapViewProps` extends `react-native-maps` `MapViewProps` with clustering
 options (`radius`, `minPoints`, `onClusterPress`, `renderCluster`, etc.).
 
-`RenderClusterProps` is passed to `renderCluster` — a `ClusterFeature` plus
+`RenderClusterProps` is passed to `renderCluster`: a `ClusterFeature` plus
 `onPress`, `clusterColor`, `clusterTextColor`, `clusterFontFamily`, and
 `tracksViewChanges`.
 
@@ -91,8 +91,8 @@ and tie-breaking with `minPoints` above 2) described under
 #### Viewport tile size
 
 `viewportTileSize` is separate from `extent`. It only affects
-`getClustersFromRegion` — how a map region plus a pixel size is turned into a
-zoom level — and shifts the result by a whole zoom level:
+`getClustersFromRegion` (how a map region plus a pixel size is turned into a
+zoom level) and shifts the result by a whole zoom level:
 
 | Value | Parity with |
 |-------|-------------|
@@ -105,7 +105,7 @@ react-native-clusterer parity; pass `viewportTileSize: 256` to opt in.
 
 ## Headless engine (`ClusterEngine`)
 
-Low-level Nitro hybrid object — create via [`createClusterEngine()`](./engine.md)
+Low-level Nitro hybrid object; create it via [`createClusterEngine()`](./engine.md)
 from `/engine`. See the [headless engine guide](./engine.md) for lifecycle,
 `isBuilt` checks, and error behavior.
 

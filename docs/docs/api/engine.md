@@ -7,7 +7,7 @@ sidebar_position: 5
 # Headless engine (advanced)
 
 Use the low-level C++ `ClusterEngine` when you own map rendering and only need
-cluster computation — for example a custom map SDK or server-side viewport
+cluster computation, for example a custom map SDK or server-side viewport
 queries in a native module.
 
 Import from `/engine`:
@@ -71,12 +71,12 @@ create a new one for new points.
 
 Call methods in this order:
 
-1. **`setOptions`** — radius, zoom range, reducers, tile extent, etc.
-2. **`setPoints`** — binary buffer from `packPoints()` (`/utils` export; must match options).
-3. **`build()`** or **`buildAsync()`** — build the spatial index.
-4. **Query** — `getClusters`, `getChildren`, `getLeaves`, `getClusterBounds`,
+1. **`setOptions`**: radius, zoom range, reducers, tile extent, etc.
+2. **`setPoints`**: binary buffer from `packPoints()` (`/utils` export; must match options).
+3. **`build()`** or **`buildAsync()`**: build the spatial index.
+4. **Query**: `getClusters`, `getChildren`, `getLeaves`, `getClusterBounds`,
    `getClusterExpansionZoom`.
-5. **`dispose()`** — free the native index when you are done (see
+5. **`dispose()`**: free the native index when you are done (see
    [Native memory](#native-memory)).
 
 `setOptions` or `setPoints` clears the index. After either call, `isBuilt` is
@@ -236,6 +236,6 @@ returns `undefined`.
 
 ## Types
 
-See [Types — Headless engine](./types.md#headless-engine-clusterengine) for
+See [Types: Headless engine](./types.md#headless-engine-clusterengine) for
 `ClusterEngine`, `ClusterEngineOptions`, `Viewport`, `EngineClusterNode` and
 `ClusterBounds`.
