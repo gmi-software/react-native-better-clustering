@@ -36,7 +36,15 @@ const EXIT_HARNESS_UNAVAILABLE = 3
 // What the bundle exports, from the measured package's src/. Changing a path
 // here makes older checkouts unbundleable (exit 3), never mismeasured.
 const ENTRY = `
-export { isMarker, markerToGeoJSONFeature } from './src/compat/helpers'
+export {
+  createChildrenCache,
+  createMarkerFeatureCache,
+  flattenChildren,
+  isMarker,
+  markerToGeoJSONFeature,
+  splitMarkerChildren,
+} from './src/compat/helpers'
+export { partitionValidPoints } from './src/engine/validatePoints'
 export { coordsToGeoJSONFeature } from './src/geojson/utils'
 export { stabilizeClusterFeatures } from './src/hooks/stabilizeClusters'
 export { packPoints } from './src/utils/packPoints'
@@ -187,6 +195,32 @@ function operationsFor(lib, size) {
   const features = coordinates.map((coordinate, i) =>
     lib.coordsToGeoJSONFeature(coordinate, { id: i })
   )
+
+  // A live update as MapView sees it: the markers above, created once, and
+  // 20 vehicle markers next to them, re-created with new coordinates on
+  // every update. The caches live as long as the map would.
+  const liveUpdate = (cluster) => {
+    const childrenCache = lib.createChildrenCache()
+    const featureCache = lib.createMarkerFeatureCache()
+    let update = 0
+    return () => {
+      update++
+      const vehicles = Array.from({ length: 20 }, (_, i) =>
+        React.createElement(Marker, {
+          key: `v${i}`,
+          cluster,
+          coordinate: {
+            latitude: coordinates[i].latitude + update * 1e-6,
+            longitude: coordinates[i].longitude,
+          },
+        })
+      )
+      const flattened = lib.flattenChildren([children, vehicles], childrenCache)
+      return lib.splitMarkerChildren(flattened, featureCache).markerFeatures
+        .length
+    }
+  }
+
   // A cluster snapshot as useClusterer sees it on two renders: the same
   // features, and features of which every tenth has moved.
   const index = new lib.Supercluster({ radius: 40, maxZoom: 20 }).load(features)
@@ -211,6 +245,9 @@ function operationsFor(lib, size) {
       })
       return result.length
     },
+    'live_update': liveUpdate(undefined),
+    'live_update_unclustered': liveUpdate(false),
+    'partition_points': () => lib.partitionValidPoints(features).valid.length,
     'pack_points': () => lib.packPoints(coordinates).buffer.byteLength,
     'pack_points_values': () =>
       lib.packPoints(coordinates, { values }).buffer.byteLength,
