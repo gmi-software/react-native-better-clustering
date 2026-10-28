@@ -44,11 +44,12 @@ import ClusterMarker from './ClusterMarker'
 import { nearestWithin, screenScaleOf, type LatLng } from './glide'
 import {
   bboxToFitCoordinates,
+  createMarkerFeatureCache,
   elementKey,
   isMarker,
   markerElementOf,
-  markerToGeoJSONFeature,
   sortByKey,
+  splitMarkerChildren,
 } from './helpers'
 import { reanimated, warnFadeUnavailable } from './reanimated'
 import { warnTwoParameterRegionChangeComplete } from './regionChangeComplete'
@@ -435,11 +436,13 @@ const CompatMapView = forwardRef(function CompatMapView(
     [children]
   )
 
-  const { otherChildren, markerFeatures } = useMemo(() => {
-    const others: ReactNode[] = []
-    const features: PointFeature[] = []
+  // Keeps the points of markers that did not change, so a live update that
+  // moves a few markers converts only those.
+  const [markerFeatureCache] = useState(createMarkerFeatureCache)
 
+  const { otherChildren, markerFeatures } = useMemo(() => {
     if (!clusteringEnabled) {
+      const others: ReactNode[] = []
       for (const child of propsChildren) {
         if (!isMarker(child)) {
           others.push(child)
@@ -451,19 +454,8 @@ const CompatMapView = forwardRef(function CompatMapView(
       }
     }
 
-    propsChildren.forEach((child, index) => {
-      if (isMarker(child)) {
-        features.push(markerToGeoJSONFeature(child, index))
-      } else {
-        others.push(child)
-      }
-    })
-
-    return {
-      otherChildren: others,
-      markerFeatures: features,
-    }
-  }, [propsChildren, clusteringEnabled])
+    return splitMarkerChildren(propsChildren, markerFeatureCache)
+  }, [propsChildren, clusteringEnabled, markerFeatureCache])
 
   const handleLayout = useCallback((event: LayoutChangeEvent) => {
     const { width: layoutWidth, height: layoutHeight } =

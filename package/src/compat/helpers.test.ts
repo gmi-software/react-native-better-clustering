@@ -3,9 +3,11 @@ import React from 'react'
 
 import {
   bboxToFitCoordinates,
+  createMarkerFeatureCache,
   elementKey,
   markerToGeoJSONFeature,
   sortByKey,
+  splitMarkerChildren,
 } from './helpers'
 import { isClusterFeature } from '../geojson'
 
@@ -39,6 +41,81 @@ describe('markerToGeoJSONFeature', () => {
       index: 2,
     })
     expect(isClusterFeature(feature)).toBe(false)
+  })
+})
+
+describe('splitMarkerChildren', () => {
+  function Marker(_props: Record<string, unknown>) {
+    return null
+  }
+
+  function marker(key: string, latitude: number, cluster?: boolean) {
+    return React.createElement(Marker, {
+      key,
+      cluster,
+      coordinate: { latitude, longitude: 21.0 },
+    })
+  }
+
+  function split(
+    children: React.ReactNode[],
+    cache: ReturnType<typeof createMarkerFeatureCache>
+  ) {
+    return splitMarkerChildren(React.Children.toArray(children), cache)
+  }
+
+  it('keeps the point of a marker whose props and child index stay the same', () => {
+    const cache = createMarkerFeatureCache()
+    const a = marker('a', 52.0)
+    const first = split([a, marker('b', 52.1)], cache)
+    const second = split([a, marker('b', 52.2)], cache)
+
+    expect(second.markerFeatures[0]).toBe(first.markerFeatures[0]!)
+    expect(second.markerFeatures[1]).not.toBe(first.markerFeatures[1]!)
+    expect(second.markerFeatures[1]!.geometry.coordinates).toEqual([21.0, 52.2])
+  })
+
+  it('makes a new point for a marker at another child index', () => {
+    const cache = createMarkerFeatureCache()
+    const a = marker('a', 52.0)
+    const first = split([a], cache)
+    const second = split([marker('x', 52.3), a], cache)
+
+    expect(second.markerFeatures[1]).not.toBe(first.markerFeatures[0]!)
+    expect(second.markerFeatures[1]!.properties.index).toBe(1)
+  })
+
+  it('makes a new point for a marker whose key changed at the same index', () => {
+    const cache = createMarkerFeatureCache()
+    const a = marker('a', 52.0)
+    const first = split([a], cache)
+    // Nested one slot later, `Children.toArray` keys it `.1:$a` instead of `.$a`.
+    const second = split([null, [a]], cache)
+
+    expect(second.markerFeatures[0]!.properties.index).toBe(0)
+    expect(second.markerFeatures[0]).not.toBe(first.markerFeatures[0]!)
+  })
+
+  it('returns the previous list while every point stays the same', () => {
+    const cache = createMarkerFeatureCache()
+    const a = marker('a', 52.0)
+    const b = marker('b', 52.1)
+    const first = split([a, b, marker('v', 52.5, false)], cache)
+    const second = split([a, b, marker('v', 52.6, false)], cache)
+
+    expect(second.markerFeatures).toBe(first.markerFeatures)
+    expect(second.otherChildren).toHaveLength(1)
+  })
+
+  it('leaves unclustered markers and other children out of the points', () => {
+    const cache = createMarkerFeatureCache()
+    const { markerFeatures, otherChildren } = split(
+      [marker('a', 52.0), marker('v', 52.5, false), 'label'],
+      cache
+    )
+
+    expect(markerFeatures).toHaveLength(1)
+    expect(otherChildren).toHaveLength(2)
   })
 })
 

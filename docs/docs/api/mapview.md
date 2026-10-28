@@ -45,6 +45,12 @@ alias of the same component.
 </MapView>
 ```
 
+`MapView` reads its marker children again whenever they change, and reuses
+what it made from a marker element whose props are the same object as
+before. When only some markers change, create the elements of the others once
+(for example with `useMemo`): a `.map()` in render gives every marker new props,
+so each one is read again.
+
 ## Clustering props
 
 All standard [`react-native-maps` `MapView` props](https://github.com/react-native-maps/react-native-maps/blob/master/docs/mapview.md)

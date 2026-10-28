@@ -94,6 +94,71 @@ export function markerElementOf(
 }
 
 /**
+ * The points {@linkcode splitMarkerChildren} made for one map, kept between
+ * renders. Create it with {@linkcode createMarkerFeatureCache}.
+ */
+export interface MarkerFeatureCache {
+  /** The point made from each marker's props, and the key it had then. */
+  points: WeakMap<
+    object,
+    { feature: PointFeature<MarkerFeatureProperties>; key: string | null }
+  >
+  /** The points the last call returned. */
+  last: PointFeature<MarkerFeatureProperties>[]
+}
+
+export function createMarkerFeatureCache(): MarkerFeatureCache {
+  return { points: new WeakMap(), last: [] }
+}
+
+/**
+ * Splits children, as `Children.toArray` returns them, into the GeoJSON
+ * points of the clusterable markers and every other child.
+ *
+ * A re-render that changes a few markers converts only those: a marker keeps
+ * its point while its props object, key and child index stay the same
+ * (`Children.toArray` clones an element but keeps its props), and while every
+ * point stays the same the previous list comes back, so the cluster index
+ * sees no new data at all.
+ */
+export function splitMarkerChildren(
+  children: React.ReactNode[],
+  cache: MarkerFeatureCache
+): {
+  otherChildren: React.ReactNode[]
+  markerFeatures: PointFeature<MarkerFeatureProperties>[]
+} {
+  const otherChildren: React.ReactNode[] = []
+  const markerFeatures: PointFeature<MarkerFeatureProperties>[] = []
+  let unchanged = true
+
+  children.forEach((child, index) => {
+    if (!isMarker(child)) {
+      otherChildren.push(child)
+      return
+    }
+    const cached = cache.points.get(child.props)
+    let feature = cached?.feature
+    if (
+      feature == null ||
+      feature.properties.index !== index ||
+      cached!.key !== child.key
+    ) {
+      feature = markerToGeoJSONFeature(child, index)
+      cache.points.set(child.props, { feature, key: child.key })
+    }
+    unchanged &&= feature === cache.last[markerFeatures.length]
+    markerFeatures.push(feature)
+  })
+
+  if (unchanged && markerFeatures.length === cache.last.length) {
+    return { otherChildren, markerFeatures: cache.last }
+  }
+  cache.last = markerFeatures
+  return { otherChildren, markerFeatures }
+}
+
+/**
  * A copy of `items` ordered by `keyOf`, so markers that stay on screen keep
  * their order among the map's children whatever order the engine returns them
  * in.
