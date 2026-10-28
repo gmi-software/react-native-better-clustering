@@ -1,0 +1,152 @@
+name: Bench JS
+
+# JS-path benchmark (package/bench/js): the library's JavaScript between a
+# MapView's children and the native engine, in Node. On a pull request it runs
+# the base and the head three times each, interleaved, on one runner, and fails
+# only when an operation became more than twice as slow (compare.mjs). V8 is
+# not Hermes, so the numbers are a regression alarm, not app performance.
+#
+# A workflow of its own, not a job in bench.yml: it follows package/src, and
+# the core benchmark should not run for every TypeScript change. Not a
+# required status check, for the same reason as bench.yml and native.yml.
+#
+# The two path lists are identical — GitHub Actions has no YAML anchors.
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/bench-js.yml'
+      - 'package/src/**'
+      - 'package/bench/js/**'
+      - 'package/bench/datasets.mjs'
+      - 'package/package.json'
+      - 'bun.lock'
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/bench-js.yml'
+      - 'package/src/**'
+      - 'package/bench/js/**'
+      - 'package/bench/datasets.mjs'
+      - 'package/package.json'
+      - 'bun.lock'
+  workflow_dispatch:
+
+concurrency:
+  group: bench-js-${{ github.event.pull_request.number || github.sha }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
+jobs:
+  js:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      # On a pull request this is the test merge commit; its first parent is
+      # the base.
+      - name: Checkout head
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          path: head
+          fetch-depth: 2
+          persist-credentials: false
+
+      - name: Find the base commit
+        id: base
+        if: github.event_name == 'pull_request'
+        run: |
+          sha=$(git -C head rev-parse --verify HEAD^1)
+          test -n "$sha"
+          echo "sha=$sha" >> "$GITHUB_OUTPUT"
+
+      - name: Checkout base
+        if: github.event_name == 'pull_request'
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ steps.base.outputs.sha }}
+          path: base
+          persist-credentials: false
+
+      # run.mjs bundles each checkout's src/ with `bun build`.
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version-file: head/package.json
+
+      - name: Setup Node.js
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+
+      # Scripts are skipped: the benchmark needs react and supercluster, not
+      # nitrogen or the package build that `prepare` runs.
+      - name: Install head dependencies
+        working-directory: head
+        run: bun install --frozen-lockfile --ignore-scripts
+
+      - name: Install base dependencies
+        if: github.event_name == 'pull_request'
+        working-directory: base
+        run: bun install --frozen-lockfile --ignore-scripts
+
+      # The head's harness measures both sides. run.mjs exits 3 when it cannot
+      # bundle the base's src (a measured function is missing or moved); then
+      # there is no base to compare with. Any other failure fails the job.
+      - name: Benchmark base and head
+        id: bench
+        run: |
+          base_ok=${{ github.event_name == 'pull_request' }}
+          for round in 1 2 3; do
+            if [ "$base_ok" = true ]; then
+              set +e
+              node head/package/bench/js/run.mjs --pkg base/package --label base --out "base-$round.json"
+              status=$?
+              set -e
+              if [ "$status" -eq 3 ]; then
+                echo "::warning::The JS benchmark harness cannot bundle the base's src, so there is nothing to compare with."
+                base_ok=false
+              elif [ "$status" -ne 0 ]; then
+                exit "$status"
+              fi
+            fi
+            node head/package/bench/js/run.mjs --pkg head/package --label head --out "head-$round.json"
+          done
+          echo "compare=$base_ok" >> "$GITHUB_OUTPUT"
+
+      # Exit 1 with a summary is a regression; without one, compare.mjs crashed.
+      - name: Compare with base
+        id: compare
+        if: steps.bench.outputs.compare == 'true'
+        run: |
+          set +e
+          node head/package/bench/js/compare.mjs \
+            base-1.json,base-2.json,base-3.json \
+            head-1.json,head-2.json,head-3.json \
+            --out summary.md > /dev/null
+          status=$?
+          set -e
+          if [ ! -f summary.md ]; then
+            echo "::error::compare.mjs failed before writing its summary (exit $status)."
+            exit 1
+          fi
+          cat summary.md >> "$GITHUB_STEP_SUMMARY"
+          echo "status=$status" >> "$GITHUB_OUTPUT"
+
+      - name: Upload results
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: bench-js
+          path: |
+            base-*.json
+            head-*.json
+            summary.md
+          if-no-files-found: ignore
+
+      - name: Fail on a regression
+        if: steps.compare.outcome == 'success' && steps.compare.outputs.status != '0'
+        run: |
+          echo "::error::A JS path became more than twice as slow. The job summary lists it."
+          exit 1

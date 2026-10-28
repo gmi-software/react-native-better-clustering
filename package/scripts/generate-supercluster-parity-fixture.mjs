@@ -1,6 +1,7 @@
 // Regenerates the ground-truth tables in `cpp/ClusterEngineCore.test.cpp`
-// (testSuperclusterParity and testSuperclusterAntimeridianParity) from the
-// reference supercluster implementation.
+// (testSuperclusterParity, testSuperclusterAntimeridianParity and
+// testSuperclusterDatasetParity) from the reference supercluster
+// implementation.
 //
 //   node scripts/generate-supercluster-parity-fixture.mjs
 //
@@ -9,6 +10,8 @@
 // is checked in so the C++ test stays independent of Node.
 
 import Supercluster from 'supercluster'
+
+import { DATASET_NAMES, generateDataset } from '../bench/datasets.mjs'
 
 // xorshift32. Bit-exact in JS (with >>> 0) and in C++ (uint32_t), so both sides
 // generate the identical point set.
@@ -306,6 +309,174 @@ for (const bbox of ANTIMERIDIAN_BBOXES) {
       `  {${bbox.map(cppDouble).join(', ')}, ${zoom}, ${features.length}, ${featureSetHash(antimeridianIndex, features)}u},`
     )
   }
+}
+
+// The core benchmark's datasets (bench/datasets.mjs, a bit-exact port of
+// bench/datasets.hpp) over every zoom the compat MapView uses, with
+// clusterProperties: an integer weight summed, minimised and maximised.
+// Must match the constants in testSuperclusterDatasetParity.
+const DATASET_PARITY = {
+  n: 5000,
+  radius: 40,
+  extent: 512,
+  minZoom: 1,
+  maxZoom: 20,
+  minPoints: 2,
+}
+
+function datasetWeight(i) {
+  return (i % 7) + 1
+}
+
+// `(minLeafId, sum, min, max)` per cluster, sorted, folded with 32-bit FNV-1a.
+// The weights are small integers, so every reduction is exact whatever order
+// the leaves are folded in.
+function aggregateHash(index, features) {
+  const rows = []
+  for (const feature of features) {
+    if (!feature.properties.cluster) continue
+    let minLeafId = Infinity
+    for (const leaf of index.getLeaves(
+      feature.properties.cluster_id,
+      Infinity
+    )) {
+      if (leaf.id < minLeafId) minLeafId = leaf.id
+    }
+    const { sum, min, max } = feature.properties
+    rows.push([minLeafId, sum, min, max])
+  }
+  rows.sort((a, b) => a[0] - b[0])
+
+  let hash = 2166136261
+  for (const row of rows) {
+    for (const value of row) {
+      hash = (hash ^ value) >>> 0
+      hash = Math.imul(hash, 16777619) >>> 0
+    }
+  }
+  return hash
+}
+
+// supercluster with its float32 rounding taken out, which the dataset parity is
+// compared with: see testSuperclusterDatasetParity. supercluster reads
+// Math.fround once, when its module loads, so it is loaded a second time under
+// another URL with fround stubbed out.
+const realFround = Math.fround
+Math.fround = (x) => x
+const { default: SuperclusterF64Base } = await import(
+  `${import.meta.resolve('supercluster')}?float64`
+)
+Math.fround = realFround
+// kdbush is supercluster's dependency, not this package's, so take its class
+// from a tree supercluster built.
+const KDBush = new SuperclusterF64Base({ minZoom: 0, maxZoom: 0 }).load([
+  {
+    type: 'Feature',
+    properties: {},
+    geometry: { type: 'Point', coordinates: [0, 0] },
+  },
+]).trees[1].constructor
+class SuperclusterF64 extends SuperclusterF64Base {
+  _createTree(data) {
+    const tree = new KDBush(
+      (data.length / this.stride) | 0,
+      this.options.nodeSize,
+      Float64Array
+    )
+    for (let i = 0; i < data.length; i += this.stride) {
+      tree.add(data[i], data[i + 1])
+    }
+    tree.finish()
+    tree.data = data
+    return tree
+  }
+}
+
+lines.push('// testSuperclusterDatasetParity: datasets')
+for (const name of DATASET_NAMES) {
+  const dataset = generateDataset(name, DATASET_PARITY.n)
+  const features = dataset.lats.map((lat, i) => ({
+    type: 'Feature',
+    id: i,
+    properties: { weight: datasetWeight(i) },
+    geometry: { type: 'Point', coordinates: [dataset.lngs[i], lat] },
+  }))
+  const options = {
+    radius: DATASET_PARITY.radius,
+    extent: DATASET_PARITY.extent,
+    minZoom: DATASET_PARITY.minZoom,
+    maxZoom: DATASET_PARITY.maxZoom,
+    minPoints: DATASET_PARITY.minPoints,
+    nodeSize: 64,
+    map: (props) => ({
+      sum: props.weight,
+      min: props.weight,
+      max: props.weight,
+    }),
+    reduce: (acc, props) => {
+      acc.sum += props.sum
+      acc.min = Math.min(acc.min, props.min)
+      acc.max = Math.max(acc.max, props.max)
+    },
+  }
+  const index = new SuperclusterF64(options).load(features)
+  // Stock supercluster, only to list where its float32 rounding changes
+  // which points cluster together.
+  const float32Index = new Supercluster(options).load(features)
+  const float32Zooms = []
+
+  const rows = {
+    nodes: [],
+    clusters: [],
+    memberships: [],
+    expansions: [],
+    aggregates: [],
+    lngSums: [],
+    latSums: [],
+  }
+  for (let z = DATASET_PARITY.minZoom; z <= DATASET_PARITY.maxZoom + 1; z++) {
+    const zoomFeatures = index.getClusters([-180, -85, 180, 85], z)
+    let lngSum = 0
+    let latSum = 0
+    let clusterCount = 0
+    for (const feature of zoomFeatures) {
+      if (!feature.properties.cluster) continue
+      clusterCount++
+      lngSum += feature.geometry.coordinates[0]
+      latSum += feature.geometry.coordinates[1]
+    }
+    const float32Features = float32Index.getClusters([-180, -85, 180, 85], z)
+    if (
+      float32Features.length !== zoomFeatures.length ||
+      membershipHash(float32Index, float32Features, DATASET_PARITY.n) !==
+        membershipHash(index, zoomFeatures, DATASET_PARITY.n)
+    ) {
+      float32Zooms.push(z)
+    }
+    rows.nodes.push(zoomFeatures.length)
+    rows.clusters.push(clusterCount)
+    rows.memberships.push(
+      `${membershipHash(index, zoomFeatures, DATASET_PARITY.n)}u`
+    )
+    rows.expansions.push(`${expansionHash(index, zoomFeatures)}u`)
+    rows.aggregates.push(`${aggregateHash(index, zoomFeatures)}u`)
+    rows.lngSums.push(cppDouble(lngSum))
+    rows.latSums.push(cppDouble(latSum))
+  }
+
+  lines.push(
+    `  // ${name}: stock (float32) supercluster clusters differently at ${
+      float32Zooms.length ? `zoom ${float32Zooms.join(', ')}` : 'no zoom'
+    }`,
+    `  {"${name}",`,
+    `   {${rows.nodes.join(', ')}},`,
+    `   {${rows.clusters.join(', ')}},`,
+    `   {${rows.memberships.join(', ')}},`,
+    `   {${rows.expansions.join(', ')}},`,
+    `   {${rows.aggregates.join(', ')}},`,
+    `   {${rows.lngSums.join(', ')}},`,
+    `   {${rows.latSums.join(', ')}}},`
+  )
 }
 
 console.log(lines.join('\n'))

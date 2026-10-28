@@ -7,10 +7,12 @@ It measures the engine alone, on a desktop CPU. It says nothing about Hermes, th
 | File | Role |
 | --- | --- |
 | `datasets.hpp` | The seeded datasets |
+| `datasets.mjs` | A bit-exact JavaScript port of them, for the supercluster parity fixture (`scripts/generate-supercluster-parity-fixture.mjs`) |
 | `bench.cpp` | The harness: measures one (dataset, size) case per process and prints JSON |
 | `run.mjs` | Compiles the harness, runs every case and writes one report (`bun run bench`) |
 | `compare.mjs` | Compares two reports and applies the gate (`bun run bench:compare`) |
 | `baseline.json` | The committed reference report |
+| `js/` | The JS-path benchmark, below |
 
 ## Running it
 
@@ -37,7 +39,7 @@ docker run --rm -v "$PWD":/repo -w /repo/package ubuntu:24.04 \
 
 ### Datasets
 
-Six seeded datasets, each at 100, 1k, 5k, 10k, 50k and 100k points. They are generated, not stored: the generator, the seed and the hash of the output pin the same points, without megabytes of fixtures in the repository. Every coordinate is `A + B / C` with integer `B` and `C`: a correctly rounded division and addition, so it is bit-identical on any IEEE-754 platform, and a JavaScript port of `datasets.hpp` can reproduce the same points and `datasetHash`.
+Six seeded datasets, each at 100, 1k, 5k, 10k, 50k and 100k points. They are generated, not stored: the generator, the seed and the hash of the output pin the same points, without megabytes of fixtures in the repository. Every coordinate is `A + B / C` with integer `B` and `C`: a correctly rounded division and addition, so it is bit-identical on any IEEE-754 platform. `datasets.mjs` is the JavaScript port; its `datasetHash` matches the one in a report for every dataset and size.
 
 | Dataset | Points | Viewports centred on |
 | --- | --- | --- |
@@ -110,3 +112,26 @@ To refresh it:
 3. Label the pull request `bench-baseline`. Without the label, `.github/workflows/bench-baseline.yml` fails any pull request that changes the file.
 
 Refresh it after an intended change in cost, such as an engine optimization, or when the runner image changes.
+
+## The JS-path benchmark
+
+`js/run.mjs` measures the library's JavaScript between a `MapView`'s children and the native engine, in Node (V8) on the `city` dataset at 1k, 10k and 50k points:
+
+| Operation | What it runs |
+| --- | --- |
+| `children_to_features` | `React.Children.toArray` over one `<Marker>` per point, then `isMarker` and `markerToGeoJSONFeature`, as `MapView` does on every children change |
+| `pack_points`, `pack_points_values` | `packPoints`, without and with two aggregation values per point |
+| `coords_to_features` | `coordsToGeoJSONFeature` per point |
+| `stabilize_same`, `stabilize_changed` | `stabilizeClusterFeatures` between two snapshots of zoom-12 clusters: equal ones, and ones where every tenth moved |
+| `reference:supercluster_load`, `reference:supercluster_query` | supercluster's `load` and a zoom-12 `getClusters`, as a yardstick |
+
+It bundles a checkout's `src/` with `bun build --target node` (React in production mode), so it runs any checkout's TypeScript without building it. From `package/`:
+
+```bash
+bun run bench:js                                   # → bench/results/js-latest.json
+bun run bench:js --pkg ../../base/package --out base.json
+bun run bench:js:compare base.json head.json       # the gate, as CI runs it
+```
+
+`.github/workflows/bench-js.yml` runs on pull requests that touch `package/src/`, `package/bench/js/`, `package/bench/datasets.mjs`, `package/package.json` or `bun.lock`. It measures the base and the head three times each, interleaved on one runner, and `compare.mjs` keeps each operation's fastest median and fastest sample per side. Wall time on a shared runner, in V8 rather than Hermes, is noisy and far from a phone, so the gate is coarse: from 10,000 points, it **fails** when both the median and the fastest sample are more than **2×** the base's, and warns above 1.5×. `reference:` rows are never gated. The table goes to the job summary, and the reports to the `bench-js` artifact. Like `Bench`, the workflow is not a required status check.
+
