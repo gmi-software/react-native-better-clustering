@@ -177,6 +177,13 @@ individual markers from clustering:
 />
 ```
 
+`react-native-maps` does not declare `cluster`, so importing from
+`react-native-better-clustering` (or `/compat`) adds it to the props
+TypeScript checks on `Marker`. It cannot add it to `MapMarkerProps`, a type
+alias, so `MapMarkerProps`, `React.ComponentProps<typeof Marker>` and
+`MarkerAnimated` go without it. Type a component that takes `cluster` and
+passes it on to a `Marker` with `MapMarkerProps & { cluster?: boolean }`.
+
 ## Live updates
 
 Moving, adding or removing a clustered marker rebuilds the whole native
@@ -196,6 +203,9 @@ time grows with their number. To keep live updates cheap:
   only the moving markers are new elements on each update.
 - Give moving markers that do not need to cluster `cluster={false}`. They skip
   the index, so moving them never rebuilds it.
+
+The example app's Live fleet scenario measures both, with up to 50,000 static
+markers and vehicles that move up to 10 times a second.
 
 ## Custom cluster UI
 
