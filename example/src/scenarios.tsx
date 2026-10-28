@@ -7,6 +7,7 @@ import { CoLocatedScreen } from './screens/CoLocatedScreen'
 import { CustomClusterScreen } from './screens/CustomClusterScreen'
 import { LargeDatasetScreen } from './screens/LargeDatasetScreen'
 import { LiveDataScreen } from './screens/LiveDataScreen'
+import { LiveFleetScreen } from './screens/LiveFleetScreen'
 import { ParentStateScreen } from './screens/ParentStateScreen'
 
 export interface Scenario {
@@ -36,6 +37,13 @@ export const SCENARIOS: Scenario[] = [
     title: 'Live data',
     description: 'Append and remove markers while the map is on screen.',
     render: () => <LiveDataScreen />,
+  },
+  {
+    id: 'live-fleet',
+    title: 'Live fleet',
+    description:
+      'Static markers with vehicles that move several times a second.',
+    render: () => <LiveFleetScreen />,
   },
   {
     id: 'co-located',
