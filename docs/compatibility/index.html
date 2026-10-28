@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="generator" content="Docusaurus v3.10.2">
 <title data-rh="true">Compatibility | React Native Better Clustering</title><meta data-rh="true" name="viewport" content="width=device-width,initial-scale=1"><meta data-rh="true" name="twitter:card" content="summary_large_image"><meta data-rh="true" property="og:url" content="https://gmi-software.github.io/react-native-better-clustering/docs/compatibility"><meta data-rh="true" property="og:locale" content="en"><meta data-rh="true" name="docusaurus_locale" content="en"><meta data-rh="true" name="docsearch:language" content="en"><meta data-rh="true" name="docusaurus_version" content="current"><meta data-rh="true" name="docusaurus_tag" content="docs-default-current"><meta data-rh="true" name="docsearch:version" content="current"><meta data-rh="true" name="docsearch:docusaurus_tag" content="docs-default-current"><meta data-rh="true" property="og:title" content="Compatibility | React Native Better Clustering"><meta data-rh="true" name="description" content="| Requirement | Supported |"><meta data-rh="true" property="og:description" content="| Requirement | Supported |"><link data-rh="true" rel="icon" href="/react-native-better-clustering/img/favicon.svg"><link data-rh="true" rel="canonical" href="https://gmi-software.github.io/react-native-better-clustering/docs/compatibility"><link data-rh="true" rel="alternate" href="https://gmi-software.github.io/react-native-better-clustering/docs/compatibility" hreflang="en"><link data-rh="true" rel="alternate" href="https://gmi-software.github.io/react-native-better-clustering/docs/compatibility" hreflang="x-default"><script data-rh="true" type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Compatibility","item":"https://gmi-software.github.io/react-native-better-clustering/docs/compatibility"}]}</script><link rel="stylesheet" href="/react-native-better-clustering/assets/css/styles.5d98aaef.css">
-<script src="/react-native-better-clustering/assets/js/runtime~main.8d24dc66.js" defer="defer"></script>
+<script src="/react-native-better-clustering/assets/js/runtime~main.efa57841.js" defer="defer"></script>
 <script src="/react-native-better-clustering/assets/js/main.be0b3d47.js" defer="defer"></script>
 </head>
 <body>
@@ -43,25 +43,37 @@ cluster with <code>sum</code>, <code>min</code> or <code>max</code> (see
 <a class="" href="/react-native-better-clustering/docs/api/types#superclusteroptions"><code>SuperclusterOptions</code></a>). supercluster&#x27;s
 <code>map</code> and <code>reduce</code> functions are not supported.</p>
 <h2 class="anchor anchorTargetStickyNavbar_QDus" id="supercluster-parity">supercluster parity<a href="#supercluster-parity" class="hash-link" aria-label="Direct link to supercluster parity" title="Direct link to supercluster parity" translate="no">​</a></h2>
-<p>The C++ engine reproduces <a href="https://github.com/mapbox/supercluster" target="_blank" rel="noopener noreferrer" class="">supercluster</a>
-feature-for-feature: with the same points, <code>radius</code>, <code>extent</code>, <code>minPoints</code> and
-zoom range, <code>getClusters</code> returns the same clusters with the same members, and
-<code>getClusterExpansionZoom</code> returns the same zoom for each of them. A checked-in
-fixture in <code>package/cpp/ClusterEngineCore.test.cpp</code>, generated from
-supercluster 8.0.1 and verified in CI, pins this for six seeded cases of
-3,000–8,000 points (<code>extent</code> 256, 512 and 1024, <code>minPoints: 2</code>): at every zoom
-from <code>minZoom</code> to <code>maxZoom + 1</code>, where every point stands on its own, the engine
-must return the same number of features and of clusters, group the same points
-into each cluster, and give each cluster the same expansion zoom. A
-second table pins viewport queries around the antimeridian, with the bbox
-written unwrapped, wrapped, far outside ±180° and 360° or wider.</p>
-<p>Two deliberate differences remain, neither of which changes cluster membership
-in practice:</p>
+<p>The C++ engine reproduces <a href="https://github.com/mapbox/supercluster" target="_blank" rel="noopener noreferrer" class="">supercluster</a>&#x27;s
+algorithm feature-for-feature. Checked-in fixtures in
+<code>package/cpp/ClusterEngineCore.test.cpp</code>, generated from supercluster 8.0.1
+and verified in CI, pin it:</p>
 <ul>
-<li class=""><strong>Precision.</strong> supercluster stores projected coordinates as <code>Float32</code>; the C++
-engine keeps them as <code>double</code>. Cluster centroids are therefore slightly more
-accurate here, and a point sitting exactly on the radius boundary can fall on
-the other side of it.</li>
+<li class=""><strong>Six seeded cases</strong> of 3,000–8,000 points spread over the world (<code>extent</code>
+256, 512 and 1024, <code>minPoints: 2</code>): at every zoom from <code>minZoom</code> to
+<code>maxZoom + 1</code>, where every point stands on its own, the engine must return
+the same number of features and of clusters, group the same points into
+each cluster, and give each cluster the same expansion zoom.</li>
+<li class=""><strong>The six benchmark datasets</strong> (uniform, a city, blobs, identical points, a
+grid and points across the antimeridian, 5,000 points each) at every zoom
+from 1 to 21, with and without <code>clusterProperties</code>: the same checks, plus
+each cluster&#x27;s centroid and its <code>sum</code>, <code>min</code> and <code>max</code> aggregates.</li>
+<li class=""><strong>Viewport queries around the antimeridian</strong>, with the bbox written
+unwrapped, wrapped, far outside ±180° and 360° or wider.</li>
+</ul>
+<p>Two deliberate differences remain:</p>
+<ul>
+<li class=""><strong>Precision.</strong> supercluster rounds projected coordinates to <code>Float32</code> and
+keeps its KD-trees in a <code>Float32Array</code>; the C++ engine keeps them as
+<code>double</code>. Centroids are therefore slightly more accurate here (supercluster&#x27;s
+can be off by up to about 2e-5° of longitude), and on dense data a point near
+the edge of the radius can fall on the other side of it, which changes which
+points share a cluster. On the benchmark&#x27;s city dataset (5,000 points within
+about 50 km) that happens at 10 of 21 zooms: 64 to 131 points end up in
+another cluster at zooms 7 to 10, where clusters are largest, and 1 to 11
+from zoom 11 up. The sparser datasets differ for one point at one zoom, or
+not at all. The fixtures compare against
+supercluster with that rounding taken out, which the engine matches exactly,
+and list the zooms where stock supercluster differs.</li>
 <li class=""><strong>Tie-breaking with <code>minPoints</code> above 2.</strong> Clustering is a greedy single pass,
 so the order in which equidistant neighbours are visited can decide which of
 two overlapping groups wins. The engine and supercluster walk their KD-trees in
