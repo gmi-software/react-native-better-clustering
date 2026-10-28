@@ -47,6 +47,26 @@ Supported props include `radius`, `minPoints`, `minZoom`, `maxZoom`, `extent`,
 `clusterTextColor`, `spiralEnabled`, `renderCluster`, and standard
 `react-native-maps` `MapView` props.
 
+### Coming from react-native-map-clustering 3.x
+
+`onRegionChangeComplete` follows react-native-map-clustering 4.x: it receives
+`(region, details, markers)`. 3.x passed `(region, markers)`, so a handler
+written for 3.x now gets the `details` of `react-native-maps` where it expects
+the markers. TypeScript only catches this when the handler's parameters have
+types. Take the markers from the third argument:
+
+```diff
+  <MapView
+-   onRegionChangeComplete={(region, markers) => setVisible(markers)}
++   onRegionChangeComplete={(region, details, markers) => setVisible(markers)}
+  >
+```
+
+In development, `MapView` warns once when the handler declares exactly two
+parameters (a parameter with a default value, and every one after it, does not
+count). A handler that means `(region, details)` can declare the third
+parameter, `(region, details, _markers) => …`, to silence the notice.
+
 ### Known fixes over react-native-map-clustering
 
 | Issue | Status |

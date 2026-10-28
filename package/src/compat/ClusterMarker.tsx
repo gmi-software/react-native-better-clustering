@@ -198,6 +198,12 @@ export interface ClusterMarkerProps {
   clusterColor: string
   clusterTextColor: string
   clusterFontFamily?: string
+  /**
+   * Accessibility label passed to the `Marker`, with the `button` role.
+   *
+   * @default `Cluster of ${point_count} markers`
+   */
+  accessibilityLabel?: string
   tracksViewChanges?: boolean
   /**
    * Fade-in duration (ms) applied to the native marker `opacity` when this bubble
@@ -255,6 +261,7 @@ function ClusterMarker({
   clusterColor,
   clusterTextColor,
   clusterFontFamily,
+  accessibilityLabel,
   tracksViewChanges = false,
   fadeInDuration = 0,
   fadeOutDuration = fadeInDuration,
@@ -291,6 +298,8 @@ function ClusterMarker({
     coordinate: { latitude, longitude },
     onPress: exiting ? undefined : () => onPress(feature),
     tracksViewChanges,
+    accessibilityLabel: accessibilityLabel ?? `Cluster of ${points} markers`,
+    accessibilityRole: 'button' as const,
   }
 
   const bubble = (
@@ -440,6 +449,7 @@ function areClusterMarkerPropsEqual(
     prev.clusterColor === next.clusterColor &&
     prev.clusterTextColor === next.clusterTextColor &&
     prev.clusterFontFamily === next.clusterFontFamily &&
+    prev.accessibilityLabel === next.accessibilityLabel &&
     prev.tracksViewChanges === next.tracksViewChanges &&
     prev.fadeInDuration === next.fadeInDuration &&
     prev.fadeOutDuration === next.fadeOutDuration &&

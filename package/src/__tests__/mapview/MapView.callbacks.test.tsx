@@ -1,6 +1,17 @@
-import { beforeEach, describe, expect, it, jest } from 'bun:test'
+import {
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  jest,
+  spyOn,
+} from 'bun:test'
 import { act, render } from '@testing-library/react'
 import React, { createRef, type MutableRefObject } from 'react'
+import type { Region } from 'react-native-maps'
+
+import type { GeoJSONFeature } from '../../geojson/types'
 
 import { CENTER, CITY_ZOOM, GROUP, SINGLES, type TestPoint } from './fixtures'
 import {
@@ -191,5 +202,97 @@ describe('MapView refs', () => {
 
     expect(typeof forwarded.current?.fitToCoordinates).toBe('function')
     expect(mapRef).toHaveBeenCalledWith(forwarded.current)
+  })
+})
+
+describe('MapView onRegionChangeComplete from react-native-map-clustering 3.x', () => {
+  const NOTICE =
+    /onRegionChangeComplete is called with \(region, details, markers\)/
+  let warn: ReturnType<typeof spyOn>
+
+  const notices = () =>
+    warn.mock.calls.filter((call: unknown[]) => NOTICE.test(String(call[0])))
+
+  beforeEach(() => {
+    warn = spyOn(console, 'warn').mockImplementation(() => {})
+  })
+
+  afterEach(() => {
+    warn.mockRestore()
+  })
+
+  // The notice is once per app, so the silent cases run before it fires.
+  it('stays silent for handlers that do not declare exactly two parameters', async () => {
+    const calls: unknown[][] = []
+    render(<Map />)
+    render(<Map onRegionChangeComplete={(region) => calls.push([region])} />)
+    render(
+      <Map
+        onRegionChangeComplete={(region, details, markers) =>
+          calls.push([region, details, markers])
+        }
+      />
+    )
+    await flush()
+
+    expect(notices()).toHaveLength(0)
+  })
+
+  it('warns once about handlers that declare two parameters', async () => {
+    const calls: unknown[][] = []
+    const { rerender, unmount } = render(
+      <Map
+        onRegionChangeComplete={(region, details) =>
+          calls.push([region, details])
+        }
+      />
+    )
+    await flush()
+    rerender(
+      <Map
+        onRegionChangeComplete={(region, details) =>
+          calls.push([details, region])
+        }
+      />
+    )
+    unmount()
+    render(
+      <Map
+        onRegionChangeComplete={(region, details) =>
+          calls.push([region, details])
+        }
+      />
+    )
+    await flush()
+
+    expect(notices()).toHaveLength(1)
+  })
+
+  it('still calls a two-parameter handler with (region, details, markers)', async () => {
+    const onRegionChangeComplete = jest.fn()
+    render(
+      <Map
+        onRegionChangeComplete={(region, details) =>
+          onRegionChangeComplete(region, details)
+        }
+      />
+    )
+    await flush()
+
+    const settled = regionAt(GROUP_CENTER, 20)
+    await settleRegion(settled)
+
+    expect(onRegionChangeComplete).toHaveBeenCalledWith(settled, {
+      isGesture: true,
+    })
+  })
+
+  it('rejects a handler typed for 3.x at compile time', () => {
+    const props: Partial<MapViewProps> = {
+      // @ts-expect-error The second argument is `details`, not the markers.
+      onRegionChangeComplete: (_region: Region, markers: GeoJSONFeature[]) =>
+        markers.length,
+    }
+    expect(typeof props.onRegionChangeComplete).toBe('function')
   })
 })

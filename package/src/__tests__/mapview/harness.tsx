@@ -241,6 +241,8 @@ export function Marker(props: MarkerMockProps) {
       'data-opacity': opacity == null ? undefined : String(opacity),
       'data-start':
         start == null ? undefined : `${start.latitude},${start.longitude}`,
+      'aria-label': props.accessibilityLabel,
+      'role': props.accessibilityRole,
       'onClick': onPress == null ? undefined : () => onPress(),
     },
     props.children
