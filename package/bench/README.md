@@ -7,6 +7,7 @@ It measures the engine alone, on a desktop CPU. It says nothing about Hermes, th
 | File | Role |
 | --- | --- |
 | `datasets.hpp` | The seeded datasets |
+| `datasets.mjs` | A bit-exact JavaScript port of them, for the supercluster parity fixture (`scripts/generate-supercluster-parity-fixture.mjs`) |
 | `bench.cpp` | The harness: measures one (dataset, size) case per process and prints JSON |
 | `run.mjs` | Compiles the harness, runs every case and writes one report (`bun run bench`) |
 | `compare.mjs` | Compares two reports and applies the gate (`bun run bench:compare`) |
@@ -37,7 +38,7 @@ docker run --rm -v "$PWD":/repo -w /repo/package ubuntu:24.04 \
 
 ### Datasets
 
-Six seeded datasets, each at 100, 1k, 5k, 10k, 50k and 100k points. They are generated, not stored: the generator, the seed and the hash of the output pin the same points, without megabytes of fixtures in the repository. Every coordinate is `A + B / C` with integer `B` and `C`: a correctly rounded division and addition, so it is bit-identical on any IEEE-754 platform, and a JavaScript port of `datasets.hpp` can reproduce the same points and `datasetHash`.
+Six seeded datasets, each at 100, 1k, 5k, 10k, 50k and 100k points. They are generated, not stored: the generator, the seed and the hash of the output pin the same points, without megabytes of fixtures in the repository. Every coordinate is `A + B / C` with integer `B` and `C`: a correctly rounded division and addition, so it is bit-identical on any IEEE-754 platform. `datasets.mjs` is the JavaScript port; its `datasetHash` matches the one in a report for every dataset and size.
 
 | Dataset | Points | Viewports centred on |
 | --- | --- | --- |
