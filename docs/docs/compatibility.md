@@ -59,26 +59,37 @@ cluster with `sum`, `min` or `max` (see
 
 ## supercluster parity
 
-The C++ engine reproduces [supercluster](https://github.com/mapbox/supercluster)
-feature-for-feature: with the same points, `radius`, `extent`, `minPoints` and
-zoom range, `getClusters` returns the same clusters with the same members, and
-`getClusterExpansionZoom` returns the same zoom for each of them. A checked-in
-fixture in `package/cpp/ClusterEngineCore.test.cpp`, generated from
-supercluster 8.0.1 and verified in CI, pins this for six seeded cases of
-3,000–8,000 points (`extent` 256, 512 and 1024, `minPoints: 2`): at every zoom
-from `minZoom` to `maxZoom + 1`, where every point stands on its own, the engine
-must return the same number of features and of clusters, group the same points
-into each cluster, and give each cluster the same expansion zoom. A
-second table pins viewport queries around the antimeridian, with the bbox
-written unwrapped, wrapped, far outside ±180° and 360° or wider.
+The C++ engine reproduces [supercluster](https://github.com/mapbox/supercluster)'s
+algorithm feature-for-feature. Checked-in fixtures in
+`package/cpp/ClusterEngineCore.test.cpp`, generated from supercluster 8.0.1
+and verified in CI, pin it:
 
-Two deliberate differences remain, neither of which changes cluster membership
-in practice:
+- **Six seeded cases** of 3,000–8,000 points spread over the world (`extent`
+  256, 512 and 1024, `minPoints: 2`): at every zoom from `minZoom` to
+  `maxZoom + 1`, where every point stands on its own, the engine must return
+  the same number of features and of clusters, group the same points into
+  each cluster, and give each cluster the same expansion zoom.
+- **The six benchmark datasets** (uniform, a city, blobs, identical points, a
+  grid and points across the antimeridian, 5,000 points each) at every zoom
+  from 1 to 21, with and without `clusterProperties`: the same checks, plus
+  each cluster's centroid and its `sum`, `min` and `max` aggregates.
+- **Viewport queries around the antimeridian**, with the bbox written
+  unwrapped, wrapped, far outside ±180° and 360° or wider.
 
-- **Precision.** supercluster stores projected coordinates as `Float32`; the C++
-  engine keeps them as `double`. Cluster centroids are therefore slightly more
-  accurate here, and a point sitting exactly on the radius boundary can fall on
-  the other side of it.
+Two deliberate differences remain:
+
+- **Precision.** supercluster rounds projected coordinates to `Float32` and
+  keeps its KD-trees in a `Float32Array`; the C++ engine keeps them as
+  `double`. Centroids are therefore slightly more accurate here (supercluster's
+  can be off by up to about 2e-5° of longitude), and on dense data a point near
+  the edge of the radius can fall on the other side of it, which changes which
+  points share a cluster. On the benchmark's city dataset (5,000 points within
+  about 50 km) that happens at 10 of 21 zooms: 64 to 131 points end up in
+  another cluster at zooms 7 to 10, where clusters are largest, and 1 to 11
+  from zoom 11 up. The sparser datasets differ for one point at one zoom, or
+  not at all. The fixtures compare against
+  supercluster with that rounding taken out, which the engine matches exactly,
+  and list the zooms where stock supercluster differs.
 - **Tie-breaking with `minPoints` above 2.** Clustering is a greedy single pass,
   so the order in which equidistant neighbours are visited can decide which of
   two overlapping groups wins. The engine and supercluster walk their KD-trees in
