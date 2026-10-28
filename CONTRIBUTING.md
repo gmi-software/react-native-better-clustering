@@ -167,13 +167,14 @@ The pod scheme only exists after Xcode has loaded the workspace once (`xcodebuil
 - Tests import from `bun:test`. A DOM is provided by happy-dom (`package/test/setup.ts`, preloaded via `package/bunfig.toml`) for hooks and components rendered with `@testing-library/react`.
 - Mock external modules with `mock.module()` **before** importing the module under test, then import it with `await import()`: static imports are evaluated first. Module mocks are process-wide, so mock native/external boundaries (e.g. `react-native-nitro-modules`), not the library's own modules.
 - Test files are typechecked with the rest of the package (`bun run typecheck`).
-- The C++ clustering core has a standalone test. CI runs it under UBSan, so undefined behaviour (such as casting `NaN` to an integer) fails it:
+- The C++ clustering core has a standalone test. CI runs it under ASan and UBSan, so a memory error or undefined behaviour (such as casting `NaN` to an integer) fails it:
   ```bash
   cd package/cpp
-  c++ -std=c++20 -I. -fsanitize=undefined,float-cast-overflow -fno-sanitize-recover=all ClusterEngineCore.test.cpp -o cluster_test
+  c++ -std=c++20 -I. -fsanitize=address,undefined,float-cast-overflow -fno-sanitize-recover=all ClusterEngineCore.test.cpp -o cluster_test
   ./cluster_test
   ```
-- `HybridClusterEngine` (the Nitro object around the core) has a lifetime test that links Nitro's C++ runtime and React Native's JSI from `node_modules`, so it needs `bun install` first. It runs under ASan and UBSan; pass `thread` for TSan. CI does not run it yet:
+  CI also compiles the C++ tests with g++ and clang++ at `-O2 -Wall -Wextra -Wpedantic -Werror`, so a new warning in the engine fails the `cpp` check. `ThreadSafeClusterEngine.test.cpp` runs under ASan + UBSan and under TSan.
+- `HybridClusterEngine` (the Nitro object around the core) has a lifetime test that links Nitro's C++ runtime and React Native's JSI from `node_modules`, so it needs `bun install` first. It runs under ASan and UBSan; pass `thread` for TSan. CI runs both (the `cpp-native` job):
   ```bash
   cd package
   bun run test:native          # or: bun run test:native thread

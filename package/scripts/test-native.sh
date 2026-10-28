@@ -35,7 +35,10 @@ while IFS= read -r source; do
   SOURCES+=("$source")
 done < <(find "$NITRO/cpp" -name '*.cpp' ! -name InstallNitro.cpp)
 
+# Nitro's NitroTypeInfo.cpp uses std::unordered_map without including it, which
+# only libc++ forgives; -include lets it build against libstdc++ on Linux too.
 "$CXX" -std=c++20 -g -O1 -pthread \
+  -include unordered_map \
   -fsanitize="$SANITIZERS" -fno-sanitize-recover=all -fno-omit-frame-pointer \
   -Icpp -I"$SPECS" -I"$WORK/include" -I"$WORK/include/NitroModules" -I"$JSI" \
   "${SOURCES[@]}" -o "$WORK/hybrid_test"
