@@ -131,14 +131,20 @@ describe('MapView rendering', () => {
   })
 
   it('renders a custom renderCluster element with the cluster data', async () => {
-    const seen: Array<{ count: number; color: string }> = []
+    const seen: Array<{
+      count: number
+      color: string
+      fontFamily: string | undefined
+    }> = []
     const { container } = render(
       <Map
         clusterColor="#123456"
+        clusterFontFamily="Inter"
         renderCluster={(cluster) => {
           seen.push({
             count: cluster.properties.point_count,
             color: cluster.clusterColor,
+            fontFamily: cluster.clusterFontFamily,
           })
           const [longitude, latitude] = cluster.geometry.coordinates
           return (
@@ -159,7 +165,11 @@ describe('MapView rendering', () => {
       's1',
       's2',
     ])
-    expect(seen.at(-1)).toEqual({ count: 5, color: '#123456' })
+    expect(seen.at(-1)).toEqual({
+      count: 5,
+      color: '#123456',
+      fontFamily: 'Inter',
+    })
   })
 
   it('announces a default cluster bubble as a button with its marker count', async () => {

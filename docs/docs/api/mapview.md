@@ -65,7 +65,7 @@ are supported, plus:
 | `spiderLineColor` | `#FF0000` | Color of spider connector lines |
 | `clusterColor` | `#0F52FF` | Default cluster bubble color (GMI brand blue) |
 | `clusterTextColor` | `#FFFFFF` | Default cluster label color |
-| `clusterFontFamily` | — | Font family for cluster count label |
+| `clusterFontFamily` | — | Font family for the cluster count label; also passed to `renderCluster` |
 | `clusterAccessibilityLabel` | ``(count) => `Cluster of ${count} markers` `` | Accessibility label for a default cluster bubble, passed to its `Marker` with the `button` role. Screen readers do not announce it yet: see [Accessibility](#accessibility) |
 | `animationEnabled` | `true` | Fade and glide the default cluster bubbles on zoom (iOS + Android); see `clusterFadeInDuration` |
 | `layoutAnimationConf` | — | Deprecated and ignored, accepted for react-native-map-clustering compatibility. `LayoutAnimation` cannot animate map markers on the New Architecture: they are native map annotations outside React Native's layout. Tune the fade with `clusterFadeInDuration` |

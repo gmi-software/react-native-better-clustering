@@ -125,6 +125,11 @@ export type RenderClusterProps = ClusterFeature & {
   clusterColor: string
   /** Text color for the default cluster bubble. */
   clusterTextColor: string
+  /**
+   * The `MapView`'s {@linkcode ClusteredMapViewProps.clusterFontFamily}, for
+   * the cluster label; `undefined` when it is not set.
+   */
+  clusterFontFamily?: string
   /** Forwarded to the underlying map marker. */
   tracksViewChanges: boolean
 }
@@ -888,6 +893,7 @@ const CompatMapView = forwardRef(function CompatMapView(
               onPress: () => handleClusterPress(cluster),
               clusterColor: effectiveClusterColor,
               clusterTextColor,
+              clusterFontFamily,
               tracksViewChanges,
             }),
             { key: clusterKey }
