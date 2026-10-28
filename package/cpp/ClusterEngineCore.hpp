@@ -1,5 +1,11 @@
 #pragma once
 
+// Ports the clustering pass of supercluster
+// (https://github.com/mapbox/supercluster, ISC, Copyright (c) Mapbox) and the
+// KD-tree of kdbush
+// (https://github.com/mourner/kdbush, ISC, Copyright (c) Vladimir Agafonkin).
+// Their license notices are in THIRD_PARTY_NOTICES.md.
+
 #include "GeoUtils.hpp"
 #include "InputValidation.hpp"
 #include <vector>

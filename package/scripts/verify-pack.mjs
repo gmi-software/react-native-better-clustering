@@ -43,6 +43,8 @@ const DENIED = [
 
 const REQUIRED = [
   'README.md',
+  'LICENSE',
+  'THIRD_PARTY_NOTICES.md',
   'package.json',
   'nitro.json',
   'react-native.config.js',
@@ -80,7 +82,8 @@ for (const file of files) {
   }
 
   const absolute = path.join(packageRoot, file)
-  // README.md is copied in by prepack and removed again by postpack.
+  // README.md and LICENSE are copied in by prepack and removed again by
+  // postpack.
   if (!fs.existsSync(absolute)) continue
 
   const fd = fs.openSync(absolute, 'r')
