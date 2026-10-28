@@ -39,6 +39,21 @@ Nitro is installed; the first one, from the library's own code, names the cause.
   that package managers do not install for you, so the app decides which Nitro
   version it runs.
 
+## Android Gradle Plugin 9: built-in Kotlin or the new DSL
+
+With Android Gradle Plugin 9, the Android build fails with an error about the
+Kotlin Gradle plugin (`Cannot add extension with name 'kotlin'`), or about
+`libraryVariants` / `applicationVariants`, once an app turns on AGP 9's
+built-in Kotlin or its new DSL. The React Native 0.87 and 0.88 app templates
+and `react-native-nitro-modules` (0.37.1 and earlier) still apply the Kotlin
+plugin themselves, so keep the opt-outs those templates set in
+`android/gradle.properties`:
+
+```properties
+android.builtInKotlin=false
+android.newDsl=false
+```
+
 ## The native ClusterEngine module is not available
 
 ```
