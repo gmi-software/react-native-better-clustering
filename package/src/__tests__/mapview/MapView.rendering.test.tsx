@@ -162,6 +162,22 @@ describe('MapView rendering', () => {
     expect(seen.at(-1)).toEqual({ count: 5, color: '#123456' })
   })
 
+  it('announces a default cluster bubble as a button with its marker count', async () => {
+    const { getByRole } = render(<Map />)
+    await flush()
+
+    expect(getByRole('button', { name: 'Cluster of 5 markers' })).toBeTruthy()
+  })
+
+  it('announces default cluster bubbles with clusterAccessibilityLabel', async () => {
+    const { getByRole } = render(
+      <Map clusterAccessibilityLabel={(count) => `${count} Standorte`} />
+    )
+    await flush()
+
+    expect(getByRole('button', { name: '5 Standorte' })).toBeTruthy()
+  })
+
   it('highlights the selected cluster with selectedClusterColor', async () => {
     const colors: string[] = []
     function Probe({ selected }: { selected?: number }) {
