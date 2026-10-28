@@ -94,6 +94,160 @@ export function markerElementOf(
 }
 
 /**
+ * Top-level children past which {@linkcode flattenChildren} leaves them to a
+ * single `Children.toArray` call: it flattens each one on its own, which costs
+ * more the further along it is.
+ */
+const MAX_FLATTENED_ONE_BY_ONE = 64
+
+/**
+ * The nested child arrays {@linkcode flattenChildren} flattened for one map,
+ * kept between renders. Create it with {@linkcode createChildrenCache}.
+ */
+export type ChildrenCache = WeakMap<
+  readonly React.ReactNode[],
+  {
+    /** Where the array was among the top-level children. */
+    position: number
+    /** The children it held then. */
+    source: React.ReactNode[]
+    /** What `Children.toArray` made of them there. */
+    nodes: React.ReactNode[]
+  }
+>
+
+export function createChildrenCache(): ChildrenCache {
+  return new WeakMap()
+}
+
+/** `child` at `position` of an otherwise empty array. */
+function childAt(position: number, child: React.ReactNode): React.ReactNode[] {
+  const holder = new Array<React.ReactNode>(position + 1)
+  holder[position] = child
+  return holder
+}
+
+function sameChildren(
+  previous: readonly React.ReactNode[],
+  next: readonly React.ReactNode[]
+): boolean {
+  if (previous.length !== next.length) {
+    return false
+  }
+  for (let i = 0; i < next.length; i++) {
+    if (previous[i] !== next[i]) {
+      return false
+    }
+  }
+  return true
+}
+
+/**
+ * `Children.toArray(children)`, without cloning the elements of a nested
+ * array again while it stays at the same position and holds the same
+ * children, such as markers created once with `useMemo`.
+ *
+ * Each top-level child is flattened on its own, at its position in an
+ * otherwise empty array, so React gives every element the key it would get
+ * from flattening all of `children`.
+ */
+export function flattenChildren(
+  children: React.ReactNode,
+  cache: ChildrenCache
+): React.ReactNode[] {
+  if (!Array.isArray(children) || children.length > MAX_FLATTENED_ONE_BY_ONE) {
+    return React.Children.toArray(children)
+  }
+
+  const parts: React.ReactNode[][] = []
+  for (let position = 0; position < children.length; position++) {
+    const child = children[position] as React.ReactNode
+    if (!Array.isArray(child)) {
+      parts.push(React.Children.toArray(childAt(position, child)))
+      continue
+    }
+    const cached = cache.get(child)
+    if (
+      cached != null &&
+      cached.position === position &&
+      sameChildren(cached.source, child)
+    ) {
+      parts.push(cached.nodes)
+      continue
+    }
+    const nodes = React.Children.toArray(childAt(position, child))
+    cache.set(child, { position, source: child.slice(), nodes })
+    parts.push(nodes)
+  }
+  return parts.length === 1 ? parts[0]! : parts.flat()
+}
+
+/**
+ * The points {@linkcode splitMarkerChildren} made for one map, kept between
+ * renders. Create it with {@linkcode createMarkerFeatureCache}.
+ */
+export interface MarkerFeatureCache {
+  /** The point made from each marker's props, and the key it had then. */
+  points: WeakMap<
+    object,
+    { feature: PointFeature<MarkerFeatureProperties>; key: string | null }
+  >
+  /** The points the last call returned. */
+  last: PointFeature<MarkerFeatureProperties>[]
+}
+
+export function createMarkerFeatureCache(): MarkerFeatureCache {
+  return { points: new WeakMap(), last: [] }
+}
+
+/**
+ * Splits children, as `Children.toArray` returns them, into the GeoJSON
+ * points of the clusterable markers and every other child.
+ *
+ * A re-render that changes a few markers converts only those: a marker keeps
+ * its point while its props object, key and child index stay the same
+ * (`Children.toArray` clones an element but keeps its props), and while every
+ * point stays the same the previous list comes back, so the cluster index
+ * sees no new data at all.
+ */
+export function splitMarkerChildren(
+  children: React.ReactNode[],
+  cache: MarkerFeatureCache
+): {
+  otherChildren: React.ReactNode[]
+  markerFeatures: PointFeature<MarkerFeatureProperties>[]
+} {
+  const otherChildren: React.ReactNode[] = []
+  const markerFeatures: PointFeature<MarkerFeatureProperties>[] = []
+  let unchanged = true
+
+  children.forEach((child, index) => {
+    if (!isMarker(child)) {
+      otherChildren.push(child)
+      return
+    }
+    const cached = cache.points.get(child.props)
+    let feature = cached?.feature
+    if (
+      feature == null ||
+      feature.properties.index !== index ||
+      cached!.key !== child.key
+    ) {
+      feature = markerToGeoJSONFeature(child, index)
+      cache.points.set(child.props, { feature, key: child.key })
+    }
+    unchanged &&= feature === cache.last[markerFeatures.length]
+    markerFeatures.push(feature)
+  })
+
+  if (unchanged && markerFeatures.length === cache.last.length) {
+    return { otherChildren, markerFeatures: cache.last }
+  }
+  cache.last = markerFeatures
+  return { otherChildren, markerFeatures }
+}
+
+/**
  * A copy of `items` ordered by `keyOf`, so markers that stay on screen keep
  * their order among the map's children whatever order the engine returns them
  * in.

@@ -65,14 +65,19 @@ The index is rebuilt only when the points' coordinates, their order, or a
   while the new index builds, then swaps to the new engine and destroys the old
   one. A `supercluster` reference you hold goes stale after that swap; use the
   one the hook returns.
+- One build runs at a time, and every build rebuilds the whole index. When
+  `data` changes again during a build, the hook swaps to that build once it
+  loads and then builds the newest `data`, skipping the arrays in between. Data
+  that changes faster than a build loads, such as a live feed of moving
+  markers, therefore updates the clusters once per build.
 
 If a build fails (most often because the native module is missing from the
 app binary, or because an option is outside its
 [valid values](./types.md#valid-values)), the hook throws the error during render, so the nearest error
 boundary (and LogBox in development) shows it. Pass `onError` to handle it
 yourself instead: the hook then keeps returning the clusters from the last
-successful build (`[]` before the first). Builds superseded by newer data or
-interrupted by unmount are never reported.
+successful build (`[]` before the first). A build that fails after newer data
+has arrived, or after unmount, is never reported.
 
 ```tsx
 const [clusters] = useClusterer(geoJsonPoints, dimensions, region, {

@@ -74,7 +74,7 @@ npm install react-native-better-clustering react-native-nitro-modules react-nati
 cd ios && pod install && cd ..
 ```
 
-Rebuild the native app after installing. With Expo, install with `npx expo install` instead, add the `react-native-maps` config plugin with your Google Maps API key, then `npx expo prebuild --clean` and build. See [Expo setup](https://gmi-software.github.io/react-native-better-clustering/docs/setup/installation).
+Rebuild the native app after installing. With Expo, install with `npx expo install` instead, add the `react-native-maps` config plugin with `androidGoogleMapsApiKey` (without it, Android apps crash when a map mounts), then `npx expo prebuild --clean` and build. See [Expo setup](https://gmi-software.github.io/react-native-better-clustering/docs/setup/installation#expo).
 
 ## Usage
 

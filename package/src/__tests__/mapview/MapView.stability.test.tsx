@@ -28,9 +28,11 @@ import {
 import {
   Marker,
   clusterLabels,
+  fakeClusterEngineBuilds,
   fakeClusterEngineStats,
   flush,
   harnessControls,
+  landHeldBuild,
   mapState,
   mountLog,
   opacityAnimations,
@@ -45,6 +47,7 @@ import {
 } from './harness'
 
 const { default: MapView } = await import('../../compat/MapView')
+const { Supercluster } = await import('../../engine/Supercluster')
 
 type MapViewProps = React.ComponentProps<typeof MapView>
 
@@ -200,6 +203,31 @@ describe('MapView index rebuilds (#12, #13)', () => {
     expect(renderedMarkerIds(container)).toEqual(['s0', 's1', 's2', 'x0'])
   })
 
+  it('moves a marker whose updates arrive faster than the index builds', async () => {
+    const vehicleAt = (step: number): TestPoint => ({
+      ...EXTRA,
+      latitude: EXTRA.latitude + step * 0.001,
+    })
+    const { container, rerender } = render(
+      <Map points={[...SINGLES, vehicleAt(0)]} />
+    )
+    await flush()
+    fakeClusterEngineBuilds.hold = true
+
+    // Each build lands only after the next update has arrived.
+    for (let step = 1; step <= 4; step++) {
+      rerender(<Map points={[...SINGLES, vehicleAt(step)]} />)
+      if (step > 1) {
+        await landHeldBuild()
+      }
+    }
+
+    // Steps 1 to 3 have landed; the build of step 4 is still held.
+    const vehicle = renderedMarkers(container).find(({ id }) => id === 'x0')
+    expect(vehicle?.latitude).toBe(vehicleAt(3).latitude)
+    expect(fakeClusterEngineBuilds.held).toHaveLength(1)
+  })
+
   it('#12: a marker inserted at the start does not shift the markers shown while rebuilding', async () => {
     const { container, rerender } = render(<Map points={SINGLES} />)
     await flush()
@@ -288,6 +316,61 @@ describe('MapView index rebuilds (#12, #13)', () => {
     expect(leaves.map((leaf) => leaf.properties.title).sort()).toEqual(
       GROUP.map((point) => `${point.id} new`)
     )
+  })
+
+  it('keeps the points of unchanged markers when only an unclustered one moves', async () => {
+    const onClusterPress = jest.fn()
+    // Created once, as an app would with useMemo, so they keep their props.
+    const group = GROUP.map((point) => (
+      <Marker
+        key={point.id}
+        testID={point.id}
+        coordinate={{ latitude: point.latitude, longitude: point.longitude }}
+      />
+    ))
+    function Fleet({ step }: { step: number }) {
+      return (
+        <MapView
+          initialRegion={regionAt(CENTER, CITY_ZOOM)}
+          clusterFadeInDuration={0}
+          preserveClusterPressBehavior
+          onClusterPress={onClusterPress}
+        >
+          {group}
+          <Marker
+            key="vehicle"
+            testID="vehicle"
+            cluster={false}
+            coordinate={{
+              latitude: EXTRA.latitude + step * 0.001,
+              longitude: EXTRA.longitude,
+            }}
+          />
+        </MapView>
+      )
+    }
+    function pressedLeaves(container: HTMLElement): unknown[] {
+      press(renderedMarkers(container).find((marker) => marker.isCluster)!)
+      return onClusterPress.mock.lastCall![1] as unknown[]
+    }
+
+    const { container, rerender } = render(<Fleet step={0} />)
+    await flush()
+    const before = pressedLeaves(container)
+    const replace = spyOn(Supercluster.prototype, 'replaceLoadedFeatures')
+    try {
+      rerender(<Fleet step={1} />)
+      await flush()
+      const after = pressedLeaves(container)
+
+      expect(after).toHaveLength(before.length)
+      after.forEach((leaf, index) => expect(leaf).toBe(before[index]))
+      // Checked before mockRestore, which clears the recorded calls.
+      expect(replace).not.toHaveBeenCalled()
+      expect(fakeClusterEngineStats.created).toBe(1)
+    } finally {
+      replace.mockRestore()
+    }
   })
 
   it('#12: mounts once under StrictMode without querying a destroyed engine', async () => {

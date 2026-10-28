@@ -72,6 +72,15 @@ export function resetFakeClusterEngineStats(): void {
   }
 }
 
+/**
+ * While `hold` is set, every `buildAsync()` waits in `held`, oldest first,
+ * until a test runs it: a native build that outlasts the updates around it.
+ */
+export const fakeClusterEngineBuilds = {
+  hold: false,
+  held: [] as Array<() => void>,
+}
+
 // Must match PACK_POINTS_MAGIC_V2 in utils/packPoints.ts.
 const MAGIC_V2 = 0x4e4d4332
 
@@ -236,14 +245,19 @@ export function createFakeClusterEngine(): FakeClusterEngine {
       // The native build runs on a thread pool and resolves on a later tick,
       // finishing even if the engine is disposed meanwhile.
       return new Promise<void>((resolve, reject) => {
-        setTimeout(() => {
+        const run = (): void => {
           try {
             buildIndex()
             resolve()
           } catch (error) {
             reject(error)
           }
-        }, 0)
+        }
+        if (fakeClusterEngineBuilds.hold) {
+          fakeClusterEngineBuilds.held.push(run)
+        } else {
+          setTimeout(run, 0)
+        }
       })
     },
     getClusters(viewport) {

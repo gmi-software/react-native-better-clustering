@@ -29,12 +29,13 @@ import {
 
 import {
   createFakeClusterEngine,
+  fakeClusterEngineBuilds,
   fakeClusterEngineStats,
   resetFakeClusterEngineStats,
 } from '../fakes/fakeClusterEngine'
 import { fakeReanimated } from '../fakes/fakeReanimated'
 
-export { fakeClusterEngineStats }
+export { fakeClusterEngineBuilds, fakeClusterEngineStats }
 
 // ---------------------------------------------------------------------------
 // Controls and recorded state
@@ -117,6 +118,8 @@ export function resetHarness(): void {
   opacityAnimations.length = 0
   glideAnimations.length = 0
   resetFakeClusterEngineStats()
+  fakeClusterEngineBuilds.hold = false
+  fakeClusterEngineBuilds.held.length = 0
 }
 
 // ---------------------------------------------------------------------------
@@ -335,6 +338,14 @@ export function regionAt(
 export async function flush(): Promise<void> {
   await act(async () => {
     await new Promise((resolve) => setTimeout(resolve, 20))
+  })
+}
+
+/** Runs the oldest held build and commits the renders it causes. */
+export async function landHeldBuild(): Promise<void> {
+  await act(async () => {
+    fakeClusterEngineBuilds.held.shift()?.()
+    await new Promise((resolve) => setTimeout(resolve, 0))
   })
 }
 
