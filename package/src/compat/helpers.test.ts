@@ -3,8 +3,10 @@ import React from 'react'
 
 import {
   bboxToFitCoordinates,
+  createChildrenCache,
   createMarkerFeatureCache,
   elementKey,
+  flattenChildren,
   markerToGeoJSONFeature,
   sortByKey,
   splitMarkerChildren,
@@ -116,6 +118,100 @@ describe('splitMarkerChildren', () => {
 
     expect(markerFeatures).toHaveLength(1)
     expect(otherChildren).toHaveLength(2)
+  })
+})
+
+describe('flattenChildren', () => {
+  function Marker(_props: Record<string, unknown>) {
+    return null
+  }
+
+  function marker(key: string | null, latitude = 52.0) {
+    return React.createElement(Marker, {
+      key,
+      coordinate: { latitude, longitude: 21.0 },
+    })
+  }
+
+  /** What a flattened child is to React: its key, type and props object. */
+  function shape(nodes: React.ReactNode[]) {
+    return nodes.map((node) =>
+      React.isValidElement(node)
+        ? { key: node.key, type: node.type, props: node.props }
+        : node
+    )
+  }
+
+  function expectSameAsToArray(children: React.ReactNode) {
+    const flattened = flattenChildren(children, createChildrenCache())
+    const expected = shape(React.Children.toArray(children))
+    expect(shape(flattened)).toEqual(expected)
+    flattened.forEach((node, index) => {
+      if (React.isValidElement(node)) {
+        // The same props object, as `Children.toArray` keeps it.
+        expect(node.props).toBe(
+          (expected[index] as { props: unknown }).props as never
+        )
+      }
+    })
+  }
+
+  it('matches Children.toArray for nested arrays among other children', () => {
+    expectSameAsToArray([
+      [marker('a'), marker('b')],
+      marker('c'),
+      null,
+      false,
+      'label',
+      [marker(null), [marker('d'), marker(null)]],
+      undefined,
+      [],
+      marker(null),
+    ])
+  })
+
+  it('matches Children.toArray for keys that need escaping', () => {
+    expectSameAsToArray([[marker('a:b'), marker('c=d'), marker('e/f')]])
+  })
+
+  it('matches Children.toArray for an iterable among the children', () => {
+    expectSameAsToArray([
+      marker('a'),
+      new Set([marker('b'), marker(null)]),
+      [marker('c')],
+    ])
+  })
+
+  it('matches Children.toArray for a single child and for many children', () => {
+    expectSameAsToArray(marker('a'))
+    expectSameAsToArray(
+      Array.from({ length: 100 }, (_, index) => marker(`m${index}`))
+    )
+  })
+
+  it('reuses the elements of a nested array kept at its position', () => {
+    const cache = createChildrenCache()
+    const kept = [marker('a'), marker('b')]
+    const first = flattenChildren([kept, [marker('v', 52.1)]], cache)
+    const second = flattenChildren([kept, [marker('v', 52.2)]], cache)
+
+    expect(second[0]).toBe(first[0])
+    expect(second[1]).toBe(first[1])
+    expect(second[2]).not.toBe(first[2])
+  })
+
+  it('flattens a nested array again when it moves or changes in place', () => {
+    const cache = createChildrenCache()
+    const kept = [marker('a')]
+    const first = flattenChildren([kept], cache)
+
+    const moved = flattenChildren([null, kept], cache)
+    expect(moved[0]).not.toBe(first[0])
+    expect(shape(moved)).toEqual(shape(React.Children.toArray([null, kept])))
+
+    kept.push(marker('b'))
+    const grown = flattenChildren([null, kept], cache)
+    expect(shape(grown)).toEqual(shape(React.Children.toArray([null, kept])))
   })
 })
 

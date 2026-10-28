@@ -44,8 +44,10 @@ import ClusterMarker from './ClusterMarker'
 import { nearestWithin, screenScaleOf, type LatLng } from './glide'
 import {
   bboxToFitCoordinates,
+  createChildrenCache,
   createMarkerFeatureCache,
   elementKey,
+  flattenChildren,
   isMarker,
   markerElementOf,
   sortByKey,
@@ -431,14 +433,15 @@ const CompatMapView = forwardRef(function CompatMapView(
     )
   )
 
-  const propsChildren = useMemo(
-    () => React.Children.toArray(children),
-    [children]
-  )
-
-  // Keeps the points of markers that did not change, so a live update that
-  // moves a few markers converts only those.
+  // Keep what was made from children that did not change, so a live update
+  // that moves a few markers flattens and converts only those.
+  const [childrenCache] = useState(createChildrenCache)
   const [markerFeatureCache] = useState(createMarkerFeatureCache)
+
+  const propsChildren = useMemo(
+    () => flattenChildren(children, childrenCache),
+    [children, childrenCache]
+  )
 
   const { otherChildren, markerFeatures } = useMemo(() => {
     if (!clusteringEnabled) {

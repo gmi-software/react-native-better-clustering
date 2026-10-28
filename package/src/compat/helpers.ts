@@ -94,6 +94,95 @@ export function markerElementOf(
 }
 
 /**
+ * Top-level children past which {@linkcode flattenChildren} leaves them to a
+ * single `Children.toArray` call: it flattens each one on its own, which costs
+ * more the further along it is.
+ */
+const MAX_FLATTENED_ONE_BY_ONE = 64
+
+/**
+ * The nested child arrays {@linkcode flattenChildren} flattened for one map,
+ * kept between renders. Create it with {@linkcode createChildrenCache}.
+ */
+export type ChildrenCache = WeakMap<
+  readonly React.ReactNode[],
+  {
+    /** Where the array was among the top-level children. */
+    position: number
+    /** The children it held then. */
+    source: React.ReactNode[]
+    /** What `Children.toArray` made of them there. */
+    nodes: React.ReactNode[]
+  }
+>
+
+export function createChildrenCache(): ChildrenCache {
+  return new WeakMap()
+}
+
+/** `child` at `position` of an otherwise empty array. */
+function childAt(position: number, child: React.ReactNode): React.ReactNode[] {
+  const holder = new Array<React.ReactNode>(position + 1)
+  holder[position] = child
+  return holder
+}
+
+function sameChildren(
+  previous: readonly React.ReactNode[],
+  next: readonly React.ReactNode[]
+): boolean {
+  if (previous.length !== next.length) {
+    return false
+  }
+  for (let i = 0; i < next.length; i++) {
+    if (previous[i] !== next[i]) {
+      return false
+    }
+  }
+  return true
+}
+
+/**
+ * `Children.toArray(children)`, without cloning the elements of a nested
+ * array again while it stays at the same position and holds the same
+ * children, such as markers created once with `useMemo`.
+ *
+ * Each top-level child is flattened on its own, at its position in an
+ * otherwise empty array, so React gives every element the key it would get
+ * from flattening all of `children`.
+ */
+export function flattenChildren(
+  children: React.ReactNode,
+  cache: ChildrenCache
+): React.ReactNode[] {
+  if (!Array.isArray(children) || children.length > MAX_FLATTENED_ONE_BY_ONE) {
+    return React.Children.toArray(children)
+  }
+
+  const parts: React.ReactNode[][] = []
+  for (let position = 0; position < children.length; position++) {
+    const child = children[position] as React.ReactNode
+    if (!Array.isArray(child)) {
+      parts.push(React.Children.toArray(childAt(position, child)))
+      continue
+    }
+    const cached = cache.get(child)
+    if (
+      cached != null &&
+      cached.position === position &&
+      sameChildren(cached.source, child)
+    ) {
+      parts.push(cached.nodes)
+      continue
+    }
+    const nodes = React.Children.toArray(childAt(position, child))
+    cache.set(child, { position, source: child.slice(), nodes })
+    parts.push(nodes)
+  }
+  return parts.length === 1 ? parts[0]! : parts.flat()
+}
+
+/**
  * The points {@linkcode splitMarkerChildren} made for one map, kept between
  * renders. Create it with {@linkcode createMarkerFeatureCache}.
  */
