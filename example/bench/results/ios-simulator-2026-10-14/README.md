@@ -4,6 +4,7 @@ The first run of the device benchmark (`example/bench/`): react-native-map-clust
 
 - Device: iOS Simulator, iPhone 17 Pro, iOS 26.5, on an Apple M5 Pro Mac (Xcode 27.0).
 - Builds: the example app in Release (Hermes), `ARCHS=arm64`. react-native-map-clustering and `main` ran in one build; 1.0.0 in a second build linked against the npm tarball, as `example/bench/README.md` describes.
+- Since `386d286`, 1.1.0 also took #79 (no blinking on zoom), #80 (bubbles glide apart and together) and #81 (only bubbles near the map are rendered), which change what the map mounts. The `1.1.0 (main)` rows are that release candidate, not the published 1.1.0; a run of the release would go in a directory of its own.
 - Runs: 5 rounds, interleaved: each round ran every size of both libraries in the first build, then every size of 1.0.0. All 45 runs passed. The `ios-main-r*.json` and `ios-v100-r*.json` reports are the raw data.
 
 Medians of the 5 runs (`node bench/summarize.mjs bench/results/ios-simulator-2026-10-14/*.json`):
