@@ -169,6 +169,26 @@ individual markers from clustering:
 />
 ```
 
+## Live updates
+
+Moving, adding or removing a clustered marker rebuilds the whole native
+index on a background thread; the index is never patched. The map keeps
+showing the previous markers until the new index has loaded. Builds run one at
+a time: markers that change during a build are built once it has loaded, from
+the newest children, so markers that move faster than a build loads update on
+the map once per build.
+
+Any change to the children, even to a marker that does not cluster, costs a
+pass over the markers on the JS thread: `MapView` reads them and compares them
+with the previous children to tell whether the index needs rebuilding. A
+rebuild then also packs every clustered marker for the native build, whose
+time grows with their number. To keep live updates cheap:
+
+- Create the elements of markers that do not move once (with `useMemo`), so
+  only the moving markers are new elements on each update.
+- Give moving markers that do not need to cluster `cluster={false}`. They skip
+  the index, so moving them never rebuilds it.
+
 ## Custom cluster UI
 
 Pass `renderCluster` for full control over the cluster bubble:
