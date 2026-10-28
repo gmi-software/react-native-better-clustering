@@ -198,23 +198,25 @@ function operationsFor(lib, size) {
 
   // A live update as MapView sees it: the markers above, created once, and
   // 20 vehicle markers next to them, re-created with new coordinates on
-  // every update. The caches live as long as the map would.
+  // every update. The caches live as long as the map would. Vehicles start
+  // on the points, wrapping round when there are fewer than 20.
   const liveUpdate = (cluster) => {
     const childrenCache = lib.createChildrenCache()
     const featureCache = lib.createMarkerFeatureCache()
     let update = 0
     return () => {
       update++
-      const vehicles = Array.from({ length: 20 }, (_, i) =>
-        React.createElement(Marker, {
+      const vehicles = Array.from({ length: 20 }, (_, i) => {
+        const start = coordinates[i % coordinates.length]
+        return React.createElement(Marker, {
           key: `v${i}`,
           cluster,
           coordinate: {
-            latitude: coordinates[i].latitude + update * 1e-6,
-            longitude: coordinates[i].longitude,
+            latitude: start.latitude + update * 1e-6,
+            longitude: start.longitude,
           },
         })
-      )
+      })
       const flattened = lib.flattenChildren([children, vehicles], childrenCache)
       return lib.splitMarkerChildren(flattened, featureCache).markerFeatures
         .length
