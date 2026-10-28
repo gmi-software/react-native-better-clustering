@@ -4,7 +4,7 @@ import type { AnyProps, BBox, ClusterFeature, PointFeature } from '../geojson'
 import type { ClusterEngine } from '../specs/ClusterEngine.nitro'
 import type { EngineClusterNode } from '../specs/EngineClusterNode'
 import type { MapRegion } from '../types'
-import { packPoints } from '../utils/packPoints'
+import { packPointFeatures } from '../utils/packPoints'
 import {
   aggregatedPropsFromValues,
   extractGeoJSONAggregationValues,
@@ -58,6 +58,8 @@ function abbreviateCount(count: number): string {
 export class Supercluster<P extends AnyProps = AnyProps> {
   private engine: ClusterEngine | null = null
   private loadedFeatures: PointFeature<P>[] = []
+  /** The array `loadedFeatures` was taken from. */
+  private loadedPoints: PointFeature<P>[] = []
   private readonly minLeafIndices = new WeakMap<ClusterFeature<P>, number>()
   private readonly featureIds = new WeakMap<
     PointFeature<P> | ClusterFeature<P>,
@@ -167,12 +169,18 @@ export class Supercluster<P extends AnyProps = AnyProps> {
    * sees changed, so leaves carry the latest properties. The caller guarantees
    * the coordinates match; only the length is checked here. Points with
    * non-finite coordinates are skipped, as on load, so the swapped features
-   * stay index-aligned with the native index.
+   * stay index-aligned with the native index. The array the features already
+   * come from is skipped without a pass over it: `useClusterer` hands every
+   * build that lands the array it was built from.
    * @throws When the instance was destroyed or has not been loaded.
    * @throws When `points` has a different number of indexable points than were loaded.
    */
   replaceLoadedFeatures(points: PointFeature<P>[]): void {
     this.throwIfNotInitialized()
+
+    if (points === this.loadedPoints) {
+      return
+    }
 
     const { valid } = partitionValidPoints(points)
     if (valid.length !== this.loadedFeatures.length) {
@@ -182,6 +190,7 @@ export class Supercluster<P extends AnyProps = AnyProps> {
     }
 
     this.loadedFeatures = valid
+    this.loadedPoints = points
   }
 
   /**
@@ -202,6 +211,7 @@ export class Supercluster<P extends AnyProps = AnyProps> {
     this.destroyed = true
     this.engine = null
     this.loadedFeatures = []
+    this.loadedPoints = []
 
     if (engine != null && !this.building) {
       engine.dispose()
@@ -425,6 +435,7 @@ export class Supercluster<P extends AnyProps = AnyProps> {
     warnSkippedPoints(invalidIndices, points.length)
 
     this.loadedFeatures = valid
+    this.loadedPoints = points
     const clusterProperties = this.options.clusterProperties
     const aggregationValues =
       clusterProperties.length > 0
@@ -442,13 +453,7 @@ export class Supercluster<P extends AnyProps = AnyProps> {
       reducers: clusterProperties.map((config) => config.reduce),
     })
     engine.setPoints(
-      packPoints(
-        valid.map((feature) => {
-          const [longitude, latitude] = feature.geometry.coordinates
-          return { latitude, longitude }
-        }),
-        { values: aggregationValues }
-      ).buffer
+      packPointFeatures(valid, { values: aggregationValues }).buffer
     )
 
     return engine

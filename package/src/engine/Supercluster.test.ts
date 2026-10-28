@@ -526,6 +526,20 @@ describe('Supercluster.getClusterMinLeaf', () => {
     expect(clusterer.getClusterMinLeaf(cluster as ClusterFeature)).toBe(newerB)
   })
 
+  it('swaps the loaded features back in after replaceLoadedFeatures', () => {
+    mockEngine.getClusters.mockReturnValueOnce([clusterNode(1)])
+    const loaded = [point('a', 21), point('b', 21.0001)]
+    const clusterer = new Supercluster().load(loaded)
+    const [cluster] = clusterer.getClusters([...WORLD_BBOX], 10)
+
+    clusterer.replaceLoadedFeatures([point('a', 21), point('b', 21.0001)])
+    clusterer.replaceLoadedFeatures(loaded)
+
+    expect(clusterer.getClusterMinLeaf(cluster as ClusterFeature)).toBe(
+      loaded[1]
+    )
+  })
+
   it('returns undefined for a cluster another instance returned', () => {
     mockEngine.getClusters.mockReturnValueOnce([clusterNode(0)])
     const [cluster] = new Supercluster()
@@ -537,6 +551,32 @@ describe('Supercluster.getClusterMinLeaf', () => {
         .load([point('a', 21)])
         .getClusterMinLeaf(cluster as ClusterFeature)
     ).toBeUndefined()
+  })
+})
+
+describe('Supercluster.replaceLoadedFeatures', () => {
+  beforeEach(() => {
+    jest.clearAllMocks()
+    mockEngine.isBuilt = false
+  })
+
+  it('makes no pass over the array it was loaded from', () => {
+    const loaded = [SAMPLE_POINT, { ...SAMPLE_POINT }]
+    let reads = 0
+    const counted = new Proxy(loaded, {
+      get(target, key, receiver) {
+        if (typeof key === 'string' && /^\d+$/.test(key)) {
+          reads++
+        }
+        return Reflect.get(target, key, receiver)
+      },
+    })
+    const clusterer = new Supercluster().load(counted)
+    reads = 0
+
+    clusterer.replaceLoadedFeatures(counted)
+
+    expect(reads).toBe(0)
   })
 })
 
