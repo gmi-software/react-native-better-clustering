@@ -27,9 +27,10 @@ export function partitionValidPoints<P extends AnyProps>(
 
   for (let i = 0; i < points.length; i++) {
     const point = points[i]!
-    const [longitude, latitude] = point.geometry.coordinates
+    // By index: destructuring doubles the cost of this loop on Hermes.
+    const coordinates = point.geometry.coordinates
 
-    if (Number.isFinite(latitude) && Number.isFinite(longitude)) {
+    if (Number.isFinite(coordinates[1]) && Number.isFinite(coordinates[0])) {
       valid.push(point)
     } else {
       invalidIndices.push(i)

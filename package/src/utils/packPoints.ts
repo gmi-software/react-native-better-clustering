@@ -1,3 +1,5 @@
+import type { PointFeature } from '../geojson/types'
+
 /** Latitude/longitude pair accepted by {@linkcode packPoints}. */
 export interface PackableCoordinate {
   latitude: number
@@ -97,6 +99,69 @@ export function packPoints(
     offset += 8
     view.setFloat64(offset, coord.longitude, true)
     offset += 8
+  }
+
+  return { buffer, count }
+}
+
+/**
+ * {@linkcode packPoints} for GeoJSON points, read straight from their
+ * `geometry.coordinates`.
+ *
+ * @internal `Supercluster` packs the points it loads with this. Making no
+ * `{ latitude, longitude }` object per point and reading coordinates by index
+ * packs a large load in about a third of the time on Hermes.
+ */
+export function packPointFeatures(
+  features: ReadonlyArray<PointFeature<unknown>>,
+  options?: PackPointsOptions
+): PackedPoints {
+  const count = features.length
+  const numProps = options?.values?.[0]?.length ?? 0
+  const hasValues = numProps > 0 && options?.values != null
+
+  if (hasValues) {
+    const stride = POINT_SIZE + numProps * VALUE_SIZE
+    const buffer = new ArrayBuffer(12 + count * stride)
+    const view = new DataView(buffer)
+
+    view.setUint32(0, PACK_POINTS_MAGIC_V2, true)
+    view.setUint32(4, count, true)
+    view.setUint32(8, numProps, true)
+
+    let offset = 12
+    for (let i = 0; i < count; i++) {
+      const coordinates = features[i]!.geometry.coordinates
+      const row = options!.values![i] ?? []
+
+      view.setInt32(offset, i, true)
+      view.setFloat64(offset + 4, coordinates[1], true)
+      view.setFloat64(offset + 12, coordinates[0], true)
+      offset += POINT_SIZE
+
+      for (let k = 0; k < numProps; k++) {
+        view.setFloat64(offset, row[k] ?? 0, true)
+        offset += 8
+      }
+    }
+
+    return { buffer, count }
+  }
+
+  const buffer = new ArrayBuffer(4 + count * POINT_SIZE)
+  const view = new DataView(buffer)
+
+  view.setUint32(0, count, true)
+
+  let offset = 4
+  for (let i = 0; i < count; i++) {
+    // Fixed offsets within the point: each `+=` is one more interpreted
+    // instruction per point on Hermes.
+    const coordinates = features[i]!.geometry.coordinates
+    view.setInt32(offset, i, true)
+    view.setFloat64(offset + 4, coordinates[1], true)
+    view.setFloat64(offset + 12, coordinates[0], true)
+    offset += POINT_SIZE
   }
 
   return { buffer, count }

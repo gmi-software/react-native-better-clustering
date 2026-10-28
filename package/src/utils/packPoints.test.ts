@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'bun:test'
 
-import { PACK_POINTS_MAGIC_V2, packPoints } from './packPoints'
+import {
+  PACK_POINTS_MAGIC_V2,
+  packPointFeatures,
+  packPoints,
+} from './packPoints'
 
 const SAMPLE_COORDINATES = [
   { latitude: 52.0, longitude: 21.0 },
@@ -35,5 +39,36 @@ describe('packPoints v2', () => {
     expect(view.getUint32(8, true)).toBe(2)
     expect(view.getFloat64(32, true)).toBeCloseTo(10)
     expect(view.getFloat64(40, true)).toBeCloseTo(1)
+  })
+})
+
+describe('packPointFeatures', () => {
+  const features = SAMPLE_COORDINATES.map(({ latitude, longitude }) => ({
+    type: 'Feature' as const,
+    geometry: {
+      type: 'Point' as const,
+      coordinates: [longitude, latitude] as [number, number],
+    },
+    properties: {},
+  }))
+
+  it('writes the bytes packPoints writes for the same coordinates', () => {
+    const expected = packPoints(SAMPLE_COORDINATES)
+    const packed = packPointFeatures(features)
+
+    expect(packed.count).toBe(expected.count)
+    expect(new Uint8Array(packed.buffer)).toEqual(
+      new Uint8Array(expected.buffer)
+    )
+  })
+
+  it('writes the bytes packPoints writes with aggregation values', () => {
+    const values = [[10, 1], [20]]
+    const expected = packPoints(SAMPLE_COORDINATES, { values })
+    const packed = packPointFeatures(features, { values })
+
+    expect(new Uint8Array(packed.buffer)).toEqual(
+      new Uint8Array(expected.buffer)
+    )
   })
 })

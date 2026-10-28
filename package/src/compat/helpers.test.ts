@@ -119,6 +119,108 @@ describe('splitMarkerChildren', () => {
     expect(markerFeatures).toHaveLength(1)
     expect(otherChildren).toHaveLength(2)
   })
+
+  describe('of flattened children', () => {
+    function caches() {
+      return {
+        children: createChildrenCache(),
+        features: createMarkerFeatureCache(),
+      }
+    }
+
+    function splitFlattened(
+      children: React.ReactNode[],
+      { children: childrenCache, features }: ReturnType<typeof caches>
+    ) {
+      return splitMarkerChildren(
+        flattenChildren(children, childrenCache),
+        features
+      )
+    }
+
+    /** Counts the per-marker lookups `splitMarkerChildren` makes. */
+    function countLookups(cache: ReturnType<typeof createMarkerFeatureCache>) {
+      const points = cache.points
+      const counter = { lookups: 0 }
+      cache.points = {
+        get: (props: object) => {
+          counter.lookups++
+          return points.get(props)
+        },
+        set: (props: object, value: never) => points.set(props, value),
+      } as never
+      return counter
+    }
+
+    const kept = Array.from({ length: 100 }, (_, index) =>
+      marker(`s${index}`, 52.0 + index / 1000)
+    )
+
+    it('visits only the markers of the runs that changed', () => {
+      const cache = caches()
+      const first = splitFlattened([kept, [marker('v', 52.5)]], cache)
+      const counter = countLookups(cache.features)
+      const second = splitFlattened([kept, [marker('v', 52.6)]], cache)
+
+      expect(counter.lookups).toBe(1)
+      expect(second.markerFeatures).not.toBe(first.markerFeatures)
+      expect(second.markerFeatures.slice(0, 100)).toEqual(
+        first.markerFeatures.slice(0, 100)
+      )
+      second.markerFeatures.slice(0, 100).forEach((feature, index) => {
+        expect(feature).toBe(first.markerFeatures[index]!)
+      })
+      expect(second.markerFeatures[100]!.geometry.coordinates).toEqual([
+        21.0, 52.6,
+      ])
+      expect(second.markerFeatures[100]!.properties.index).toBe(100)
+    })
+
+    it('returns the previous list when only unclustered children change', () => {
+      const cache = caches()
+      const first = splitFlattened(
+        [kept, [marker('v', 52.5, false), 'label']],
+        cache
+      )
+      const second = splitFlattened(
+        [kept, [marker('v', 52.6, false), 'label']],
+        cache
+      )
+
+      expect(second.markerFeatures).toBe(first.markerFeatures)
+      expect(second.otherChildren).toHaveLength(2)
+    })
+
+    it('makes the points of a kept run again when it starts at another index', () => {
+      const cache = caches()
+      const first = splitFlattened([[marker('v', 52.5)], kept], cache)
+      const second = splitFlattened(
+        [[marker('v', 52.5), marker('w', 52.6)], kept],
+        cache
+      )
+
+      expect(second.markerFeatures[2]).not.toBe(first.markerFeatures[1]!)
+      second.markerFeatures.forEach((feature, index) => {
+        expect(feature.properties.index).toBe(index)
+      })
+    })
+
+    it('matches a split of Children.toArray', () => {
+      const cache = caches()
+      const children = [
+        [marker('a', 52.0), 'label'],
+        marker('b', 52.1),
+        [marker('c', 52.2, false), marker('d', 52.3)],
+      ]
+      splitFlattened(children, cache)
+      const reused = splitFlattened(children, cache)
+      const expected = split(children, createMarkerFeatureCache())
+
+      expect(reused.markerFeatures).toEqual(expected.markerFeatures)
+      expect(reused.otherChildren).toHaveLength(2)
+      expect(reused.otherChildren[0]).toBe('label')
+    })
+  })
 })
 
 describe('flattenChildren', () => {
