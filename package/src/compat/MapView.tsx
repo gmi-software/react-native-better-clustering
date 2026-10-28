@@ -616,9 +616,7 @@ const CompatMapView = forwardRef(function CompatMapView(
     ? Math.min(clusterFadeIn, MOVING_EXIT_HOLD_MS)
     : clusterFadeIn
 
-  // Only a loaded engine is exposed: the placeholder before the first load
-  // throws on every query, and an engine is destroyed once it is replaced or
-  // the map unmounts, so the cleanup clears the ref first.
+  // A replaced engine is destroyed, and so is the last one on unmount.
   useEffect(() => {
     if (!superClusterRef) {
       return

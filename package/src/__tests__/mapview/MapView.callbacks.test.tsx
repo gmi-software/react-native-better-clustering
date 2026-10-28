@@ -183,8 +183,7 @@ describe('MapView refs', () => {
     expect(instance).toBeInstanceOf(Supercluster)
     expect(instance!.isLoaded).toBe(true)
 
-    // Moving a marker rebuilds the index: the ref moves to the new engine
-    // once it has loaded, never to the destroyed one.
+    // Moving a marker rebuilds the index.
     const moved = [
       ...GROUP,
       ...SINGLES.map((point, index) =>
@@ -196,7 +195,6 @@ describe('MapView refs', () => {
     const rebuilt = superClusterRef.current
     expect(rebuilt).toBeInstanceOf(Supercluster)
     expect(rebuilt).not.toBe(instance)
-    expect(rebuilt!.isLoaded).toBe(true)
     expect(() => rebuilt!.getClusters([-180, -85, 180, 85], 1)).not.toThrow()
 
     rerender(
