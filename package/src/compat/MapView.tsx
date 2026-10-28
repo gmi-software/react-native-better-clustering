@@ -19,6 +19,7 @@ import {
 import MapView, {
   type Details,
   type EdgePadding,
+  type MapMarkerProps,
   type MapViewProps,
   type Region,
 } from 'react-native-maps'
@@ -114,6 +115,26 @@ const DEFAULT_EDGE_PADDING: EdgePadding = {
   left: 50,
   right: 50,
   bottom: 50,
+}
+
+// Types the `cluster` prop `MapView` reads from its `Marker` children. Here,
+// so it reaches the published types of the root and `/compat` entries.
+// `MapMarkerProps` is a type alias, which cannot be augmented, so this
+// widens the props of the `MapMarker` class that `Marker` is instead.
+declare module 'react-native-maps' {
+  interface MapMarker {
+    readonly props: Readonly<
+      MapMarkerProps & {
+        /**
+         * `false` keeps the marker out of clustering: a clustering `MapView`
+         * always renders it on its own.
+         *
+         * @default `true`
+         */
+        cluster?: boolean
+      }
+    >
+  }
 }
 
 /**

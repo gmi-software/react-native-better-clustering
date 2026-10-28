@@ -177,6 +177,13 @@ individual markers from clustering:
 />
 ```
 
+`react-native-maps` does not declare `cluster`, so importing from
+`react-native-better-clustering` (or `/compat`) adds it to the props
+TypeScript checks on `Marker`. It cannot add it to `MapMarkerProps`, a type
+alias, so `MapMarkerProps`, `React.ComponentProps<typeof Marker>` and
+`MarkerAnimated` go without it. Type a component that takes `cluster` and
+passes it on to a `Marker` with `MapMarkerProps & { cluster?: boolean }`.
+
 ## Live updates
 
 Moving, adding or removing a clustered marker rebuilds the whole native

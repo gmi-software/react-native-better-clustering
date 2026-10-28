@@ -219,7 +219,10 @@ Everything from `react-native-maps` `MapView`, plus:
 | `clusterRenderMargin`          | `100`                 | How far outside the map (pt) cluster bubbles still render; `Infinity` = every cluster found |
 
 
-Per-marker opt-out: `<Marker cluster={false} ... />`.
+Per-marker opt-out: `<Marker cluster={false} ... />`. The package adds
+`cluster` to the TypeScript props of `react-native-maps`' `Marker`; see
+[Per-marker opt-out](https://gmi-software.github.io/react-native-better-clustering/docs/api/mapview#per-marker-opt-out)
+for the types that do not get it.
 
 ## Fixes over react-native-map-clustering
 
