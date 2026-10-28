@@ -331,16 +331,19 @@ describe('MapView index rebuilds (#12, #13)', () => {
     await flush()
     const before = pressedLeaves(container)
     const replace = spyOn(Supercluster.prototype, 'replaceLoadedFeatures')
+    try {
+      rerender(<Fleet step={1} />)
+      await flush()
+      const after = pressedLeaves(container)
 
-    rerender(<Fleet step={1} />)
-    await flush()
-    const after = pressedLeaves(container)
-    replace.mockRestore()
-
-    expect(after).toHaveLength(before.length)
-    after.forEach((leaf, index) => expect(leaf).toBe(before[index]))
-    expect(replace).not.toHaveBeenCalled()
-    expect(fakeClusterEngineStats.created).toBe(1)
+      expect(after).toHaveLength(before.length)
+      after.forEach((leaf, index) => expect(leaf).toBe(before[index]))
+      // Checked before mockRestore, which clears the recorded calls.
+      expect(replace).not.toHaveBeenCalled()
+      expect(fakeClusterEngineStats.created).toBe(1)
+    } finally {
+      replace.mockRestore()
+    }
   })
 
   it('#12: mounts once under StrictMode without querying a destroyed engine', async () => {

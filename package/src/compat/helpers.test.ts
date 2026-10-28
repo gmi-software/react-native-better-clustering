@@ -126,9 +126,10 @@ describe('flattenChildren', () => {
     return null
   }
 
+  /** A `null` key makes an unkeyed marker: React turns `key: null` into `"null"`. */
   function marker(key: string | null, latitude = 52.0) {
     return React.createElement(Marker, {
-      key,
+      key: key ?? undefined,
       coordinate: { latitude, longitude: 21.0 },
     })
   }

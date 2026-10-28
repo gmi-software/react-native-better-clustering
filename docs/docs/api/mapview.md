@@ -45,11 +45,13 @@ alias of the same component.
 </MapView>
 ```
 
-`MapView` reads its marker children again whenever they change, and reuses
-what it made from a marker element whose props are the same object as
-before. When only some markers change, create the elements of the others once
-(for example with `useMemo`): a `.map()` in render gives every marker new props,
-so each one is read again.
+`MapView` reads its marker children again whenever they change. It reuses what
+it made from a marker element while three things stay the same: its props
+object, its `key`, and its position among the children. When only some markers
+change, create the elements of the others once (for example with `useMemo`): a
+`.map()` in render gives every marker new props, so each one is read again. Put
+such a group before any list that changes length, since a list that grows or
+shrinks ahead of it moves its markers to new positions.
 
 ## Clustering props
 
