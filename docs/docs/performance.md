@@ -14,7 +14,7 @@ ceiling. Where each step runs decides what a large dataset costs.
 | Step | Where it runs | When |
 |------|---------------|------|
 | Turning `<Marker>` children into points, and comparing them with the previous points | JS thread | Each render with new children |
-| Packing the points into a buffer (`packPoints`) and copying them into the engine (`setPoints`) | JS thread; the copy is a synchronous native call | When markers are added, removed, moved or reordered |
+| Packing the points into a buffer and copying them into the engine (`setPoints`) | JS thread; the copy is a synchronous native call | When markers are added, removed, moved or reordered |
 | Building the index | A background thread | After each copy |
 | Finding the clusters in the region (`getClusters`) | JS thread, a synchronous native call | Each region update; while the map moves, at most every `clusterUpdateIntervalMs` |
 | Reading a cluster's markers (`getLeaves`) | JS thread, a synchronous native call | On a cluster press with `onClusterPress`, and for spiderfy |
