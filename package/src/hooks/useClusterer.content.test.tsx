@@ -240,17 +240,34 @@ describe('useClusterer native memory (#24)', () => {
     expect(fakeClusterEngineStats.disposed).toBe(21)
   })
 
-  it('disposes an engine superseded while it was still building', async () => {
+  it('disposes the engines of data that changes during a build', async () => {
     const { rerender, unmount } = renderClusterer(dataset(0))
     await flush()
 
     rerender({ data: dataset(1) })
     rerender({ data: dataset(2) })
+    // The build of dataset(1) lands, then dataset(2) builds.
+    await flush()
     await flush()
     unmount()
 
     expect(fakeClusterEngineStats.created).toBe(3)
     expect(fakeClusterEngineStats.disposed).toBe(3)
+  })
+
+  it('disposes an engine still building at unmount once its build settles', async () => {
+    const { rerender, unmount } = renderClusterer(dataset(0))
+    await flush()
+
+    rerender({ data: dataset(1) })
+    unmount()
+
+    expect(fakeClusterEngineStats.disposed).toBe(1)
+
+    await flush()
+
+    expect(fakeClusterEngineStats.created).toBe(2)
+    expect(fakeClusterEngineStats.disposed).toBe(2)
   })
 })
 
