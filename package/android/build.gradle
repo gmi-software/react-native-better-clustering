@@ -19,7 +19,19 @@ def isNewArchitectureEnabled() {
 }
 
 apply plugin: "com.android.library"
-apply plugin: 'org.jetbrains.kotlin.android'
+
+// AGP 9 compiles Kotlin itself unless an app opts out with
+// android.builtInKotlin=false (as the React Native 0.87 and 0.88 templates
+// still do), and fails when the Kotlin plugin is applied on top of it. Older
+// AGP versions need the plugin.
+def builtInKotlin() {
+  def agpMajor = com.android.Version.ANDROID_GRADLE_PLUGIN_VERSION.tokenize('.')[0].toInteger()
+  return agpMajor >= 9 && project.findProperty("android.builtInKotlin")?.toString() != "false"
+}
+
+if (!builtInKotlin()) {
+  apply plugin: 'org.jetbrains.kotlin.android'
+}
 apply from: '../nitrogen/generated/android/NitroMapCluster+autolinking.gradle'
 apply from: "./fix-prefab.gradle"
 
@@ -35,11 +47,10 @@ android {
   namespace "com.margelo.nitro.nitromapcluster"
 
   ndkVersion getExtOrDefault("ndkVersion")
-  compileSdkVersion getExtOrIntegerDefault("compileSdkVersion")
+  compileSdk getExtOrIntegerDefault("compileSdkVersion")
 
   defaultConfig {
-    minSdkVersion getExtOrIntegerDefault("minSdkVersion")
-    targetSdkVersion getExtOrIntegerDefault("targetSdkVersion")
+    minSdk getExtOrIntegerDefault("minSdkVersion")
     buildConfigField "boolean", "IS_NEW_ARCHITECTURE_ENABLED", isNewArchitectureEnabled().toString()
 
     externalNativeBuild {
@@ -47,15 +58,6 @@ android {
         cppFlags "-frtti -fexceptions -Wall -Wextra -fstack-protector-all"
         arguments "-DANDROID_STL=c++_shared", "-DANDROID_SUPPORT_FLEXIBLE_PAGE_SIZES=ON"
         abiFilters (*reactNativeArchitectures())
-
-        buildTypes {
-          debug {
-            cppFlags "-O1 -g"
-          }
-          release {
-            cppFlags "-O2"
-          }
-        }
       }
     }
   }
@@ -66,25 +68,27 @@ android {
     }
   }
 
-  packagingOptions {
-    excludes = [
-            "META-INF",
-            "META-INF/**",
-            "**/libc++_shared.so",
-            "**/libNitroModules.so",
-            "**/libfbjni.so",
-            "**/libjsi.so",
-            "**/libfolly_json.so",
-            "**/libfolly_runtime.so",
-            "**/libglog.so",
-            "**/libhermes.so",
-            "**/libhermes-executor-debug.so",
-            "**/libhermes_executor.so",
-            "**/libreactnative.so",
-            "**/libreactnativejni.so",
-            "**/libturbomodulejsijni.so",
-            "**/libreact_nativemodule_core.so",
-            "**/libjscexecutor.so"
+  packaging {
+    resources.excludes += [
+      "META-INF",
+      "META-INF/**"
+    ]
+    jniLibs.excludes += [
+      "**/libc++_shared.so",
+      "**/libNitroModules.so",
+      "**/libfbjni.so",
+      "**/libjsi.so",
+      "**/libfolly_json.so",
+      "**/libfolly_runtime.so",
+      "**/libglog.so",
+      "**/libhermes.so",
+      "**/libhermes-executor-debug.so",
+      "**/libhermes_executor.so",
+      "**/libreactnative.so",
+      "**/libreactnativejni.so",
+      "**/libturbomodulejsijni.so",
+      "**/libreact_nativemodule_core.so",
+      "**/libjscexecutor.so"
     ]
   }
 
@@ -93,19 +97,29 @@ android {
     prefab true
   }
 
+  // Per build type here, not inside defaultConfig's cmake block: a buildTypes
+  // block there resolves to this one through Groovy's delegation and gave every
+  // variant both sets of flags.
   buildTypes {
+    debug {
+      externalNativeBuild {
+        cmake {
+          cppFlags "-O1 -g"
+        }
+      }
+    }
     release {
       minifyEnabled false
+      externalNativeBuild {
+        cmake {
+          cppFlags "-O2"
+        }
+      }
     }
   }
 
-  lintOptions {
+  lint {
     disable "GradleCompatible"
-  }
-
-  compileOptions {
-    sourceCompatibility JavaVersion.VERSION_1_8
-    targetCompatibility JavaVersion.VERSION_1_8
   }
 
 }

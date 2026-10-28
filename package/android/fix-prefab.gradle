@@ -28,17 +28,17 @@ afterEvaluate {
       return
     }
 
-    def variants = proj.android.hasProperty('applicationVariants') ? proj.android.applicationVariants : proj.android.libraryVariants
+    // Walks .cxx/<build type>/<hash>/<abi> rather than listing variants: AGP 9's
+    // new DSL removes applicationVariants / libraryVariants.
     // Touch the prefab_config.json files to ensure that in ExternalNativeJsonGenerator.kt we will re-trigger the prefab CLI to
     // generate a libnameConfig.cmake file that will contain our native library (.so).
     // See this condition: https://cs.android.com/android-studio/platform/tools/base/+/mirror-goog-studio-main:build-system/gradle-core/src/main/java/com/android/build/gradle/tasks/ExternalNativeJsonGenerator.kt;l=207-219?q=createPrefabBuildSystemGlue
-    variants.all { variant ->
-      def variantName = variant.name
+    def cxxDir = new File(proj.projectDir, ".cxx")
+    if (!cxxDir.exists()) return
+    cxxDir.eachDir { variantDir ->
       abis.each { abi ->
-        def searchDir = new File(proj.projectDir, ".cxx/${variantName}")
-        if (!searchDir.exists()) return
         def matches = []
-        searchDir.eachDir { randomDir ->
+        variantDir.eachDir { randomDir ->
           def prefabFile = new File(randomDir, "${abi}/prefab_config.json")
           if (prefabFile.exists()) matches << prefabFile
         }
