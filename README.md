@@ -18,7 +18,9 @@ A drop-in replacement for **[react-native-map-clustering](https://github.com/tom
 </div>
 
 <div align="center">
-  <img src="./docs/static/img/demo.gif" alt="Clustering demo: pan and zoom with 2,000 markers" width="360" />
+  <img src="./docs/static/img/comparison.gif" alt="Side by side with 100,000 markers: react-native-better-clustering 1.1 shows markers in 0.65 s, react-native-map-clustering 4.0 in 3.38 s; with a courier moving twice a second, react-native-map-clustering freezes while it rebuilds" width="540" />
+  <br />
+  <sub>The published 1.1.0 and react-native-map-clustering 4.0.0, same app, same 100,000 markers, iOS Simulator, real time.</sub>
 </div>
 
 ## Benchmark
