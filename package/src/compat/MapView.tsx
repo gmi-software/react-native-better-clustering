@@ -120,7 +120,10 @@ export type RenderClusterProps = ClusterFeature & {
   clusterColor: string
   /** Text color for the default cluster bubble. */
   clusterTextColor: string
-  /** Font family for the default cluster label, when set. */
+  /**
+   * The `MapView`'s {@linkcode ClusteredMapViewProps.clusterFontFamily}, for
+   * the cluster label; `undefined` when it is not set.
+   */
   clusterFontFamily?: string
   /** Forwarded to the underlying map marker. */
   tracksViewChanges: boolean

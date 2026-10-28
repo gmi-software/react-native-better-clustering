@@ -203,6 +203,7 @@ Everything from `react-native-maps` `MapView`, plus:
 | `onClusterPress`               | —                     | `(cluster, markers) => void`      |
 | `onError`                      | throws during render  | `(error) => void` — native index build failed or an option is invalid |
 | `renderCluster`                | —                     | Custom cluster renderer           |
+| `clusterFontFamily`            | —                     | Font family for the cluster count label; also passed to `renderCluster` |
 | `preserveClusterPressBehavior` | `false`               | Skip auto `fitToCoordinates`      |
 | `superClusterRef`              | —                     | Access the underlying engine      |
 | `width` / `height`             | window size           | Seed map dimensions before layout |
