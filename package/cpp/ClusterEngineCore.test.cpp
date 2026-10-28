@@ -1661,6 +1661,103 @@ static void testInvalidOptionsNameTheOption() {
 // line at the top of this file) any read past the buffer or overflow fails it;
 // on its own it checks that the engine either rejects a buffer or indexes it
 // consistently.
+static bool sameBits(double a, double b) {
+  return std::memcmp(&a, &b, sizeof(double)) == 0;
+}
+
+static bool sameNode(const ClusterNode& a, const ClusterNode& b) {
+  if (a.id != b.id || !sameBits(a.x, b.x) || !sameBits(a.y, b.y) || a.count != b.count ||
+      a.parentId != b.parentId || a.pointIndex != b.pointIndex || a.isCluster != b.isCluster ||
+      a.zoom != b.zoom || a.minLeafId != b.minLeafId || a.values.size() != b.values.size()) {
+    return false;
+  }
+  for (size_t k = 0; k < a.values.size(); k++) {
+    if (!sameBits(a.values[k], b.values[k])) return false;
+  }
+  return true;
+}
+
+static bool sameNodes(const std::vector<ClusterNode>& a, const std::vector<ClusterNode>& b) {
+  if (a.size() != b.size()) return false;
+  for (size_t i = 0; i < a.size(); i++) {
+    if (!sameNode(a[i], b[i])) return false;
+  }
+  return true;
+}
+
+// build() skips the neighbour query of a node that provably has no other node
+// within the level's radius. Nothing may depend on that: every node at every
+// zoom, every cluster's children and expansion zoom must be bit-identical to a
+// build that queries every node, including with minPoints above 2, where the
+// order of a query's results shapes the levels below.
+static void testSkippedQueriesBuildTheSameIndex() {
+  struct Config {
+    double radius;
+    int32_t minPoints;
+    int32_t nodeSize;
+    bool aggregate;
+    int32_t maxZoom;
+    int32_t extent;
+  };
+  const Config configs[] = {
+    {390 * 0.06, 2, 64, false, 20, 512}, // the compat MapView's on a 390 pt wide phone
+    {40.0, 2, 64, true, 20, 512},
+    {40.0, 3, 16, false, 20, 512},
+    {60.0, 5, 64, false, 20, 512},
+    // Radii a few ulps of the coordinates wide, where rounding decides.
+    {2.0, 2, 64, false, 30, 1 << 20},
+  };
+
+  const int32_t size = 5000;
+  for (const char* name : bench::kDatasetNames) {
+    const bench::Dataset dataset = bench::generateDataset(name, size);
+    std::vector<int32_t> ids(static_cast<size_t>(size));
+    std::vector<double> values;
+    for (int32_t i = 0; i < size; i++) {
+      ids[static_cast<size_t>(i)] = i;
+      const double weight = static_cast<double>(i % 7 + 1);
+      values.insert(values.end(), {weight, weight * 2});
+    }
+
+    for (const Config& c : configs) {
+      auto build = [&](bool skip) {
+        ClusterEngineCore engine;
+        ClusterEngineConfig config;
+        config.radius = c.radius;
+        config.minPoints = c.minPoints;
+        config.minZoom = 1;
+        config.maxZoom = c.maxZoom;
+        config.extent = c.extent;
+        config.nodeSize = c.nodeSize;
+        if (c.aggregate) config.reducers = {AggregationReducer::Sum, AggregationReducer::Max};
+        engine.setOptions(config);
+        engine.setPoints(ids.data(), dataset.lats.data(), dataset.lngs.data(), ids.size(),
+                         c.aggregate ? values.data() : nullptr, c.aggregate ? 2 : 0);
+        engine.setSkipLonelyQueries(skip);
+        engine.build();
+        return engine;
+      };
+      const ClusterEngineCore skipping = build(true);
+      const ClusterEngineCore querying = build(false);
+
+      for (int32_t z = 1; z <= c.maxZoom + 1; z++) {
+        const ViewportBounds world{85.0, -85.0, 180.0, -180.0, static_cast<double>(z)};
+        const auto nodes = skipping.getClusters(world);
+        if (!sameNodes(nodes, querying.getClusters(world))) {
+          std::printf("skipped queries changed the index: %s %d radius %.1f minPoints %d zoom %d\n", name, size,
+                      c.radius, c.minPoints, z);
+          assert(false);
+        }
+        for (const auto& node : nodes) {
+          if (!node.isCluster) continue;
+          assert(sameNodes(skipping.getChildren(node.id), querying.getChildren(node.id)));
+          assert(skipping.getClusterExpansionZoom(node.id) == querying.getClusterExpansionZoom(node.id));
+        }
+      }
+    }
+  }
+}
+
 static void testBufferFuzz() {
   uint32_t state = 0x9E3779B9u;
   auto next = [&state] { return parityRandom(state); };
@@ -1797,6 +1894,7 @@ int main() {
   testBoundaryLeafOffsets();
   testBoundaryOptions();
   testInvalidOptionsNameTheOption();
+  testSkippedQueriesBuildTheSameIndex();
   testBufferFuzz();
   std::printf("ClusterEngineCore tests passed.\n");
   return 0;
