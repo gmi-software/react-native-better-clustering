@@ -97,7 +97,10 @@ export function MapScreen() {
       }}
     >
       {points.map((point) => (
-        <Marker key={point.id} coordinate={point.coordinate} />
+        <Marker
+          key={point.id}
+          coordinate={{ latitude: point.latitude, longitude: point.longitude }}
+        />
       ))}
     </MapView>
   )
