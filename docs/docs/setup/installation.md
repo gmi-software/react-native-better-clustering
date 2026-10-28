@@ -80,6 +80,13 @@ Android apps crash with "API key not found" when a map mounts. iOS uses Apple
 Maps and needs no key, unless you render with `provider={PROVIDER_GOOGLE}`;
 then add `iosGoogleMapsApiKey` too.
 
+The plugin ships with `react-native-maps` 1.22.0 and newer, which Expo SDK 55
+and later install. Expo SDK 53 and 54 install 1.20.1, which has no plugin, and
+`expo prebuild` stops with a `PluginError` saying `react-native-maps` has no
+valid config plugin. On those SDKs, leave `react-native-maps` out of `plugins`
+and set `expo.android.config.googleMaps.apiKey` instead (and
+`expo.ios.config.googleMapsApiKey` for Google Maps on iOS).
+
 Then regenerate native projects:
 
 ```bash
