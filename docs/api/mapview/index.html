@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="generator" content="Docusaurus v3.10.2">
 <title data-rh="true">MapView | React Native Better Clustering</title><meta data-rh="true" name="viewport" content="width=device-width,initial-scale=1"><meta data-rh="true" name="twitter:card" content="summary_large_image"><meta data-rh="true" property="og:url" content="https://gmi-software.github.io/react-native-better-clustering/docs/api/mapview"><meta data-rh="true" property="og:locale" content="en"><meta data-rh="true" name="docusaurus_locale" content="en"><meta data-rh="true" name="docsearch:language" content="en"><meta data-rh="true" name="docusaurus_version" content="current"><meta data-rh="true" name="docusaurus_tag" content="docs-default-current"><meta data-rh="true" name="docsearch:version" content="current"><meta data-rh="true" name="docsearch:docusaurus_tag" content="docs-default-current"><meta data-rh="true" property="og:title" content="MapView | React Native Better Clustering"><meta data-rh="true" name="description" content="The main export: a clustered MapView with the same API as"><meta data-rh="true" property="og:description" content="The main export: a clustered MapView with the same API as"><link data-rh="true" rel="icon" href="/react-native-better-clustering/img/favicon.svg"><link data-rh="true" rel="canonical" href="https://gmi-software.github.io/react-native-better-clustering/docs/api/mapview"><link data-rh="true" rel="alternate" href="https://gmi-software.github.io/react-native-better-clustering/docs/api/mapview" hreflang="en"><link data-rh="true" rel="alternate" href="https://gmi-software.github.io/react-native-better-clustering/docs/api/mapview" hreflang="x-default"><script data-rh="true" type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"API Reference","item":"https://gmi-software.github.io/react-native-better-clustering/docs/api/mapview"}]}</script><link rel="stylesheet" href="/react-native-better-clustering/assets/css/styles.5d98aaef.css">
-<script src="/react-native-better-clustering/assets/js/runtime~main.6172ca52.js" defer="defer"></script>
+<script src="/react-native-better-clustering/assets/js/runtime~main.7bd7b0b6.js" defer="defer"></script>
 <script src="/react-native-better-clustering/assets/js/main.be0b3d47.js" defer="defer"></script>
 </head>
 <body>
@@ -85,14 +85,16 @@ showing the previous markers until the new index has loaded. Builds run one at
 a time: markers that change during a build are built once it has loaded, from
 the newest children, so markers that move faster than a build loads update on
 the map once per build.</p>
-<p>Any change to the children, even to a marker that does not cluster, costs a
-pass over the markers on the JS thread: <code>MapView</code> reads them and compares them
-with the previous children to tell whether the index needs rebuilding. A
-rebuild then also packs every clustered marker for the native build, whose
-time grows with their number. To keep live updates cheap:</p>
+<p>Any change to the children, even to a marker that does not cluster, makes
+<code>MapView</code> look for the markers that changed on the JS thread, to tell whether
+the index needs rebuilding. An array of markers it has read before, at the same
+place among the children, costs a comparison of its elements rather than a read
+of each marker. A rebuild then also packs every clustered marker for the native
+build, whose time grows with their number. To keep live updates cheap:</p>
 <ul>
-<li class="">Create the elements of markers that do not move once (with <code>useMemo</code>), so
-only the moving markers are new elements on each update.</li>
+<li class="">Create the elements of markers that do not move once (with <code>useMemo</code>), and
+pass them as a child of their own (<code>{staticMarkers}</code>) rather than spread into
+one array with the moving markers, so each update reads only the moving ones.</li>
 <li class="">Give moving markers that do not need to cluster <code>cluster={false}</code>. They skip
 the index, so moving them never rebuilds it.</li>
 </ul>
