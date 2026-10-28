@@ -258,6 +258,7 @@ A menu of scenarios that exercise real-world usage. A dev HUD on each one shows 
 | Basic | 2,000 static markers across Poland |
 | Parent state | A selection and a visible list from `onMarkersChange={setState}` with inline children, plus a 2 Hz parent re-render |
 | Live data | Appending and removing markers, on demand or one per second |
+| Live fleet | 1k to 50k static markers and 20 vehicles moving 1 to 10 times a second, with how far the index lags behind, clustered or with `cluster={false}` |
 | Co-located markers | Spiderfy from zoom 19 or on press; 1,000 markers at one spot stay a bubble |
 | Antimeridian | Markers on both sides of ±180° |
 | 10k / 50k markers | Large datasets, with the time to first markers |
