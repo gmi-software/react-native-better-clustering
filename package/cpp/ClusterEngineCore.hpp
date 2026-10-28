@@ -216,19 +216,12 @@ public:
 
   /** Returns false when the buffer layout is invalid (state is reset). */
   bool setPointsFromBuffer(const uint8_t* data, size_t byteLength) {
-    if (data == nullptr || byteLength < 4) {
+    if (!parseBuffer(data, byteLength)) {
       resetDerivedState(true);
       return false;
     }
-
-    uint32_t magic = 0;
-    std::memcpy(&magic, data, 4);
-
-    if (magic == kBufferMagicV2) {
-      return parseBufferV2(data, byteLength);
-    }
-
-    return parseBufferV1(data, byteLength);
+    resetDerivedState();
+    return true;
   }
 
   void build() {
@@ -664,85 +657,56 @@ private:
     std::vector<std::pair<int32_t, int32_t>>().swap(_sparsePointIds);
   }
 
-  bool parseBufferV1(const uint8_t* data, size_t byteLength) {
+  // Reads packPoints' layout into `_points`. v1: uint32 count, then per point
+  // int32 id, float64 lat, float64 lng. v2: the magic, uint32 count, uint32
+  // numProps, and each point followed by numProps float64 values.
+  bool parseBuffer(const uint8_t* data, size_t byteLength) {
+    if (data == nullptr || byteLength < 4) return false;
+    uint32_t magic = 0;
+    std::memcpy(&magic, data, 4);
+    const bool v2 = magic == kBufferMagicV2;
+    const size_t header = v2 ? 12 : 4;
+    if (byteLength < header) return false;
+
     int32_t count = 0;
-    std::memcpy(&count, data, 4);
-    const size_t expectedSize = 4 + static_cast<size_t>(count) * 20;
-    if (byteLength < expectedSize || count < 0) {
-      resetDerivedState(true);
-      return false;
-    }
+    uint32_t numProps = 0;
+    std::memcpy(&count, data + (v2 ? 4 : 0), 4);
+    if (v2) std::memcpy(&numProps, data + 8, 4);
+
+    // Both counts come from the buffer, so the size check divides rather than
+    // multiplies: `count * stride` wraps size_t, on a 32-bit ABI from a 4-byte
+    // count alone. The stride itself only wraps a 32-bit size_t.
+    const uint64_t maxNumProps = (std::numeric_limits<size_t>::max() - 20) / 8;
+    if (count < 0 || static_cast<uint64_t>(numProps) > maxNumProps) return false;
+    const size_t valuesSize = static_cast<size_t>(numProps) * 8;
+    const size_t stride = 20 + valuesSize;
+    if (static_cast<size_t>(count) > (byteLength - header) / stride) return false;
+
+    // Cluster ids continue from the largest point id (firstFreeClusterId), and
+    // there are fewer clusters than points, so this leaves room for all of them
+    // in int32. packPoints writes ids below `count`.
+    const int32_t maxPointId = std::numeric_limits<int32_t>::max() - count;
 
     _points.clear();
     _points.reserve(static_cast<size_t>(count));
-    const uint8_t* ptr = data + 4;
     for (int32_t i = 0; i < count; i++) {
+      const uint8_t* record = data + header + static_cast<size_t>(i) * stride;
       PointData p;
-      std::memcpy(&p.id, ptr, 4);
-      ptr += 4;
-      std::memcpy(&p.latitude, ptr, 8);
-      ptr += 8;
-      std::memcpy(&p.longitude, ptr, 8);
-      ptr += 8;
-      if (!isValidGeoCoordinate(p.latitude, p.longitude)) {
-        continue;
-      }
+      std::memcpy(&p.id, record, 4);
+      std::memcpy(&p.latitude, record + 4, 8);
+      std::memcpy(&p.longitude, record + 12, 8);
+      if (p.id > maxPointId) return false;
+      if (!isValidGeoCoordinate(p.latitude, p.longitude)) continue;
       p.latitude = clampLatitude(p.latitude);
       p.longitude = clampLongitude(p.longitude);
       p.x = lngToX(p.longitude, _options.extent);
       p.y = latToY(p.latitude, _options.extent);
+      if (numProps > 0) {
+        p.values.resize(numProps);
+        std::memcpy(p.values.data(), record + 20, valuesSize);
+      }
       _points.push_back(std::move(p));
     }
-    resetDerivedState();
-    return true;
-  }
-
-  bool parseBufferV2(const uint8_t* data, size_t byteLength) {
-    if (byteLength < 12) {
-      resetDerivedState(true);
-      return false;
-    }
-
-    int32_t count = 0;
-    uint32_t numProps = 0;
-    std::memcpy(&count, data + 4, 4);
-    std::memcpy(&numProps, data + 8, 4);
-
-    const size_t stride = 20 + static_cast<size_t>(numProps) * 8;
-    const size_t expectedSize = 12 + static_cast<size_t>(count) * stride;
-    if (byteLength < expectedSize || count < 0) {
-      resetDerivedState(true);
-      return false;
-    }
-
-    _points.clear();
-    _points.reserve(static_cast<size_t>(count));
-    const uint8_t* ptr = data + 12;
-    for (int32_t i = 0; i < count; i++) {
-      PointData p;
-      std::memcpy(&p.id, ptr, 4);
-      ptr += 4;
-      std::memcpy(&p.latitude, ptr, 8);
-      ptr += 8;
-      std::memcpy(&p.longitude, ptr, 8);
-      ptr += 8;
-      bool valid = isValidGeoCoordinate(p.latitude, p.longitude);
-      if (valid) {
-        p.latitude = clampLatitude(p.latitude);
-        p.longitude = clampLongitude(p.longitude);
-        p.x = lngToX(p.longitude, _options.extent);
-        p.y = latToY(p.latitude, _options.extent);
-        if (numProps > 0) {
-          p.values.resize(numProps);
-          std::memcpy(p.values.data(), ptr, static_cast<size_t>(numProps) * 8);
-        }
-      }
-      ptr += static_cast<size_t>(numProps) * 8;
-      if (valid) {
-        _points.push_back(std::move(p));
-      }
-    }
-    resetDerivedState();
     return true;
   }
 
