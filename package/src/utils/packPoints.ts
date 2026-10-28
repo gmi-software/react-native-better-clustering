@@ -29,7 +29,8 @@ export interface PackedPoints {
 }
 
 /**
- * Pack map points into a binary `ArrayBuffer` for zero-copy transfer to C++.
+ * Pack map points into a binary `ArrayBuffer` for `ClusterEngine.setPoints`,
+ * which copies them into the native engine.
  *
  * v1 layout (no aggregation):
  * - uint32 point count

@@ -109,7 +109,8 @@ export class Supercluster<P extends AnyProps = AnyProps> {
   }
 
   /**
-   * Loads points and builds the cluster index without blocking the JS thread.
+   * Loads points and builds the cluster index on a background thread.
+   * Validating and packing the points still runs on the JS thread.
    *
    * Prefer this for large datasets (10k+ points).
    *

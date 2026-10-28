@@ -13,6 +13,7 @@ Import from `/clusterer`:
 
 ```tsx
 import { Clusterer } from 'react-native-better-clustering/clusterer'
+import { isClusterFeature } from 'react-native-better-clustering/geojson'
 ```
 
 ## `Clusterer`
@@ -26,7 +27,14 @@ Maps visible clustered features to React elements via `renderItem`.
   mapDimensions={{ width: mapWidth, height: mapHeight }}
   options={{ radius: 40, minPoints: 2, maxZoom: 20 }}
   renderItem={(feature) => (
-    <MyMarker key={featureKey(feature)} feature={feature} />
+    <MyMarker
+      key={
+        isClusterFeature(feature)
+          ? `cluster-${feature.properties.cluster_id}`
+          : `point-${feature.properties.id}`
+      }
+      feature={feature}
+    />
   )}
 />
 ```

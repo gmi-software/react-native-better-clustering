@@ -71,7 +71,7 @@ export function MapScreen() {
 
 ## Migrating from react-native-map-clustering
 
-Change one import — props and `<Marker>` children stay the same:
+Change one import — props and `<Marker>` children carry over:
 
 ```diff
 - import MapView from 'react-native-map-clustering'
@@ -80,7 +80,8 @@ Change one import — props and `<Marker>` children stay the same:
 
 Coming from 3.x? `onRegionChangeComplete` receives `(region, details, markers)`,
 as in 4.x, not `(region, markers)`. See
-[Coming from react-native-map-clustering 3.x](./compatibility.md#coming-from-react-native-map-clustering-3x).
+[Migrating from react-native-map-clustering](./migration.md) for that and the
+other differences.
 
 ## Custom map stack
 

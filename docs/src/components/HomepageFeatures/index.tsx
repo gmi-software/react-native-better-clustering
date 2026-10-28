@@ -32,8 +32,8 @@ const FeatureList: FeatureItem[] = [
     title: 'Cluster Aggregation',
     description: (
       <>
-        <code>clusterProperties</code> map/reduce for aggregated values on
-        clusters — beyond what react-native-clusterer offers.
+        <code>clusterProperties</code> sums, or takes the minimum or maximum
+        of, a numeric property across each cluster&apos;s points.
       </>
     ),
   },
