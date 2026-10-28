@@ -253,3 +253,43 @@ describe('useClusterer native memory (#24)', () => {
     expect(fakeClusterEngineStats.disposed).toBe(3)
   })
 })
+
+describe('useClusterer co-located points (#95)', () => {
+  it('returns co-located points without an id as distinct objects above maxZoom', async () => {
+    const unnamed = (
+      longitude: number,
+      title: string
+    ): PointFeature<{ title: string }> => ({
+      type: 'Feature',
+      geometry: { type: 'Point', coordinates: [longitude, 37.78] },
+      properties: { title },
+    })
+    const data = [
+      unnamed(-122.42, 'a'),
+      unnamed(-122.42, 'b'),
+      unnamed(-122.418, 'c'),
+      unnamed(-122.422, 'd'),
+    ]
+    const near = (longitude: number): MapRegion => ({
+      latitude: 37.78,
+      longitude,
+      latitudeDelta: 0.002,
+      longitudeDelta: 0.002,
+    })
+    const { result, rerender } = renderHook(
+      ({ region }) =>
+        useClusterer(data, MAP_DIMENSIONS, region, { maxZoom: 10 }),
+      { initialProps: { region: near(-122.4185) } }
+    )
+    await flush()
+    const titles = () =>
+      result.current[0].map((feature) => feature.properties.title).sort()
+    expect(titles()).toEqual(['a', 'b', 'c'])
+
+    rerender({ region: near(-122.4215) })
+    await flush()
+
+    expect(titles()).toEqual(['a', 'b', 'd'])
+    expect(new Set(result.current[0]).size).toBe(3)
+  })
+})

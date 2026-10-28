@@ -92,7 +92,28 @@ when rendering markers yourself:
 
 ```tsx
 import { stabilizeClusterFeatures } from 'react-native-better-clustering/hooks'
+
+const stable = stabilizeClusterFeatures(previous, next)
 ```
+
+It matches a point across snapshots by its `id` (on `properties` or the
+feature) and its coordinates, so give an `id` to points that can share a
+coordinate: without one, two such points match the same prior feature. To
+match on a key of your own, pass it as the third argument; it must be unique
+within each array:
+
+```tsx
+import { isClusterFeature } from 'react-native-better-clustering/geojson'
+
+stabilizeClusterFeatures(previous, next, (feature) =>
+  isClusterFeature(feature)
+    ? `c:${feature.properties.cluster_id}:${feature.properties.point_count}`
+    : `p:${feature.properties.uuid}`
+)
+```
+
+`useClusterer` and `MapView` already tell co-located points apart, with or
+without an `id`.
 
 For most apps, the main [`MapView`](./mapview.md) handles this automatically.
 

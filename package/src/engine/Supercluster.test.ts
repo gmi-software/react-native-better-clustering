@@ -540,6 +540,56 @@ describe('Supercluster.getClusterMinLeaf', () => {
   })
 })
 
+describe('Supercluster.getFeatureId', () => {
+  beforeEach(() => {
+    jest.clearAllMocks()
+    mockEngine.isBuilt = false
+  })
+
+  const point = (longitude: number): PointFeature => ({
+    type: 'Feature',
+    geometry: { type: 'Point', coordinates: [longitude, 52] },
+    properties: {},
+  })
+  const node = (id: number, isCluster: boolean): EngineClusterNode => ({
+    id,
+    latitude: 52,
+    longitude: 21,
+    count: isCluster ? 2 : 1,
+    isCluster,
+    parentId: -1,
+    pointIndex: isCluster ? -1 : id,
+    minLeafId: isCluster ? 0 : id,
+    values: [],
+  })
+
+  it('returns the engine id of each point and cluster, also for co-located points', () => {
+    mockEngine.getClusters.mockReturnValueOnce([
+      node(0, false),
+      node(1, false),
+      node(10, true),
+    ])
+    const clusterer = new Supercluster().load([point(21), point(21)])
+
+    const features = clusterer.getClusters([...WORLD_BBOX], 10)
+
+    expect(features.map((feature) => clusterer.getFeatureId(feature))).toEqual([
+      0, 1, 10,
+    ])
+  })
+
+  it('throws for a feature another instance returned', () => {
+    mockEngine.getClusters.mockReturnValueOnce([node(0, false)])
+    const [feature] = new Supercluster()
+      .load([point(21)])
+      .getClusters([...WORLD_BBOX], 10)
+
+    expect(() =>
+      new Supercluster().load([point(21)]).getFeatureId(feature!)
+    ).toThrow('did not return')
+  })
+})
+
 describe('Supercluster.getAllLeaves', () => {
   beforeEach(() => {
     jest.clearAllMocks()

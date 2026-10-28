@@ -262,8 +262,10 @@ export function useClusterIndex<P extends AnyProps = AnyProps>(
   let clusters = stable.clusters
   if (raw !== stable.raw) {
     clusters =
-      stable.supercluster === supercluster
-        ? stabilizeClusterFeatures(stable.clusters, raw)
+      supercluster != null && stable.supercluster === supercluster
+        ? stabilizeClusterFeatures(stable.clusters, raw, (feature) =>
+            supercluster.getFeatureId(feature)
+          )
         : raw
     setStable({ raw, supercluster, clusters })
   }
