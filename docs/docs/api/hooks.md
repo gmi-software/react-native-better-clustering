@@ -99,17 +99,19 @@ const stable = stabilizeClusterFeatures(previous, next)
 It matches a point across snapshots by its `id` (on `properties` or the
 feature) and its coordinates, so give an `id` to points that can share a
 coordinate: without one, two such points match the same prior feature. To
-match on a key of your own, pass it as the third argument; it must be unique
-within each array:
+match on a key of your own, pass it as the third argument. It must be unique
+within each array, and a feature whose key matches gets the previous object
+back, so include whatever must refresh it, such as its coordinates:
 
 ```tsx
 import { isClusterFeature } from 'react-native-better-clustering/geojson'
 
-stabilizeClusterFeatures(previous, next, (feature) =>
-  isClusterFeature(feature)
-    ? `c:${feature.properties.cluster_id}:${feature.properties.point_count}`
-    : `p:${feature.properties.uuid}`
-)
+stabilizeClusterFeatures(previous, next, (feature) => {
+  const [longitude, latitude] = feature.geometry.coordinates
+  return isClusterFeature(feature)
+    ? `c:${feature.properties.cluster_id}:${feature.properties.point_count}:${latitude}:${longitude}`
+    : `p:${feature.properties.uuid}:${latitude}:${longitude}`
+})
 ```
 
 `useClusterer` and `MapView` already tell co-located points apart, with or
