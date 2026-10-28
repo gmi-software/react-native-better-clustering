@@ -11,12 +11,13 @@
     "e2e": "maestro test .maestro"
   },
   "dependencies": {
-    "react-native-better-clustering": "workspace:*",
     "expo": "~56.0.24",
     "expo-dev-client": "~56.0.28",
     "expo-status-bar": "~56.0.4",
     "react": "19.2.3",
     "react-native": "0.85.3",
+    "react-native-better-clustering": "workspace:*",
+    "react-native-map-clustering": "4.0.0",
     "react-native-maps": "^1.26.0",
     "react-native-nitro-modules": "0.35.9",
     "react-native-reanimated": "^4.5.0",

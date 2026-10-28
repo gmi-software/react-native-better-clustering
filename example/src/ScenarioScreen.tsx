@@ -1,7 +1,8 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { BackHandler, Pressable, StyleSheet, Text, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { DevHud } from './hud/DevHud'
+import { HudVisibilityContext } from './hud/HudVisibility'
 import type { Scenario } from './scenarios'
 
 /** A scenario under a header with a way back, and the dev HUD over it. */
@@ -12,6 +13,8 @@ export function ScenarioScreen({
   scenario: Scenario
   onBack: () => void
 }) {
+  const [hudHidden, setHudHidden] = useState(false)
+
   useEffect(() => {
     const subscription = BackHandler.addEventListener(
       'hardwareBackPress',
@@ -39,8 +42,10 @@ export function ScenarioScreen({
         </Text>
       </View>
       <View style={styles.body}>
-        {scenario.render()}
-        <DevHud />
+        <HudVisibilityContext.Provider value={setHudHidden}>
+          {scenario.render()}
+        </HudVisibilityContext.Provider>
+        {hudHidden ? null : <DevHud />}
       </View>
     </SafeAreaView>
   )
