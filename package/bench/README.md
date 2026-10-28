@@ -59,6 +59,7 @@ The compat `MapView` with default props on a 390 × 844 pt phone: `radius` 23.4 
 | `build` | `setPointsFromBuffer` (the packed buffer the Nitro module receives) and `build`, on a fresh engine |
 | `clusters_z4`, `_z8`, `_z12`, `_z16` | `getClusters` for the phone viewport at that cluster zoom |
 | `leaves_top` | `getLeaves` of the top cluster, unlimited: the cluster with the most points at `minZoom` (ties go to the smallest leaf id) |
+| `leaves_offset` | `getLeaves` of the top cluster, the last page: 10 leaves at offset `count - 10` |
 | `bounds_top` | `getClusterBounds` of the top cluster: the box its leaves span, which a `MapView` cluster press fits the map to |
 | `expansion_top` | `getClusterExpansionZoom` of the top cluster |
 | `zoom_sweep` | `getClusters` at every zoom from `minZoom` to `maxZoom`, like a zoom-in animation |

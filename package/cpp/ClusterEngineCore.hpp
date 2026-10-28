@@ -522,6 +522,10 @@ public:
         } else {
           result.push_back(node);
         }
+      } else if (offset - skipped >= node.count) {
+        // The whole sub-cluster lies before the page: skip it by its count,
+        // as supercluster does, instead of walking its leaves.
+        skipped += node.count;
       } else {
         const size_t cluster = static_cast<size_t>(index) - _points.size();
         for (int32_t i = _childOffsets[cluster + 1] - 1; i >= _childOffsets[cluster]; i--) {
