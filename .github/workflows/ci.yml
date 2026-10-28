@@ -112,23 +112,89 @@ jobs:
         with:
           persist-credentials: false
 
+      # Ubuntu runners randomize mmap with more bits than g++'s ASan and TSan
+      # runtimes support, which aborts them at startup.
+      - name: Limit mmap randomization for the sanitizers
+        run: sudo sysctl vm.mmap_rnd_bits=28
+
+      # Both compilers, at -O2 so the flow-based warnings (maybe-uninitialized
+      # and the like) run. The tests include every engine header, so this
+      # covers the code apps compile too.
+      - name: Compile the C++ tests with warnings as errors
+        working-directory: package/cpp
+        run: |
+          for cxx in g++ clang++; do
+            for test in ClusterEngineCore ThreadSafeClusterEngine; do
+              echo "$cxx $test.test.cpp"
+              "$cxx" -std=c++20 -I. -O2 -pthread -Wall -Wextra -Wpedantic -Werror \
+                -c "$test.test.cpp" -o /dev/null
+            done
+          done
+
       # g++'s `undefined` group leaves out float-cast-overflow, which catches a
       # NaN or out-of-range double cast to int; name it, and stop on the first
       # report so undefined behaviour fails the job.
-      - name: Compile and run the ClusterEngineCore tests
+      - name: Compile and run the ClusterEngineCore tests under ASan and UBSan
         working-directory: package/cpp
         run: |
-          c++ -std=c++20 -I. -fsanitize=undefined,float-cast-overflow -fno-sanitize-recover=all ClusterEngineCore.test.cpp -o cluster_test
+          c++ -std=c++20 -I. -g -O1 -fno-omit-frame-pointer \
+            -fsanitize=address,undefined,float-cast-overflow -fno-sanitize-recover=all \
+            ClusterEngineCore.test.cpp -o cluster_test
           ./cluster_test
 
-      # halt_on_error fails the job on the first data race. The sysctl is
-      # needed because Ubuntu runners randomize mmap with more bits than g++'s
-      # TSan runtime supports, which aborts it at startup.
+      - name: Compile and run the ThreadSafeClusterEngine tests under ASan and UBSan
+        working-directory: package/cpp
+        run: |
+          c++ -std=c++20 -I. -g -O1 -fno-omit-frame-pointer -pthread \
+            -fsanitize=address,undefined,float-cast-overflow -fno-sanitize-recover=all \
+            ThreadSafeClusterEngine.test.cpp -o thread_test
+          ./thread_test
+
+      # halt_on_error fails the job on the first data race.
       - name: Compile and run the ThreadSafeClusterEngine tests under TSan
         working-directory: package/cpp
         env:
           TSAN_OPTIONS: halt_on_error=1
         run: |
-          sudo sysctl vm.mmap_rnd_bits=28
           c++ -std=c++20 -I. -g -O1 -fsanitize=thread -pthread ThreadSafeClusterEngine.test.cpp -o thread_test
           ./thread_test
+
+  # HybridClusterEngine linked against Nitro's C++ runtime and JSI from
+  # node_modules (package/scripts/test-native.sh). A job of its own because it
+  # needs the install and codegen that `cpp` does without.
+  cpp-native:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version-file: package.json
+
+      - name: Setup Node.js
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+
+      # Also runs nitrogen through the package's `prepare` script, which writes
+      # the generated specs the test links.
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Limit mmap randomization for the sanitizers
+        run: sudo sysctl vm.mmap_rnd_bits=28
+
+      - name: Run the HybridClusterEngine tests under ASan and UBSan
+        working-directory: package
+        run: bun run test:native
+
+      - name: Run the HybridClusterEngine tests under TSan
+        working-directory: package
+        env:
+          TSAN_OPTIONS: halt_on_error=1
+        run: bun run test:native thread
