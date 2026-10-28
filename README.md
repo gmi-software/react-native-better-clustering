@@ -201,6 +201,7 @@ Everything from `react-native-maps` `MapView`, plus:
 | `spiderLineColor`              | `#FF0000`             | Color of spider connector lines   |
 | `clusterColor`                 | `#0F52FF`             | Default cluster bubble color (GMI brand blue) |
 | `clusterTextColor`             | `#FFFFFF`             | Default cluster label color       |
+| `clusterAccessibilityLabel`    | `Cluster of N markers` | `(count) => string` — accessibility label for the default cluster bubbles; not announced by screen readers yet, see [Accessibility](https://gmi-software.github.io/react-native-better-clustering/docs/api/mapview#accessibility) |
 | `animationEnabled`             | `true`                | Fade and glide cluster bubbles on zoom |
 | `onClusterPress`               | —                     | `(cluster, markers) => void`      |
 | `onError`                      | throws during render  | `(error) => void` — native index build failed or an option is invalid |

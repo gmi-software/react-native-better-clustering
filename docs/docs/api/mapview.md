@@ -66,6 +66,7 @@ are supported, plus:
 | `clusterColor` | `#0F52FF` | Default cluster bubble color (GMI brand blue) |
 | `clusterTextColor` | `#FFFFFF` | Default cluster label color |
 | `clusterFontFamily` | — | Font family for cluster count label |
+| `clusterAccessibilityLabel` | ``(count) => `Cluster of ${count} markers` `` | Accessibility label for a default cluster bubble, passed to its `Marker` with the `button` role. Screen readers do not announce it yet: see [Accessibility](#accessibility) |
 | `animationEnabled` | `true` | Fade and glide the default cluster bubbles on zoom (iOS + Android); see `clusterFadeInDuration` |
 | `layoutAnimationConf` | — | Deprecated and ignored, accepted for react-native-map-clustering compatibility. `LayoutAnimation` cannot animate map markers on the New Architecture: they are native map annotations outside React Native's layout. Tune the fade with `clusterFadeInDuration` |
 | `clusterFadeInDuration` | `250` | Cross-fade duration (ms) for default cluster bubbles on zoom: new bubbles fade in while removed ones linger and fade out, eliminating the blink from native annotations being added/removed (iOS + Android). Driven by Reanimated on the UI thread; without the optional `react-native-reanimated` peer, bubbles do not fade and removed ones disappear at once. Bubbles cross-fade when the map settles; during an active pinch/pan, new bubbles appear at once and removed ones stay for up to 100 ms (never longer than this duration) before they go, so a continuous zoom leaves no gaps; at the default `clusterUpdateIntervalMs` at most one extra generation of bubbles stays mounted. It also times the glide: on a zoom step, a splitting cluster's new bubbles start at its place and glide to theirs, a bubble whose cluster moves slides there, and merging bubbles glide into the one that takes them in (while the map moves, within the 100 ms they stay); pans and data changes only fade. Gated by `animationEnabled`; ignored with a custom `renderCluster`. Set to `0` to disable |
@@ -159,6 +160,29 @@ const renderCluster = (cluster: RenderClusterProps) => {
 Cluster features include `properties.point_count`,
 `properties.point_count_abbreviated`, and
 `properties.getExpansionRegion()` for zoom-on-tap.
+
+## Accessibility
+
+Each default cluster bubble passes an `accessibilityLabel` and the `button`
+role to its `Marker`. The label is `Cluster of N markers`, or what
+`clusterAccessibilityLabel` returns for the number of markers:
+
+```tsx
+<MapView
+  clusterAccessibilityLabel={(count) => t('map.cluster', { count })}
+  {...props}
+>
+  {/* markers */}
+</MapView>
+```
+
+Screen readers do not announce it yet. `react-native-maps` (up to 1.29) does
+not pass a `Marker`'s `accessibilityLabel` or `accessibilityRole` to the
+native map annotation: on iOS with Apple Maps, VoiceOver reads a cluster
+bubble as "Map pin", and on Android the label does not reach the Google Maps
+marker. A `renderCluster` marker has the same limit. The bubbles announce
+their label once `react-native-maps` passes it on; follow
+[react-native-maps#6046](https://github.com/react-native-maps/react-native-maps/issues/6046).
 
 ## Types
 
