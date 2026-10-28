@@ -143,6 +143,24 @@ function sameChildren(
 }
 
 /**
+ * `runs` joined into one array: the only run itself, or else a copy. `concat`
+ * copies 50k items many times faster than `flat` on Hermes.
+ */
+function concatRuns<T>(runs: T[][]): T[] {
+  return runs.length === 1 ? runs[0]! : ([] as T[]).concat(...runs)
+}
+
+/**
+ * The runs each array {@linkcode flattenChildren} returned was joined from, in
+ * order. A nested array kept at its position is the same run on every render,
+ * so {@linkcode splitMarkerChildren} can reuse what it made of it.
+ */
+const flattenedRuns = new WeakMap<
+  readonly React.ReactNode[],
+  React.ReactNode[][]
+>()
+
+/**
  * `Children.toArray(children)`, without cloning the elements of a nested
  * array again while it stays at the same position and holds the same
  * children, such as markers created once with `useMemo`.
@@ -179,7 +197,17 @@ export function flattenChildren(
     cache.set(child, { position, source: child.slice(), nodes })
     parts.push(nodes)
   }
-  return parts.length === 1 ? parts[0]! : parts.flat()
+  const flattened = concatRuns(parts)
+  flattenedRuns.set(flattened, parts)
+  return flattened
+}
+
+/** What {@linkcode splitMarkerChildren} made of one run of children. */
+interface SplitRun {
+  /** The child index the run started at, which its points carry. */
+  offset: number
+  markerFeatures: PointFeature<MarkerFeatureProperties>[]
+  otherChildren: React.ReactNode[]
 }
 
 /**
@@ -192,12 +220,63 @@ export interface MarkerFeatureCache {
     object,
     { feature: PointFeature<MarkerFeatureProperties>; key: string | null }
   >
+  /** What each run of children was split into, by the run's array. */
+  runs: WeakMap<readonly React.ReactNode[], SplitRun>
+  /** The runs the last call split, in order. */
+  lastRuns: SplitRun[]
   /** The points the last call returned. */
   last: PointFeature<MarkerFeatureProperties>[]
 }
 
 export function createMarkerFeatureCache(): MarkerFeatureCache {
-  return { points: new WeakMap(), last: [] }
+  return { points: new WeakMap(), runs: new WeakMap(), lastRuns: [], last: [] }
+}
+
+/** Splits one run of children that starts at child index `offset`. */
+function splitRun(
+  run: readonly React.ReactNode[],
+  offset: number,
+  points: MarkerFeatureCache['points']
+): SplitRun {
+  const markerFeatures: PointFeature<MarkerFeatureProperties>[] = []
+  const otherChildren: React.ReactNode[] = []
+
+  run.forEach((child, i) => {
+    if (!isMarker(child)) {
+      otherChildren.push(child)
+      return
+    }
+    const index = offset + i
+    const cached = points.get(child.props)
+    let feature = cached?.feature
+    if (
+      feature == null ||
+      feature.properties.index !== index ||
+      cached!.key !== child.key
+    ) {
+      feature = markerToGeoJSONFeature(child, index)
+      points.set(child.props, { feature, key: child.key })
+    }
+    markerFeatures.push(feature)
+  })
+
+  return { offset, markerFeatures, otherChildren }
+}
+
+/** Whether `split` holds the same points as `previous`, in the same order. */
+function samePoints(split: SplitRun, previous: SplitRun | undefined): boolean {
+  if (split === previous) {
+    return true
+  }
+  if (
+    previous == null ||
+    split.markerFeatures.length !== previous.markerFeatures.length
+  ) {
+    return false
+  }
+  return split.markerFeatures.every(
+    (feature, i) => feature === previous.markerFeatures[i]
+  )
 }
 
 /**
@@ -209,6 +288,11 @@ export function createMarkerFeatureCache(): MarkerFeatureCache {
  * (`Children.toArray` clones an element but keeps its props), and while every
  * point stays the same the previous list comes back, so the cluster index
  * sees no new data at all.
+ *
+ * Children that {@linkcode flattenChildren} returned are split one run at a
+ * time, and a run that starts at the same child index as before keeps its
+ * split without a visit to its markers: a live update that re-creates a few
+ * markers next to a kept array of thousands walks only those few.
  */
 export function splitMarkerChildren(
   children: React.ReactNode[],
@@ -217,34 +301,28 @@ export function splitMarkerChildren(
   otherChildren: React.ReactNode[]
   markerFeatures: PointFeature<MarkerFeatureProperties>[]
 } {
-  const otherChildren: React.ReactNode[] = []
-  const markerFeatures: PointFeature<MarkerFeatureProperties>[] = []
-  let unchanged = true
+  const runs = flattenedRuns.get(children) ?? [children]
+  const splits: SplitRun[] = []
+  let unchanged = runs.length === cache.lastRuns.length
+  let offset = 0
 
-  children.forEach((child, index) => {
-    if (!isMarker(child)) {
-      otherChildren.push(child)
-      return
+  runs.forEach((run, i) => {
+    let split = cache.runs.get(run)
+    if (split == null || split.offset !== offset) {
+      split = splitRun(run, offset, cache.points)
+      cache.runs.set(run, split)
     }
-    const cached = cache.points.get(child.props)
-    let feature = cached?.feature
-    if (
-      feature == null ||
-      feature.properties.index !== index ||
-      cached!.key !== child.key
-    ) {
-      feature = markerToGeoJSONFeature(child, index)
-      cache.points.set(child.props, { feature, key: child.key })
-    }
-    unchanged &&= feature === cache.last[markerFeatures.length]
-    markerFeatures.push(feature)
+    unchanged &&= samePoints(split, cache.lastRuns[i])
+    splits.push(split)
+    offset += run.length
   })
+  cache.lastRuns = splits
 
-  if (unchanged && markerFeatures.length === cache.last.length) {
-    return { otherChildren, markerFeatures: cache.last }
+  const otherChildren = concatRuns(splits.map((split) => split.otherChildren))
+  if (!unchanged) {
+    cache.last = concatRuns(splits.map((split) => split.markerFeatures))
   }
-  cache.last = markerFeatures
-  return { otherChildren, markerFeatures }
+  return { otherChildren, markerFeatures: cache.last }
 }
 
 /**
