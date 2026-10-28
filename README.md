@@ -2,19 +2,18 @@
 
 <div align="center">
 
-A drop-in replacement for **[react-native-map-clustering](https://github.com/tomekvenits/react-native-map-clustering)** — same API, same `react-native-maps` workflow, but clustering runs in **C++ via Nitro** instead of supercluster in JavaScript.
+**Your `react-native-maps` screen freezes with thousands of markers? Change one import.**
+
+A drop-in replacement for **[react-native-map-clustering](https://github.com/tomekvenits/react-native-map-clustering)** — same API, same `react-native-maps` workflow, but the cluster index is built in **C++ via [Nitro](https://nitro.margelo.com/)** on a background thread, not in JavaScript on the JS thread.
 
 [![npm version](https://img.shields.io/npm/v/react-native-better-clustering.svg)](https://www.npmjs.com/package/react-native-better-clustering)
+[![npm downloads](https://img.shields.io/npm/dw/react-native-better-clustering.svg)](https://www.npmjs.com/package/react-native-better-clustering)
+[![GitHub stars](https://img.shields.io/github/stars/gmi-software/react-native-better-clustering?style=flat)](https://github.com/gmi-software/react-native-better-clustering/stargazers)
+[![New Architecture](https://img.shields.io/badge/New_Architecture-required-0F52FF.svg)](https://reactnative.dev/architecture/landing-page)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE)
-[![TypeScript](https://img.shields.io/badge/TypeScript-Ready-blue.svg)](https://www.typescriptlang.org/)
-[![Expo Compatible](https://img.shields.io/badge/Expo-Compatible-000020.svg)](https://expo.dev/)
 [![CI](https://github.com/gmi-software/react-native-better-clustering/actions/workflows/ci.yml/badge.svg)](https://github.com/gmi-software/react-native-better-clustering/actions/workflows/ci.yml)
 
-Built with [Nitro Modules](https://nitro.margelo.com/) for native clustering.
-
-[Migration](#migration) • [Installation](#installation) • [Usage](#usage) • [Documentation](https://gmi-software.github.io/react-native-better-clustering/docs/intro) • [Example app](./example)
-
-**Full documentation** is available at [gmi-software.github.io/react-native-better-clustering](https://gmi-software.github.io/react-native-better-clustering/docs/intro). The Docusaurus source lives in **[`docs/`](docs/)**; run `bun run docs:start` to view it locally, or `bun run docs:build` to build static files.
+[Benchmark](#benchmark) • [Migration](#migration) • [Installation](#installation) • [Usage](#usage) • [Documentation](https://gmi-software.github.io/react-native-better-clustering/docs/intro) • [Example app](./example)
 
 </div>
 
@@ -22,7 +21,24 @@ Built with [Nitro Modules](https://nitro.margelo.com/) for native clustering.
   <img src="./docs/static/img/demo.gif" alt="Clustering demo — pan and zoom with 2,000 markers" width="360" />
 </div>
 
----
+## Benchmark
+
+The same app, the same markers, the same cluster bubble, both libraries with their default props. Medians of 5 runs of a Release build (Hermes), from the [device benchmark](./example/bench):
+
+| Markers | | First markers on the map | Longest JS freeze while mounting | JS blocked over 10 parent re-renders |
+| --- | --- | --- | --- | --- |
+| 10,000 | react-native-map-clustering 4.0.0 | 359 ms | 360 ms | 2,877 ms |
+| | **react-native-better-clustering** | **193 ms** | **27 ms** | **0 ms** |
+| 50,000 | react-native-map-clustering 4.0.0 | 1,834 ms | 1,835 ms | 17,794 ms |
+| | **react-native-better-clustering** | **232 ms** | **92 ms** | **464 ms** |
+| 100,000 | react-native-map-clustering 4.0.0 | 3,557 ms | 3,558 ms | 35,899 ms |
+| | **react-native-better-clustering** | **434 ms** | **170 ms** | **1,719 ms** |
+
+- **Mount.** react-native-map-clustering builds its index on the JS thread, so no touch, timer or state update runs until the first markers appear. Here the build runs on a background thread.
+- **Re-renders.** With the same markers as new inline children, react-native-map-clustering rebuilds its index on every render. This library keeps the index and every mounted marker.
+- **Zoom.** react-native-map-clustering queries four times the screen's area; at zoom 8 it renders about 3–4× as many markers and bubbles, most of them off screen.
+
+Measured on the iOS Simulator (iPhone 17 Pro, Apple M5 Pro) against the 1.1.0 release candidate, which runs faster than a phone: compare the libraries, not the absolute times. The [full results](./example/bench/results/ios-simulator-2026-10-14/README.md) include memory, zoom and cluster presses — including where this library is slower: after a cluster press, the camera settles about 0.45 s later.
 
 ## Migration
 
@@ -32,22 +48,22 @@ Built with [Nitro Modules](https://nitro.margelo.com/) for native clustering.
   import { Marker } from 'react-native-maps'
 ```
 
-That is it. Your `<Marker>` children, cluster props, and `react-native-maps` options carry over — the cluster index is now built in C++ on a background thread instead of in JavaScript on the JS thread. A few defaults and behaviours differ, such as the default cluster color and how `style` is applied: see [Migrating from react-native-map-clustering](https://gmi-software.github.io/react-native-better-clustering/docs/migration).
+That is it. Your `<Marker>` children, cluster props, and `react-native-maps` options carry over. A few defaults and behaviours differ, such as the default cluster color and how `style` is applied: see [Migrating from react-native-map-clustering](https://gmi-software.github.io/react-native-better-clustering/docs/migration), and [Coming from 3.x](#coming-from-react-native-map-clustering-3x) below.
 
-Coming from react-native-map-clustering **3.x**? `onRegionChangeComplete` receives `(region, details, markers)`, as in 4.x, not `(region, markers)`: take the markers from the third argument. Development builds warn once about a handler that declares two parameters. See [Coming from 3.x](https://gmi-software.github.io/react-native-better-clustering/docs/migration#coming-from-react-native-map-clustering-3x).
-
-## Why switch?
+## Fixes over react-native-map-clustering
 
 
-|                | react-native-map-clustering         | This package                               |
-| -------------- | ----------------------------------- | ------------------------------------------ |
-| API            | `MapView` + `<Marker>` children     | **Same**                                   |
-| Map            | `react-native-maps`                 | `react-native-maps`                        |
-| Engine         | JS supercluster                     | **C++ supercluster via Nitro**             |
-| Index build    | JavaScript, on the JS thread        | **C++, on a background thread**            |
-| Viewport query | JavaScript, on the JS thread        | C++, a synchronous call from the JS thread |
-| Markers        | One `<Marker>` per cluster or point | Same, see [Roadmap](#roadmap)              |
+| Issue                                                                                                                                                                                              | Status                                    |
+| -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------- |
+| Crash on `NaN` zoom ([#294](https://github.com/tomekvenits/react-native-map-clustering/issues/294))                                                                                                | Guarded with finite zoom fallback         |
+| `Map size can't be 0` on Android ([#285](https://github.com/tomekvenits/react-native-map-clustering/issues/285))                                                                                   | Layout-aware `fitToCoordinates`           |
+| `maxZoom` / `spiralEnabled` ignored ([#274](https://github.com/tomekvenits/react-native-map-clustering/issues/274), [#275](https://github.com/tomekvenits/react-native-map-clustering/issues/275)) | Implemented                               |
+| Unstable clusters on zoom ([#255](https://github.com/tomekvenits/react-native-map-clustering/issues/255))                                                                                          | Stable cluster references between renders |
+| Per-marker `cluster={false}` ([#297](https://github.com/tomekvenits/react-native-map-clustering/issues/297))                                                                                       | Supported                                 |
 
+
+> [!CAUTION]
+> Bugs in `react-native-maps` itself (ghost markers on Android, navigation crashes) may still occur — this library replaces clustering, not the map renderer.
 
 ## Supported platforms
 
@@ -64,7 +80,7 @@ Coming from react-native-map-clustering **3.x**? `onRegionChangeComplete` receiv
 | ---------------------------- | ---------- | ------------------------------------------- |
 | `react-native-maps`          | `>=1.20.1` | Required                                    |
 | `react-native-nitro-modules` | `>=0.32.0` | Required; install it next to the library    |
-| `react-native-reanimated`    | `^4.1.0`   | Optional; fades and glides the cluster bubbles on zoom |
+| `react-native-reanimated`    | `^4.1.0`   | Optional; fades and glides the cluster bubbles on zoom, see [Animated cluster bubbles](#animated-cluster-bubbles) |
 
 ### Bare React Native
 
@@ -97,21 +113,6 @@ Add the `react-native-maps` plugin to `app.json`:
 npx expo prebuild --clean
 npx expo run:ios   # or: npx expo run:android
 ```
-
-### Optional: animated cluster bubbles
-
-With [Reanimated](https://docs.swmansion.com/react-native-reanimated/) installed,
-the default cluster bubbles cross-fade on zoom, and glide: a splitting
-cluster's parts slide out of it and merging clusters slide into one. Follow Reanimated's own
-[installation guide](https://docs.swmansion.com/react-native-reanimated/docs/fundamentals/getting-started/)
-(it also needs `react-native-worklets`), or with Expo:
-
-```bash
-npx expo install react-native-reanimated react-native-worklets
-```
-
-Without it, bubbles appear and disappear without a fade or glide, and development builds
-log a one-time notice unless you pass `clusterFadeInDuration={0}`.
 
 ## Usage
 
@@ -216,38 +217,52 @@ Everything from `react-native-maps` `MapView`, plus:
 
 Per-marker opt-out: `<Marker cluster={false} ... />`.
 
-## Fixes over react-native-map-clustering
+## What runs where
 
 
-| Issue                                                                                                                                                                                              | Status                                    |
-| -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------- |
-| Crash on `NaN` zoom ([#294](https://github.com/tomekvenits/react-native-map-clustering/issues/294))                                                                                                | Guarded with finite zoom fallback         |
-| `Map size can't be 0` on Android ([#285](https://github.com/tomekvenits/react-native-map-clustering/issues/285))                                                                                   | Layout-aware `fitToCoordinates`           |
-| `maxZoom` / `spiralEnabled` ignored ([#274](https://github.com/tomekvenits/react-native-map-clustering/issues/274), [#275](https://github.com/tomekvenits/react-native-map-clustering/issues/275)) | Implemented                               |
-| Unstable clusters on zoom ([#255](https://github.com/tomekvenits/react-native-map-clustering/issues/255))                                                                                          | Stable cluster references between renders |
-| Per-marker `cluster={false}` ([#297](https://github.com/tomekvenits/react-native-map-clustering/issues/297))                                                                                       | Supported                                 |
+|                | react-native-map-clustering         | This package                               |
+| -------------- | ----------------------------------- | ------------------------------------------ |
+| API            | `MapView` + `<Marker>` children     | **Same**                                   |
+| Map            | `react-native-maps`                 | `react-native-maps`                        |
+| Engine         | JS supercluster                     | **C++ supercluster via Nitro**             |
+| Index build    | JavaScript, on the JS thread        | **C++, on a background thread**            |
+| Viewport query | JavaScript, on the JS thread        | C++, a synchronous call from the JS thread |
+| Markers        | One `<Marker>` per cluster or point | Same, see [Roadmap](#roadmap)              |
+
+See the [performance model](https://gmi-software.github.io/react-native-better-clustering/docs/performance).
+
+## Common problems
 
 
-> [!CAUTION]
-> Bugs in `react-native-maps` itself (ghost markers on Android, navigation crashes) may still occur — this library replaces clustering, not the map renderer.
+| Problem                  | Solution                                                                                                                                |
+| ------------------------ | --------------------------------------------------------------------------------------------------------------------------------------- |
+| Map is blank on Android  | Add a Google Maps API key. See [platform setup](https://gmi-software.github.io/react-native-better-clustering/docs/setup/installation). |
+| New Architecture errors  | Confirm New Architecture is enabled and rebuild.                                                                                        |
+| Does not work in Expo Go | Use a [development build](https://docs.expo.dev/develop/development-builds/introduction/).                                              |
+| `native ClusterEngine module is not available` | Rebuild the native app after installing (`pod install` / `npx expo prebuild --clean`). See [troubleshooting](https://gmi-software.github.io/react-native-better-clustering/docs/troubleshooting#the-native-clusterengine-module-is-not-available). |
+| Markers flicker on zoom  | Give each `Marker` a stable `key` (not the array index); memoize marker components.                                                     |
 
-## Roadmap
 
-Today this library moves **clustering compute** to C++: `MapView` builds the index on a background thread, and each viewport query is a synchronous native call from the JS thread. Visible markers are still rendered through `react-native-maps` `<Marker>` components, which becomes the UI-thread bottleneck when hundreds of annotations are on screen at once. See the [performance model](https://gmi-software.github.io/react-native-better-clustering/docs/performance).
+More in [troubleshooting](https://gmi-software.github.io/react-native-better-clustering/docs/troubleshooting).
 
-The long-term goal is to remove that ceiling entirely.
+## Coming from react-native-map-clustering 3.x
 
-### Tier 1 — `react-native-maps` rendering optimizations (near term)
+`onRegionChangeComplete` receives `(region, details, markers)`, as in 4.x, not `(region, markers)`: take the markers from the third argument. Development builds warn once about a handler that declares two parameters. See [Coming from 3.x](https://gmi-software.github.io/react-native-better-clustering/docs/migration#coming-from-react-native-map-clustering-3x).
 
-Improvements within the current drop-in API: image-based cluster bubbles with caching, stable marker pooling, and smarter defaults. Still bounded by per-annotation overhead from `react-native-maps`.
+## Animated cluster bubbles
 
-### Tier 2 — Native render layer (**the goal**, months)
+With [Reanimated](https://docs.swmansion.com/react-native-reanimated/) installed,
+the default cluster bubbles cross-fade on zoom, and glide: a splitting
+cluster's parts slide out of it and merging clusters slide into one. Follow Reanimated's own
+[installation guide](https://docs.swmansion.com/react-native-reanimated/docs/fundamentals/getting-started/)
+(it also needs `react-native-worklets`), or with Expo:
 
-A **native clustered map view** that draws annotations in a single native pass instead of mounting one React `<Marker>` per cluster or point. The existing C++ `ClusterEngine` feeds packed point data directly into native bubble rendering — same public `MapView` + `<Marker>` API, no N-marker mount storm on zoom.
+```bash
+npx expo install react-native-reanimated react-native-worklets
+```
 
-Tier 2 is the reason this library exists beyond a native supercluster port: **render as many markers as you need without FPS collapse.** The compat API stays unchanged; rendering moves under the hood.
-
-Track progress in [GitHub Issues](https://github.com/gmi-software/react-native-better-clustering/issues).
+Without it, bubbles appear and disappear without a fade or glide, and development builds
+log a one-time notice unless you pass `clusterFadeInDuration={0}`.
 
 ## Example app
 
@@ -263,6 +278,7 @@ A menu of scenarios that exercise real-world usage. A dev HUD on each one shows 
 | 10k / 50k markers | Large datasets, with the time to first markers |
 | Custom `renderCluster` | Clusters drawn by the app |
 | `clusteringEnabled` toggle | Clustering turned off and on with the map mounted |
+| Benchmark | The [device benchmark](./example/bench) against react-native-map-clustering |
 
 ```bash
 cd example
@@ -287,19 +303,13 @@ Low-level hooks and headless access live under subpath exports for custom map st
 
 See the [docs](https://gmi-software.github.io/react-native-better-clustering/docs/intro) for details. The `/compat` subpath is an alias of the main export.
 
-## Common problems
+## Roadmap
 
+Today this library moves **clustering compute** to C++. Visible markers are still rendered through `react-native-maps` `<Marker>` components, which becomes the UI-thread bottleneck with hundreds of annotations on screen at once.
 
-| Problem                  | Solution                                                                                                                                |
-| ------------------------ | --------------------------------------------------------------------------------------------------------------------------------------- |
-| Map is blank on Android  | Add a Google Maps API key. See [platform setup](https://gmi-software.github.io/react-native-better-clustering/docs/setup/installation). |
-| New Architecture errors  | Confirm New Architecture is enabled and rebuild.                                                                                        |
-| Does not work in Expo Go | Use a [development build](https://docs.expo.dev/develop/development-builds/introduction/).                                              |
-| `native ClusterEngine module is not available` | Rebuild the native app after installing (`pod install` / `npx expo prebuild --clean`). See [troubleshooting](https://gmi-software.github.io/react-native-better-clustering/docs/troubleshooting#the-native-clusterengine-module-is-not-available). |
-| Markers flicker on zoom  | Give each `Marker` a stable `key` (not the array index); memoize marker components.                                                     |
+The goal is a **native render layer**: the C++ engine feeds native bubble rendering directly in a single pass, behind the same `MapView` + `<Marker>` API, so you can render as many markers as you need without FPS collapse. Before that, near-term work stays within `react-native-maps`: image-based cluster bubbles with caching, stable marker pooling and smarter defaults.
 
-
-More in [troubleshooting](https://gmi-software.github.io/react-native-better-clustering/docs/troubleshooting).
+Track progress in [GitHub Issues](https://github.com/gmi-software/react-native-better-clustering/issues).
 
 ## Contributing
 
@@ -311,6 +321,16 @@ bun run lint && bun run format:check
 cd package && bun run typecheck && bun run test
 ```
 
+The [documentation](https://gmi-software.github.io/react-native-better-clustering/docs/intro) is built with Docusaurus from [`docs/`](docs/): `bun run docs:start` to view it locally, `bun run docs:build` to build static files.
+
 ## License
 
 MIT — see [LICENSE](./LICENSE).
+
+---
+
+<div align="center">
+
+Built and maintained by [GMI Software](https://gmi.software/open-source). If it saves your map screen, a ⭐ helps other React Native developers find it.
+
+</div>

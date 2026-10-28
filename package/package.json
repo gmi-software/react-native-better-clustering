@@ -4,7 +4,7 @@
   "description": "A drop-in react-native-map-clustering replacement — same MapView API, C++/Nitro supercluster engine under the hood",
   "author": "gmi.software",
   "license": "MIT",
-  "homepage": "https://gmi.software/open-source",
+  "homepage": "https://gmi-software.github.io/react-native-better-clustering/",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/gmi-software/react-native-better-clustering.git"
@@ -110,10 +110,20 @@
   "keywords": [
     "react-native",
     "nitro",
+    "nitro-modules",
     "map",
+    "maps",
     "clustering",
+    "cluster",
+    "marker-clustering",
+    "markers",
     "react-native-maps",
-    "supercluster"
+    "react-native-map-clustering",
+    "supercluster",
+    "expo",
+    "new-architecture",
+    "ios",
+    "android"
   ],
   "publishConfig": {
     "access": "public",
