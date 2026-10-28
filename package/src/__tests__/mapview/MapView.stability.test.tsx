@@ -221,8 +221,9 @@ describe('MapView index rebuilds (#12, #13)', () => {
       }
     }
 
+    // Steps 1 to 3 have landed; the build of step 4 is still held.
     const vehicle = renderedMarkers(container).find(({ id }) => id === 'x0')
-    expect(vehicle?.latitude).toBeGreaterThan(vehicleAt(0).latitude)
+    expect(vehicle?.latitude).toBe(vehicleAt(3).latitude)
     expect(fakeClusterEngineBuilds.held).toHaveLength(1)
   })
 
