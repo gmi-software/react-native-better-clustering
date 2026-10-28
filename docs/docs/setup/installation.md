@@ -47,7 +47,7 @@ Confirm it is enabled and rebuild the native app.
 
 ## Expo
 
-Use a [development build](https://docs.expo.dev/develop/development-builds/introduction/) — not Expo Go.
+Use a [development build](https://docs.expo.dev/develop/development-builds/introduction/), not Expo Go.
 
 ```bash
 npx expo install react-native-better-clustering react-native-nitro-modules react-native-maps

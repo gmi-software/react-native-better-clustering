@@ -7,7 +7,7 @@ sidebar_position: 3
 # Hooks (advanced)
 
 Use these when you render your own `react-native-maps` `MapView` and only need
-cluster computation — not the bundled clustered `MapView`.
+cluster computation, not the bundled clustered `MapView`.
 
 Import from `/hooks`:
 
@@ -71,9 +71,9 @@ The index is rebuilt only when the points' coordinates, their order, or a
   that changes faster than a build loads, such as a live feed of moving
   markers, therefore updates the clusters once per build.
 
-If a build fails — most often because the native module is missing from the
+If a build fails (most often because the native module is missing from the
 app binary, or because an option is outside its
-[valid values](./types.md#valid-values) — the hook throws the error during render, so the nearest error
+[valid values](./types.md#valid-values)), the hook throws the error during render, so the nearest error
 boundary (and LogBox in development) shows it. Pass `onError` to handle it
 yourself instead: the hook then keeps returning the clusters from the last
 successful build (`[]` before the first). A build that fails after newer data

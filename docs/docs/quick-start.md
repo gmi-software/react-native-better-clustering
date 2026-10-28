@@ -71,7 +71,7 @@ export function MapScreen() {
 
 ## Migrating from react-native-map-clustering
 
-Change one import — props and `<Marker>` children carry over:
+Change one import; props and `<Marker>` children carry over:
 
 ```diff
 - import MapView from 'react-native-map-clustering'

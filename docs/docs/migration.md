@@ -41,7 +41,7 @@ a rebuild of the app (a development build with Expo, not Expo Go). See
 | Zoomed in past `maxZoom` | With a `maxZoom` below 20, every marker shows on its own, and markers at one location stack | Clusters stay as they are at `maxZoom`, and spiderfy as above |
 | Cluster press | Fits the map to every marker in the cluster | Fits the map to the cluster's bounds: the same region, without reading every marker unless you pass `onClusterPress` |
 | `superClusterRef` | A [supercluster](https://github.com/mapbox/supercluster) instance, rebuilt on the JS thread whenever the children change | A [`Supercluster`](./api/engine.md#supercluster) on the native engine, built in the background (see [below](#superclusterref)) |
-| Build failures | — | A failed native build, or an invalid clustering prop, is thrown during render, unless you pass `onError` |
+| Build failures | No `onError` prop | A failed native build, or an invalid clustering prop, is thrown during render, unless you pass `onError` |
 | `<Marker cluster={false}>` in TypeScript | Does not type-check: no type declares `cluster` | Type-checks (see [Per-marker opt-out](./api/mapview.md#per-marker-opt-out)). A `@ts-expect-error` you added for it now fails as unused: remove it |
 
 `MapView` also adds props react-native-map-clustering does not have, such as
