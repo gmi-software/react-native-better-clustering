@@ -529,6 +529,19 @@ const CompatMapView = forwardRef(function CompatMapView(
     warnTwoParameterRegionChangeComplete(onRegionChangeComplete)
   }, [onRegionChangeComplete])
 
+  // A replaced engine is destroyed, and so is the last one on unmount. Declared
+  // before the `onMarkersChange` effect so the callback can query the ref.
+  useEffect(() => {
+    if (!superClusterRef) {
+      return
+    }
+    superClusterRef.current =
+      clusteringEnabled && supercluster.isLoaded ? supercluster : null
+    return () => {
+      superClusterRef.current = null
+    }
+  }, [superClusterRef, supercluster, clusteringEnabled])
+
   // `clusters` is the single source of truth for what is visible in the current
   // region. Reuse it for `onMarkersChange` instead of querying the engine again
   // (the previous `visibleFeatures` recomputed the exact same set, doubling the
@@ -615,18 +628,6 @@ const CompatMapView = forwardRef(function CompatMapView(
   const bubbleExitMs = isMapMoving
     ? Math.min(clusterFadeIn, MOVING_EXIT_HOLD_MS)
     : clusterFadeIn
-
-  // A replaced engine is destroyed, and so is the last one on unmount.
-  useEffect(() => {
-    if (!superClusterRef) {
-      return
-    }
-    superClusterRef.current =
-      clusteringEnabled && supercluster.isLoaded ? supercluster : null
-    return () => {
-      superClusterRef.current = null
-    }
-  }, [superClusterRef, supercluster, clusteringEnabled])
 
   const assignMapRef = useCallback(
     (map: MapView | null) => {

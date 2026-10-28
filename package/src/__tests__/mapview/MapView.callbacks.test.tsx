@@ -221,6 +221,39 @@ describe('MapView refs', () => {
     expect(superClusterRef.current?.isLoaded).toBe(true)
   })
 
+  it('publishes superClusterRef before calling onMarkersChange', async () => {
+    const superClusterRef = createSuperClusterRef()
+    const loadedAtCall: boolean[] = []
+    const onMarkersChange = () => {
+      loadedAtCall.push(superClusterRef.current?.isLoaded === true)
+    }
+    const { rerender } = render(
+      <Map
+        superClusterRef={superClusterRef}
+        onMarkersChange={onMarkersChange}
+      />
+    )
+    await flush()
+
+    const moved = [
+      ...GROUP,
+      ...SINGLES.map((point, index) =>
+        index === 0 ? { ...point, latitude: point.latitude + 0.01 } : point
+      ),
+    ]
+    rerender(
+      <Map
+        superClusterRef={superClusterRef}
+        onMarkersChange={onMarkersChange}
+        points={moved}
+      />
+    )
+    await flush()
+
+    expect(loadedAtCall.length).toBeGreaterThanOrEqual(2)
+    expect(loadedAtCall.every(Boolean)).toBe(true)
+  })
+
   it('clears superClusterRef on unmount', async () => {
     const superClusterRef = createSuperClusterRef()
     const { unmount } = render(<Map superClusterRef={superClusterRef} />)
