@@ -197,6 +197,9 @@ time grows with their number. To keep live updates cheap:
 - Give moving markers that do not need to cluster `cluster={false}`. They skip
   the index, so moving them never rebuilds it.
 
+The example app's Live fleet scenario measures both, with up to 50,000 static
+markers and vehicles that move up to 10 times a second.
+
 ## Custom cluster UI
 
 Pass `renderCluster` for full control over the cluster bubble:

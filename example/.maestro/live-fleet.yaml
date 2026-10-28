@@ -1,0 +1,66 @@
+appId: com.nitromapcluster.example
+name: Live fleet
+---
+- runFlow:
+    file: subflows/open-scenario.yaml
+    env:
+      SCENARIO: live-fleet
+- extendedWaitUntil:
+    visible:
+      id: fleet-index
+      text: 'Index: current'
+    timeout: 30000
+
+# Ten updates a second over 10k static markers, each a full rebuild.
+- tapOn:
+    id: rate-10
+- tapOn:
+    id: hud-reset
+- tapOn:
+    id: stream-toggle
+# The index keeps advancing while the feed runs.
+- extendedWaitUntil:
+    visible:
+      id: hud-engine-builds
+      text: 'Engine builds: ([5-9]|\d{2,})'
+    timeout: 30000
+- assertVisible:
+    id: fleet-lag
+    text: 'Index lag: \d+ ms \(max \d+ ms\)'
+- tapOn:
+    id: stream-toggle
+# And reaches the last update once the feed stops.
+- extendedWaitUntil:
+    visible:
+      id: fleet-index
+      text: 'Index: current'
+    timeout: 30000
+
+# Vehicles with cluster={false} leave the index in one rebuild. After it,
+# moving them never rebuilds the index, and the static markers stay mounted.
+- tapOn:
+    id: hud-reset
+- tapOn:
+    id: unclustered-toggle
+- extendedWaitUntil:
+    visible:
+      id: hud-engine-builds
+      text: 'Engine builds: 1'
+    timeout: 30000
+- tapOn:
+    id: hud-reset
+- tapOn:
+    id: stream-toggle
+- extendedWaitUntil:
+    visible:
+      id: fleet-updates
+      text: 'Updates: ([2-9]\d|\d{3,})'
+    timeout: 30000
+- tapOn:
+    id: stream-toggle
+- assertVisible:
+    id: hud-engine-builds
+    text: 'Engine builds: 0'
+- assertVisible:
+    id: fleet-static-mounts
+    text: 'Static marker mounts: 0'
