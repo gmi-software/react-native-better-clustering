@@ -43,3 +43,29 @@ measures the C++ engine alone on a desktop CPU: build and query times, and
 memory, for six datasets of up to 100k points. It says nothing about Hermes,
 the JS layer or rendering on a phone, so it cannot back a claim about app
 frame rates.
+
+The [device benchmark](https://github.com/gmi-software/react-native-better-clustering/tree/main/example/bench)
+measures the whole pipeline instead: the example app in a Release build on
+Hermes, rendering included, running this library and react-native-map-clustering
+4.0.0 through the same script. Its
+[first run](https://github.com/gmi-software/react-native-better-clustering/blob/main/example/bench/results/ios-simulator-2026-10-14/README.md),
+on the iOS Simulator, reports the time to the first markers, JS freezes, memory,
+zoom and cluster presses for 10k, 50k and 100k markers. A simulator runs on the
+Mac's CPU, faster than a phone: compare the libraries, not the absolute times.
+
+## Roadmap
+
+Today this library moves clustering compute to C++. Visible markers are still
+rendered through `react-native-maps` `<Marker>` components, which is the ceiling
+described above.
+
+- **Near term**, within `react-native-maps`: image-based cluster bubbles with
+  caching, stable marker pooling and smarter defaults. Still bounded by the cost
+  of each annotation.
+- **The goal**: a native render layer. The C++ engine feeds packed point data
+  directly into native bubble rendering, drawn in a single native pass instead
+  of one React `<Marker>` per cluster or point, behind the same `MapView` +
+  `<Marker>` API.
+
+Track progress in
+[GitHub Issues](https://github.com/gmi-software/react-native-better-clustering/issues).
