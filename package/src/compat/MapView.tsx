@@ -196,7 +196,12 @@ export interface ClusteredMapViewProps extends Omit<
   clusterColor?: string
   /** Default cluster label color. */
   clusterTextColor?: string
-  /** Receives the internal {@linkcode Supercluster} instance for imperative queries. */
+  /**
+   * Receives the loaded {@linkcode Supercluster} for imperative queries:
+   * `null` until the first index has loaded and while clustering is off.
+   * Replaced (and the previous one destroyed) after each rebuild, so read
+   * `current` when querying instead of keeping the instance.
+   */
   superClusterRef?: MutableRefObject<Supercluster | null>
   /** Callback ref for the underlying `react-native-maps` map instance. */
   mapRef?: (map: MapView | null) => void
@@ -524,6 +529,19 @@ const CompatMapView = forwardRef(function CompatMapView(
     warnTwoParameterRegionChangeComplete(onRegionChangeComplete)
   }, [onRegionChangeComplete])
 
+  // A replaced engine is destroyed, and so is the last one on unmount. Declared
+  // before the `onMarkersChange` effect so the callback can query the ref.
+  useEffect(() => {
+    if (!superClusterRef) {
+      return
+    }
+    superClusterRef.current =
+      clusteringEnabled && supercluster.isLoaded ? supercluster : null
+    return () => {
+      superClusterRef.current = null
+    }
+  }, [superClusterRef, supercluster, clusteringEnabled])
+
   // `clusters` is the single source of truth for what is visible in the current
   // region. Reuse it for `onMarkersChange` instead of querying the engine again
   // (the previous `visibleFeatures` recomputed the exact same set, doubling the
@@ -610,12 +628,6 @@ const CompatMapView = forwardRef(function CompatMapView(
   const bubbleExitMs = isMapMoving
     ? Math.min(clusterFadeIn, MOVING_EXIT_HOLD_MS)
     : clusterFadeIn
-
-  useEffect(() => {
-    if (superClusterRef) {
-      superClusterRef.current = clusteringEnabled ? supercluster : null
-    }
-  }, [superClusterRef, supercluster, clusteringEnabled])
 
   const assignMapRef = useCallback(
     (map: MapView | null) => {
