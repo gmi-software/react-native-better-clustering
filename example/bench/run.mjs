@@ -125,8 +125,11 @@ function deviceInfo() {
   }
 }
 
-/** A run takes 1 to 3 minutes; a hung Maestro must not stall the rest. */
-const RUN_TIMEOUT_MS = 10 * 60 * 1000
+/**
+ * A run takes 1 to 3 minutes, and up to 10 for react-native-map-clustering's
+ * 100,000 markers on an Android emulator; a hung Maestro must not stall the rest.
+ */
+const RUN_TIMEOUT_MS = 15 * 60 * 1000
 
 function runMaestro(maestroArgs) {
   return new Promise((resolve) => {

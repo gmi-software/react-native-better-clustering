@@ -55,6 +55,8 @@ node bench/summarize.mjs bench/results/ios.json
 
 Android needs a real Maps SDK key: with the placeholder in `app.json`, Google Maps draws no markers and ignores camera moves, so the zoom and press phases time out.
 
+An Android emulator slows down within a few runs in a row, every phase with it. Cold-boot it before each run (`--counts` and `--libs` with one value each, `--runs 1`), as the [29 October results](results/android-emulator-2026-10-29/README.md) did, and give each run its own `--out`: `summarize.mjs` takes them all.
+
 ### Against a published version
 
 One build links one version of this library's native code, so measuring another version takes another build. To measure 1.0.0 from npm, temporarily:
