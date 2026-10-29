@@ -1685,12 +1685,18 @@ static bool sameNodes(const std::vector<ClusterNode>& a, const std::vector<Clust
   return true;
 }
 
-// build() skips the neighbour query of a node that provably has no other node
-// within the level's radius. Nothing may depend on that: every node at every
-// zoom, every cluster's children and expansion zoom must be bit-identical to a
-// build that queries every node, including with minPoints above 2, where the
-// order of a query's results shapes the levels below.
-static void testSkippedQueriesBuildTheSameIndex() {
+static std::vector<ClusterNode> byId(std::vector<ClusterNode> nodes) {
+  std::sort(nodes.begin(), nodes.end(), [](const ClusterNode& a, const ClusterNode& b) { return a.id < b.id; });
+  return nodes;
+}
+
+// Builds every bench dataset at 5000 points under several configurations,
+// with `toggle(engine, true)` and with `toggle(engine, false)`, and checks that
+// every node at every zoom and every cluster's children and expansion zoom are
+// bit-identical. getClusters() must return the nodes in the same order too,
+// unless `anyOrder`.
+template <typename Toggle>
+static void checkToggleKeepsTheIndex(const char* what, Toggle toggle, bool anyOrder) {
   struct Config {
     double radius;
     int32_t minPoints;
@@ -1720,7 +1726,7 @@ static void testSkippedQueriesBuildTheSameIndex() {
     }
 
     for (const Config& c : configs) {
-      auto build = [&](bool skip) {
+      auto build = [&](bool on) {
         ClusterEngineCore engine;
         ClusterEngineConfig config;
         config.radius = c.radius;
@@ -1733,26 +1739,160 @@ static void testSkippedQueriesBuildTheSameIndex() {
         engine.setOptions(config);
         engine.setPoints(ids.data(), dataset.lats.data(), dataset.lngs.data(), ids.size(),
                          c.aggregate ? values.data() : nullptr, c.aggregate ? 2 : 0);
-        engine.setSkipLonelyQueries(skip);
+        toggle(engine, on);
         engine.build();
         return engine;
       };
-      const ClusterEngineCore skipping = build(true);
-      const ClusterEngineCore querying = build(false);
+      const ClusterEngineCore withToggle = build(true);
+      const ClusterEngineCore without = build(false);
 
       for (int32_t z = 1; z <= c.maxZoom + 1; z++) {
         const ViewportBounds world{85.0, -85.0, 180.0, -180.0, static_cast<double>(z)};
-        const auto nodes = skipping.getClusters(world);
-        if (!sameNodes(nodes, querying.getClusters(world))) {
-          std::printf("skipped queries changed the index: %s %d radius %.1f minPoints %d zoom %d\n", name, size,
-                      c.radius, c.minPoints, z);
+        const auto nodes = withToggle.getClusters(world);
+        const auto expected = without.getClusters(world);
+        if (anyOrder ? !sameNodes(byId(nodes), byId(expected)) : !sameNodes(nodes, expected)) {
+          std::printf("%s changed the index: %s %d radius %.1f minPoints %d zoom %d\n", what, name, size, c.radius,
+                      c.minPoints, z);
           assert(false);
         }
         for (const auto& node : nodes) {
           if (!node.isCluster) continue;
-          assert(sameNodes(skipping.getChildren(node.id), querying.getChildren(node.id)));
-          assert(skipping.getClusterExpansionZoom(node.id) == querying.getClusterExpansionZoom(node.id));
+          assert(sameNodes(withToggle.getChildren(node.id), without.getChildren(node.id)));
+          assert(withToggle.getClusterExpansionZoom(node.id) == without.getClusterExpansionZoom(node.id));
         }
+      }
+    }
+  }
+}
+
+// build() skips the neighbour query of a node that provably has no other node
+// within the level's radius. Nothing may depend on that, including with
+// minPoints above 2, where the order of a query's results shapes the levels
+// below.
+static void testSkippedQueriesBuildTheSameIndex() {
+  checkToggleKeepsTheIndex(
+    "skipped queries", [](ClusterEngineCore& engine, bool on) { engine.setSkipLonelyQueries(on); }, false);
+}
+
+// A level of build() that changes few nodes patches the tree of the level
+// above it. Nothing may depend on that but the order in which getClusters()
+// returns a level's nodes.
+static void testPatchedTreesBuildTheSameIndex() {
+  checkToggleKeepsTheIndex(
+    "patched trees", [](ClusterEngineCore& engine, bool on) { engine.setReuseTrees(on); }, true);
+
+  // ...which needs some level to get a patched tree: it returns its nodes in
+  // another order than a fresh one.
+  const bench::Dataset dataset = bench::generateDataset("city", 5000);
+  std::vector<int32_t> ids(dataset.lats.size());
+  for (size_t i = 0; i < ids.size(); i++) ids[i] = static_cast<int32_t>(i);
+  auto build = [&](bool reuse) {
+    ClusterEngineCore engine;
+    ClusterEngineConfig config;
+    config.radius = 390 * 0.06;
+    engine.setOptions(config);
+    engine.setPoints(ids.data(), dataset.lats.data(), dataset.lngs.data(), ids.size());
+    engine.setReuseTrees(reuse);
+    engine.build();
+    return engine;
+  };
+  const ClusterEngineCore patching = build(true);
+  const ClusterEngineCore building = build(false);
+  int32_t patchedLevels = 0;
+  for (int32_t z = 1; z <= 20; z++) {
+    const ViewportBounds world{85.0, -85.0, 180.0, -180.0, static_cast<double>(z)};
+    if (!sameNodes(patching.getClusters(world), building.getClusters(world))) patchedLevels++;
+  }
+  assert(patchedLevels > 0);
+}
+
+// KDTree::within() returns every item whose squared distance, as it computes
+// it, is within the radius squared, however the tree is split: build() relies
+// on that when a level patches a tree. Here an item lies a hair beyond the
+// radius, 1 + 2^-53 from the query point along x, but that difference rounds to
+// exactly 1, the radius, so it passes. The tree splits at the item, and the
+// query point's x plus the radius rounds to 1, short of the split: a subtree
+// pruned on that rounded sum would drop the item. Mirrored, the same holds for
+// the query point's x minus the radius.
+static void testWithinFindsItemsOnTheRoundingEdge() {
+  const double edge = 1.0 + std::ldexp(1.0, -52);
+  const double q = std::ldexp(1.0, -53);
+  for (const double side : {1.0, -1.0}) {
+    // Sorted by x: one item well within the radius, and two at the split, one
+    // of which nth_element puts in the subtree beyond it.
+    std::vector<KDTree::Item> items = {{-side * 0.5, 0.0, 0}, {side * edge, 0.0, 1}, {side * edge, 0.0, 2}};
+    KDTree tree;
+    tree.build(items, 1);
+    std::vector<int32_t> found;
+    tree.within(side * q, 0.0, 1.0, found);
+    std::sort(found.begin(), found.end());
+    assert((found == std::vector<int32_t>{0, 1, 2}));
+  }
+}
+
+// KDTree::remove() and place() patch a tree so that its queries return what a
+// fresh tree over its items would. Here a tree loses random items and gains
+// new ones crowded into one corner, which fills the corner's leaves and makes
+// place() sort ranges again, and every round is checked against a scan of the
+// items. Coordinates lie on a grid of quarters, so many tie on a split and
+// every distance is exact.
+static void testPatchedTreeMatchesAScan() {
+  uint32_t state = 0x2545F491u;
+  auto next = [&state] { return parityRandom(state); };
+  auto coordinate = [&next](uint32_t cells) { return static_cast<double>(next() % cells) / 4.0; };
+  for (const int32_t nodeSize : {4, 64}) {
+    std::vector<KDTree::Item> items;
+    for (int32_t i = 0; i < 3000; i++) items.push_back({coordinate(2048), coordinate(2048), i});
+    KDTree tree;
+    tree.build(items, nodeSize);
+    // By item index: where it sits, and whether the tree still holds it.
+    std::vector<int32_t> position(items.size());
+    for (size_t p = 0; p < tree.size(); p++) position[static_cast<size_t>(tree.item(p).index)] = static_cast<int32_t>(p);
+    std::vector<bool> held(items.size(), true);
+
+    for (int round = 0; round < 20; round++) {
+      for (int k = 0; k < 100; k++) {
+        size_t i;
+        do {
+          i = next() % items.size();
+        } while (!held[i]);
+        held[i] = false;
+        tree.remove(static_cast<size_t>(position[i]));
+      }
+      for (int k = 0; k < 60; k++) {
+        const KDTree::Item item{coordinate(64), coordinate(64), static_cast<int32_t>(items.size())};
+        items.push_back(item);
+        held.push_back(true);
+        position.push_back(-1);
+        const bool placed = tree.place(item, [&](int32_t p, int32_t index) { position[static_cast<size_t>(index)] = p; });
+        assert(placed);
+      }
+
+      for (size_t i = 0; i < items.size(); i++) {
+        if (!held[i]) continue;
+        const KDTree::Item& item = tree.item(static_cast<size_t>(position[i]));
+        assert(item.index == static_cast<int32_t>(i) && item.x == items[i].x && item.y == items[i].y);
+      }
+      for (int q = 0; q < 50; q++) {
+        const double x = coordinate(2048);
+        const double y = coordinate(2048);
+        const double r = coordinate(400);
+        std::vector<int32_t> found;
+        std::vector<int32_t> nearby;
+        std::vector<int32_t> inBox;
+        for (size_t i = 0; i < items.size(); i++) {
+          if (!held[i]) continue;
+          const double dx = items[i].x - x;
+          const double dy = items[i].y - y;
+          if (dx * dx + dy * dy <= r * r) nearby.push_back(static_cast<int32_t>(i));
+          if (std::fabs(dx) <= r && std::fabs(dy) <= r) inBox.push_back(static_cast<int32_t>(i));
+        }
+        tree.within(x, y, r, found);
+        std::sort(found.begin(), found.end());
+        assert(found == nearby);
+        tree.range(x - r, y - r, x + r, y + r, found);
+        std::sort(found.begin(), found.end());
+        assert(found == inBox);
       }
     }
   }
@@ -1895,6 +2035,9 @@ int main() {
   testBoundaryOptions();
   testInvalidOptionsNameTheOption();
   testSkippedQueriesBuildTheSameIndex();
+  testPatchedTreesBuildTheSameIndex();
+  testWithinFindsItemsOnTheRoundingEdge();
+  testPatchedTreeMatchesAScan();
   testBufferFuzz();
   std::printf("ClusterEngineCore tests passed.\n");
   return 0;
