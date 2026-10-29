@@ -9,6 +9,8 @@ export interface BenchMapViewProps {
   mapRef: (map: unknown) => void
   onRegionChangeComplete: (region: Region) => void
   renderCluster: (cluster: BenchClusterProps) => ReactNode
+  /** Assigned each built index: counts builds (see `createBuildCounterRef`). */
+  superClusterRef: { current: unknown }
   style: object
   children: ReactNode
 }

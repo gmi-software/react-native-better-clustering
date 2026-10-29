@@ -14,13 +14,14 @@ The example app's **Benchmark** scenario runs react-native-better-clustering and
 
 ## What one run does
 
-Both libraries get the same props: `initialRegion` over Poland, `mapRef`, `onRegionChangeComplete`, a `renderCluster` that draws the same bubble (`BenchCluster`), and the markers as inline `BenchMarker` children, the way apps write them. Every other prop is the library's default. The markers are the seeded points of the `large-*` scenarios.
+Both libraries get the same props: `initialRegion` over Poland, `mapRef`, `onRegionChangeComplete`, a `renderCluster` that draws the same bubble (`BenchCluster`), a `superClusterRef` that counts index builds, and the markers as inline `BenchMarker` children, the way apps write them. Every other prop is the library's default. The markers are the seeded points of the `large-*` scenarios.
 
 1. **ready**: the points exist, the map is not mounted. The host samples memory.
 2. **mount**: the map mounts with every marker, until no marker or bubble mounts or unmounts and no JS frame is late for 1 s. The host samples memory.
 3. **re-render**: the screen re-renders the map with the same markers 10 times, every 500 ms, like a clock or a selection in a parent would. The host samples memory.
 4. **zoom**: the camera jumps (`animateToRegion` with no animation) to Kraków at zoom 8, 10, 12, 14 and 10, then back to Poland, settling after each step.
 5. **press**: the largest bubble on screen is pressed, through its `onPress`, until the camera settles. The host samples memory.
+6. **live**: the camera jumps to Kraków at zoom 12. 20 vehicles (`BenchVehicle`, more inline children) drive loops through the markers, 10 updates a second for 10 s. Update n is due n − 1 intervals after the start; a timer that fires late sends the newest update due and skips the ones before it, as a feed whose newest position wins would. Every update re-renders the map, with new elements for the vehicles and the same elements for the other markers, as an app that only moves its vehicles would; recreating those too costs what a re-render does, which the re-render phase measures. The phase ends once the map shows the last update and settles. The host samples memory.
 
 ## Metrics
 
@@ -33,6 +34,11 @@ Both libraries get the same props: `initialRegion` over Poland, `mapRef`, `onReg
 | Remounts | `BenchMarker` and `BenchCluster` mounts in a phase |
 | Fewest on map | The fewest markers and bubbles mounted at once in a phase: 0 means the map went blank |
 | Memory | iOS: the app's `phys_footprint` (`footprint`); Android: total PSS (`dumpsys meminfo`). Reported as the growth from **ready** |
+| Age of the map | Over the live phase, the mean time since the update the map shows was due (before the map shows any, since the first was due). The one number that weighs both how often and how late the map catches up |
+| Updates shown | Of the live phase's 100 updates, how many a vehicle rendered. An update that a newer one overtook before the map showed it is not shown |
+| Lag | From when a live update was due to when a vehicle first rendered it. For a point, both libraries render the marker element they hold for it, so that is when the map showed the update. A timer that fired late counts in it. Only shown updates count, so a library that shows few has few lags: read it with the age of the map |
+| Last update shown after | The lag of the 100th update: how long the map takes to catch up once the feed stops |
+| Index builds | Index objects the library assigned to `superClusterRef` during the live phase: each is a build |
 | JS heap | Hermes' `js_heapSize` (`HermesInternal.getInstrumentedStats()`) |
 
 ## Running it

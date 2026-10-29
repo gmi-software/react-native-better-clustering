@@ -58,6 +58,58 @@ export function BenchMarker(props: MapMarkerProps) {
   return <Marker {...props} tracksViewChanges={false} />
 }
 
+/** When each update of the live phase first reached the map. */
+export const liveShown = new Map<number, number>()
+
+/**
+ * A vehicle of the live phase, at its position in update `update`. For a
+ * point, both libraries render the marker element they were handed with it,
+ * so a vehicle renders the update its library's index holds; the first
+ * render of an update is when the map showed it.
+ */
+export function BenchVehicle({
+  update,
+  ...props
+}: MapMarkerProps & { update: number }) {
+  useEffect(() => recordMount('marker'), [])
+  useEffect(() => {
+    if (!liveShown.has(update)) {
+      liveShown.set(update, performance.now())
+    }
+  }, [update])
+  return <Marker {...props} pinColor="#16A34A" tracksViewChanges={false} />
+}
+
+/** Index builds since the last reset: see {@linkcode createBuildCounterRef}. */
+export const benchBuilds = { count: 0 }
+
+/**
+ * A `superClusterRef` that counts index builds. Both libraries assign it a new
+ * index object each time they build one. react-native-better-clustering
+ * assigns an unloaded placeholder before its first build, which is not one.
+ */
+export function createBuildCounterRef(): { current: unknown } {
+  const seen = new WeakSet<object>()
+  let current: unknown = null
+  return {
+    get current() {
+      return current
+    },
+    set current(next: unknown) {
+      if (
+        typeof next === 'object' &&
+        next != null &&
+        (next as { isLoaded?: boolean }).isLoaded !== false &&
+        !seen.has(next)
+      ) {
+        seen.add(next)
+        benchBuilds.count += 1
+      }
+      current = next
+    },
+  }
+}
+
 /**
  * The bubble both libraries draw through `renderCluster`, so neither is
  * measured with its own default bubble (one fades in with Reanimated, the

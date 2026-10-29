@@ -1,10 +1,11 @@
-import { memo, useCallback, useEffect, useRef, useState } from 'react'
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Platform, Pressable, StyleSheet, Text, View } from 'react-native'
 import type { Region } from 'react-native-maps'
 import { ControlPanel, ControlRow, StatusText } from '../components/Controls'
 import { useSetHudHidden } from '../hud/HudVisibility'
 import {
   generatePoints,
+  pointAt,
   POLAND_BOUNDS,
   POLAND_REGION,
   regionAtZoom,
@@ -12,7 +13,11 @@ import {
 } from '../data'
 import {
   BenchMarker,
+  benchBuilds,
   benchCounters,
+  BenchVehicle,
+  createBuildCounterRef,
+  liveShown,
   mountedClusters,
   renderBenchCluster,
   resetBenchCounters,
@@ -51,6 +56,49 @@ const ZOOM_STEPS: Array<{ zoom: number; region: Region }> = [
   { zoom: 6, region: POLAND_REGION },
 ]
 
+/**
+ * The live phase: vehicles that move on a fixed schedule over the static
+ * markers, as a feed would move them, seen at a street-level zoom.
+ */
+const LIVE_ZOOM = 12
+const LIVE_VEHICLES = 20
+const LIVE_RATE_HZ = 10
+const LIVE_UPDATES = 100
+const LIVE_INTERVAL_MS = 1000 / LIVE_RATE_HZ
+/** How long the map may take to show the last update. */
+const LIVE_TIMEOUT_MS = 60_000
+/** Vehicles drive loops of this radius at most, in degrees of latitude. */
+const LIVE_LOOP_RADIUS = 0.01
+/** Where loops are centred, around Kraków, so every vehicle stays in view. */
+const LIVE_LOOP_CENTRES = {
+  minLat: KRAKOW.latitude - 0.02,
+  maxLat: KRAKOW.latitude + 0.02,
+  minLng: KRAKOW.longitude - 0.02,
+  maxLng: KRAKOW.longitude + 0.02,
+}
+const LIVE_SEED = 13
+/** `pointAt` over this gives two seeded numbers in [0, 1). */
+const UNIT = { minLat: 0, maxLat: 1, minLng: 0, maxLng: 1 }
+
+/** Where vehicle `index` is at `update`: on a loop of its own, in and out of clusters. */
+function vehicleAt(index: number, update: number): MapPoint {
+  const centre = pointAt(LIVE_LOOP_CENTRES, LIVE_SEED, index)
+  const shape = pointAt(UNIT, LIVE_SEED + 1, index)
+  const radius = LIVE_LOOP_RADIUS * (0.4 + 0.6 * shape.latitude)
+  const loopUpdates = 40 + Math.round(80 * shape.longitude)
+  const direction = index % 2 === 0 ? 1 : -1
+  const angle =
+    2 * Math.PI * (shape.latitude + (direction * update) / loopUpdates)
+  return {
+    id: `vehicle-${index}`,
+    latitude: centre.latitude + radius * Math.sin(angle),
+    longitude:
+      centre.longitude +
+      (radius * Math.cos(angle)) / Math.cos((KRAKOW.latitude * Math.PI) / 180),
+  }
+}
+
+
 type Phase =
   | 'setup'
   | 'ready'
@@ -59,11 +107,13 @@ type Phase =
   | 'rerendering'
   | 'rerendered'
   | 'zooming'
+  | 'pressed'
+  | 'live'
   | 'done'
   | 'failed'
 
 /** Phases that wait for `bench-next`, so a host script can sample memory first. */
-const WAITING: Phase[] = ['ready', 'mounted', 'rerendered']
+const WAITING: Phase[] = ['ready', 'mounted', 'rerendered', 'pressed']
 
 interface MapHandle {
   animateToRegion(region: Region, duration?: number): void
@@ -101,23 +151,44 @@ function jsHeap(): { heapBytes: number; allocatedBytes: number } | null {
 }
 
 /**
- * The map under test. Memoized so only `tick` re-renders it: any other parent
- * update would hand both libraries new children and start a rebuild.
+ * The map under test. Memoized so only `tick` and `liveUpdate` re-render it:
+ * any other parent update would hand both libraries new children and start a
+ * rebuild.
  */
 const BenchMap = memo(function BenchMap({
   library,
   points,
+  tick,
+  liveUpdate,
+  buildCounterRef,
   onMap,
   onRegionChangeComplete,
 }: {
   library: BenchLibrary
   points: MapPoint[]
   tick: number
+  /** The live phase's latest update, or null before it: no vehicles. */
+  liveUpdate: number | null
+  buildCounterRef: { current: unknown }
   onMap: (map: unknown) => void
   onRegionChangeComplete: (region: Region) => void
 }) {
   const { MapView } = library
-  // Inline children, as apps write them: new elements on every render.
+  // Inline children, as apps write them: new elements on every re-render of
+  // the parent (`tick`). Live updates keep them, as an app that only moves
+  // its vehicles keeps the elements of the markers that did not change;
+  // recreating them costs what a re-render costs, which its phase measures.
+  const markers = useMemo(
+    () =>
+      points.map((point) => (
+        <BenchMarker
+          key={point.id}
+          coordinate={{ latitude: point.latitude, longitude: point.longitude }}
+        />
+      )),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [points, tick]
+  )
   return (
     <MapView
       initialRegion={POLAND_REGION}
@@ -125,13 +196,24 @@ const BenchMap = memo(function BenchMap({
       onRegionChangeComplete={onRegionChangeComplete}
       renderCluster={renderBenchCluster}
       style={styles.map}
+      superClusterRef={buildCounterRef}
     >
-      {points.map((point) => (
-        <BenchMarker
-          key={point.id}
-          coordinate={{ latitude: point.latitude, longitude: point.longitude }}
-        />
-      ))}
+      {markers}
+      {liveUpdate == null
+        ? null
+        : Array.from({ length: LIVE_VEHICLES }, (_, index) => {
+            const vehicle = vehicleAt(index, liveUpdate)
+            return (
+              <BenchVehicle
+                key={vehicle.id}
+                coordinate={{
+                  latitude: vehicle.latitude,
+                  longitude: vehicle.longitude,
+                }}
+                update={liveUpdate}
+              />
+            )
+          })}
     </MapView>
   )
 })
@@ -166,6 +248,7 @@ function JsClock({
  * 2. mounting: mount the map with every marker until markers settle
  * 3. rerendering: re-render the parent at 2 Hz with the same markers
  * 4. zooming: jump into Kraków and back, then press the largest cluster
+ * 5. live: at street level in Kraków, move vehicles over the markers at 10 Hz
  *
  * Results are JSON in `bench-result`; `example/bench/` runs it over Maestro.
  */
@@ -176,6 +259,8 @@ export function BenchmarkScreen() {
   const [points, setPoints] = useState<MapPoint[] | null>(null)
   const [mapMounted, setMapMounted] = useState(false)
   const [tick, setTick] = useState(0)
+  const [liveUpdate, setLiveUpdate] = useState<number | null>(null)
+  const [buildCounterRef] = useState(createBuildCounterRef)
   const [startedAt, setStartedAt] = useState(0)
   const [result, setResult] = useState<string | null>(null)
   // For screen recordings: no dev HUD, a larger clock that restarts at mount.
@@ -360,6 +445,90 @@ export function BenchmarkScreen() {
           ...statsSince(pressStart),
         }
       }
+      await waitForNext('pressed')
+
+      // Live updates on a fixed schedule: update n is due `n - 1` intervals
+      // after the start. A late timer sends the newest update due and skips
+      // the ones before it, as a feed whose newest position wins would.
+      setPhase('live')
+      const settledAtKrakow = new Promise<void>((resolve) => {
+        regionWaiterRef.current = resolve
+      })
+      mapRef.current?.animateToRegion(
+        regionAtZoom(KRAKOW.latitude, KRAKOW.longitude, LIVE_ZOOM),
+        0
+      )
+      await Promise.race([settledAtKrakow, sleep(REGION_TIMEOUT_MS)])
+      regionWaiterRef.current = null
+      await waitForQuiet()
+      liveShown.clear()
+      benchBuilds.count = 0
+      resetBenchCounters()
+      const liveStart = performance.now()
+      const dueAt = (update: number) =>
+        liveStart + (update - 1) * LIVE_INTERVAL_MS
+      let sent = 0
+      let updatesSent = 0
+      while (sent < LIVE_UPDATES) {
+        const due = Math.min(
+          LIVE_UPDATES,
+          Math.floor((performance.now() - liveStart) / LIVE_INTERVAL_MS) + 1
+        )
+        if (due > sent) {
+          sent = due
+          updatesSent += 1
+          setLiveUpdate(due)
+        }
+        await sleep(Math.max(0, dueAt(sent + 1) - performance.now()))
+      }
+      const lastShown = await waitUntil(
+        () => liveShown.has(LIVE_UPDATES),
+        LIVE_TIMEOUT_MS
+      ).then(
+        () => true,
+        () => false
+      )
+      const liveEnd = liveShown.get(LIVE_UPDATES) ?? performance.now()
+      await waitForQuiet()
+      // How old what the map showed was, on average over the phase: at each
+      // moment, the time since the update on the map was due (since the
+      // first was due, before it shows any). A library that shows few
+      // updates shows old ones in between, which a lag per update misses.
+      let staleArea = 0
+      let showing = 1
+      let since = liveStart
+      const ageArea = (from: number, to: number) =>
+        ((from - dueAt(showing) + (to - dueAt(showing))) / 2) * (to - from)
+      const shownInOrder = [...liveShown].sort((a, b) => a[1] - b[1])
+      for (const [update, shownAt] of shownInOrder) {
+        if (shownAt > liveEnd) break
+        staleArea += ageArea(since, shownAt)
+        showing = Math.max(showing, update)
+        since = shownAt
+      }
+      staleArea += ageArea(since, liveEnd)
+      // From when each update was due to when the map first showed it.
+      const lags = [...liveShown]
+        .map(([update, shownAt]) => shownAt - dueAt(update))
+        .sort((a, b) => a - b)
+      results.live = {
+        vehicles: LIVE_VEHICLES,
+        rateHz: LIVE_RATE_HZ,
+        zoom: LIVE_ZOOM,
+        updates: LIVE_UPDATES,
+        updatesSent,
+        updatesShown: liveShown.size,
+        stalenessMs: round(staleArea / (liveEnd - liveStart)),
+        lagMedianMs:
+          lags.length === 0 ? null : round(lags[Math.floor(lags.length / 2)]),
+        lagMaxMs: lags.length === 0 ? null : round(lags[lags.length - 1]),
+        lastUpdateMs: lastShown
+          ? round(liveShown.get(LIVE_UPDATES)! - dueAt(LIVE_UPDATES))
+          : null,
+        builds: benchBuilds.count,
+        ...counters(),
+        ...statsSince(liveStart),
+      }
 
       results.jsHeap = jsHeap()
       setResult(JSON.stringify(results))
@@ -426,7 +595,9 @@ export function BenchmarkScreen() {
       <View style={styles.mapArea}>
         {mapMounted && points != null ? (
           <BenchMap
+            buildCounterRef={buildCounterRef}
             library={library}
+            liveUpdate={liveUpdate}
             onMap={onMap}
             onRegionChangeComplete={onRegionChangeComplete}
             points={points}
