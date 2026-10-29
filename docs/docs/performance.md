@@ -51,7 +51,10 @@ Hermes, rendering included, running this library and react-native-map-clustering
 [first run](https://github.com/gmi-software/react-native-better-clustering/blob/main/example/bench/results/ios-simulator-2026-10-14/README.md),
 on the iOS Simulator, reports the time to the first markers, JS freezes, memory,
 zoom and cluster presses for 10k, 50k and 100k markers. Since
-[29 October 2026](https://github.com/gmi-software/react-native-better-clustering/blob/main/example/bench/results/ios-simulator-2026-10-29/README.md)
+29 October 2026, on the
+[iOS Simulator](https://github.com/gmi-software/react-native-better-clustering/blob/main/example/bench/results/ios-simulator-2026-10-29/README.md)
+and an
+[Android emulator](https://github.com/gmi-software/react-native-better-clustering/blob/main/example/bench/results/android-emulator-2026-10-29/README.md),
 it also moves 20 vehicles over the markers 10 times a second, and reports how
 many updates reach the map, how late and how old the map is, and how long JS
 is blocked meanwhile. A simulator runs on the Mac's CPU, faster than a phone:

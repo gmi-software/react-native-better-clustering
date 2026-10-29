@@ -1,0 +1,1930 @@
+{
+  "generatedAt": "2026-10-29T16:16:42.332Z",
+  "platform": "android",
+  "appId": "com.nitromapcluster.example",
+  "device": {
+    "kind": "Android emulator",
+    "model": "sdk_gphone64_arm64",
+    "android": "15",
+    "abi": "arm64-v8a"
+  },
+  "runs": [
+    {
+      "run": 1,
+      "lib": "rnbc",
+      "count": 10000,
+      "attempt": 1,
+      "memory": {
+        "baseline": {
+          "pssBytes": 174815232,
+          "nativeHeapBytes": 112587776,
+          "javaHeapBytes": 6733824
+        },
+        "mounted": {
+          "pssBytes": 220683264,
+          "nativeHeapBytes": 134387712,
+          "javaHeapBytes": 13369344
+        },
+        "rerendered": {
+          "pssBytes": 258499584,
+          "nativeHeapBytes": 135915520,
+          "javaHeapBytes": 13172736
+        },
+        "pressed": {
+          "pssBytes": 310470656,
+          "nativeHeapBytes": 160585728,
+          "javaHeapBytes": 20320256
+        },
+        "done": {
+          "pssBytes": 244634624,
+          "nativeHeapBytes": 137795584,
+          "javaHeapBytes": 15695872
+        }
+      },
+      "result": {
+        "library": "react-native-better-clustering",
+        "version": "main + #126 + engine",
+        "count": 10000,
+        "platform": "android",
+        "osVersion": "35",
+        "frameIntervalMs": 16.6,
+        "baseline": {
+          "jsHeap": {
+            "heapBytes": 8388608,
+            "allocatedBytes": 4546504
+          }
+        },
+        "mount": {
+          "firstMarkersMs": 207.8,
+          "settledMs": 207.8,
+          "markerMounts": 2,
+          "clusterMounts": 44,
+          "mounted": 46,
+          "minMounted": 0,
+          "frames": 67,
+          "frameIntervalMs": 16.6,
+          "maxGapMs": 135.2,
+          "blockedMs": 147.5,
+          "droppedFrames": 14,
+          "jsHeap": {
+            "heapBytes": 16777216,
+            "allocatedBytes": 10574176
+          }
+        },
+        "rerender": {
+          "rerenders": 10,
+          "durationMs": 5167.4,
+          "markerMounts": 0,
+          "clusterMounts": 0,
+          "mounted": 46,
+          "minMounted": 46,
+          "frames": 306,
+          "frameIntervalMs": 16.6,
+          "maxGapMs": 40.1,
+          "blockedMs": 0,
+          "droppedFrames": 9,
+          "jsHeap": {
+            "heapBytes": 50331648,
+            "allocatedBytes": 46378320
+          }
+        },
+        "zoom": {
+          "steps": [
+            {
+              "zoom": 8,
+              "regionMs": 50.3,
+              "updatedMs": 50.3,
+              "markerMounts": 5,
+              "clusterMounts": 88,
+              "mounted": 101,
+              "minMounted": 8,
+              "frames": 64,
+              "frameIntervalMs": 16.6,
+              "maxGapMs": 105.2,
+              "blockedMs": 55.2,
+              "droppedFrames": 6
+            },
+            {
+              "zoom": 10,
+              "regionMs": 57.2,
+              "updatedMs": 57.2,
+              "markerMounts": 62,
+              "clusterMounts": 26,
+              "mounted": 94,
+              "minMounted": 6,
+              "frames": 66,
+              "frameIntervalMs": 16.6,
+              "maxGapMs": 25.2,
+              "blockedMs": 0,
+              "droppedFrames": 1
+            },
+            {
+              "zoom": 12,
+              "regionMs": 23.8,
+              "updatedMs": 23.8,
+              "markerMounts": 17,
+              "clusterMounts": 0,
+              "mounted": 19,
+              "minMounted": 2,
+              "frames": 66,
+              "frameIntervalMs": 16.6,
+              "maxGapMs": 18.9,
+              "blockedMs": 0,
+              "droppedFrames": 0
+            },
+            {
+              "zoom": 14,
+              "regionMs": 35.7,
+              "updatedMs": 35.7,
+              "markerMounts": 0,
+              "clusterMounts": 0,
+              "mounted": 3,
+              "minMounted": 3,
+              "frames": 65,
+              "frameIntervalMs": 16.6,
+              "maxGapMs": 18.9,
+              "blockedMs": 0,
+              "droppedFrames": 0
+            },
+            {
+              "zoom": 10,
+              "regionMs": 46.8,
+              "updatedMs": 46.8,
+              "markerMounts": 63,
+              "clusterMounts": 31,
+              "mounted": 94,
+              "minMounted": 0,
+              "frames": 65,
+              "frameIntervalMs": 16.6,
+              "maxGapMs": 43.3,
+              "blockedMs": 0,
+              "droppedFrames": 2
+            },
+            {
+              "zoom": 6,
+              "regionMs": 36.8,
+              "updatedMs": 36.8,
+              "markerMounts": 2,
+              "clusterMounts": 43,
+              "mounted": 46,
+              "minMounted": 1,
+              "frames": 64,
+              "frameIntervalMs": 16.6,
+              "maxGapMs": 53.6,
+              "blockedMs": 3.6,
+              "droppedFrames": 2
+            }
+          ],
+          "frames": 390,
+          "frameIntervalMs": 16.6,
+          "maxGapMs": 105.2,
+          "blockedMs": 58.7,
+          "droppedFrames": 11
+        },
+        "press": {
+          "pointCount": 503,
+          "regionMs": 1219.2,
+          "markerMounts": 12,
+          "clusterMounts": 326,
+          "mounted": 211,
+          "minMounted": 46,
+          "frames": 120,
+          "frameIntervalMs": 16.6,
+          "maxGapMs": 120.6,
+          "blockedMs": 137.6,
+          "droppedFrames": 14
+        },
+        "live": {
+          "vehicles": 20,
+          "rateHz": 10,
+          "zoom": 12,
+          "updates": 100,
+          "updatesSent": 99,
+          "updatesShown": 80,
+          "stalenessMs": 139.5,
+          "lagMedianMs": 31.5,
+          "lagMaxMs": 78.2,
+          "lastUpdateMs": 37.4,
+          "builds": 99,
+          "markerMounts": 34,
+          "clusterMounts": 39,
+          "mounted": 23,
+          "minMounted": 17,
+          "frames": 644,
+          "frameIntervalMs": 16.6,
+          "maxGapMs": 218,
+          "blockedMs": 168,
+          "droppedFrames": 15
+        },
+        "jsHeap": {
+          "heapBytes": 20971520,
+          "allocatedBytes": 15755800
+        }
+      }
+    },
+    {
+      "run": 1,
+      "lib": "rnbc",
+      "count": 50000,
+      "attempt": 1,
+      "memory": {
+        "baseline": {
+          "pssBytes": 172909568,
+          "nativeHeapBytes": 106418176,
+          "javaHeapBytes": 6393856
+        },
+        "mounted": {
+          "pssBytes": 273204224,
+          "nativeHeapBytes": 158498816,
+          "javaHeapBytes": 16044032
+        },
+        "rerendered": {
+          "pssBytes": 497397760,
+          "nativeHeapBytes": 202121216,
+          "javaHeapBytes": 13357056
+        },
+        "pressed": {
+          "pssBytes": 580326400,
+          "nativeHeapBytes": 256524288,
+          "javaHeapBytes": 22560768
+        },
+        "done": {
+          "pssBytes": 441832448,
+          "nativeHeapBytes": 210513920,
+          "javaHeapBytes": 16113664
+        }
+      },
+      "result": {
+        "library": "react-native-better-clustering",
+        "version": "main + #126 + engine",
+        "count": 50000,
+        "platform": "android",
+        "osVersion": "35",
+        "frameIntervalMs": 16.7,
+        "baseline": {
+          "jsHeap": {
+            "heapBytes": 12582912,
+            "allocatedBytes": 9742864
+          }
+        },
+        "mount": {
+          "firstMarkersMs": 285.8,
+          "settledMs": 285.8,
+          "markerMounts": 0,
+          "clusterMounts": 46,
+          "mounted": 46,
+          "minMounted": 0,
+          "frames": 65,
+          "frameIntervalMs": 16.7,
+          "maxGapMs": 150.4,
+          "blockedMs": 229.8,
+          "droppedFrames": 19,
+          "jsHeap": {
+            "heapBytes": 37748736,
+            "allocatedBytes": 35043024
+          }
+        },
+        "rerender": {
+          "rerenders": 10,
+          "durationMs": 5833.4,
+          "markerMounts": 0,
+          "clusterMounts": 0,
+          "mounted": 46,
+          "minMounted": 46,
+          "frames": 285,
+          "frameIntervalMs": 16.7,
+          "maxGapMs": 167,
+          "blockedMs": 832.3,
+          "droppedFrames": 70,
+          "jsHeap": {
+            "heapBytes": 222298112,
+            "allocatedBytes": 162534104
+          }
+        },
+        "zoom": {
+          "steps": [
+            {
+              "zoom": 8,
+              "regionMs": 164.9,
+              "updatedMs": 164.9,
+              "markerMounts": 4,
+              "clusterMounts": 88,
+              "mounted": 100,
+              "minMounted": 8,
+              "frames": 59,
+              "frameIntervalMs": 16.7,
+              "maxGapMs": 128.5,
+              "blockedMs": 111.2,
+              "droppedFrames": 12
+            },
+            {
+              "zoom": 10,
+              "regionMs": 46.4,
+              "updatedMs": 46.4,
+              "markerMounts": 24,
+              "clusterMounts": 84,
+              "mounted": 116,
+              "minMounted": 8,
+              "frames": 64,
+              "frameIntervalMs": 16.7,
+              "maxGapMs": 80.8,
+              "blockedMs": 30.8,
+              "droppedFrames": 4
+            },
+            {
+              "zoom": 12,
+              "regionMs": 39.1,
+              "updatedMs": 39.1,
+              "markerMounts": 45,
+              "clusterMounts": 6,
+              "mounted": 54,
+              "minMounted": 3,
+              "frames": 66,
+              "frameIntervalMs": 16.7,
+              "maxGapMs": 22.8,
+              "blockedMs": 0,
+              "droppedFrames": 0
+            },
+            {
+              "zoom": 14,
+              "regionMs": 35.9,
+              "updatedMs": 35.9,
+              "markerMounts": 4,
+              "clusterMounts": 0,
+              "mounted": 8,
+              "minMounted": 4,
+              "frames": 65,
+              "frameIntervalMs": 16.7,
+              "maxGapMs": 18.2,
+              "blockedMs": 0,
+              "droppedFrames": 0
+            },
+            {
+              "zoom": 10,
+              "regionMs": 57.2,
+              "updatedMs": 57.2,
+              "markerMounts": 24,
+              "clusterMounts": 92,
+              "mounted": 116,
+              "minMounted": 0,
+              "frames": 66,
+              "frameIntervalMs": 16.7,
+              "maxGapMs": 39.2,
+              "blockedMs": 0,
+              "droppedFrames": 1
+            },
+            {
+              "zoom": 6,
+              "regionMs": 43.6,
+              "updatedMs": 43.6,
+              "markerMounts": 0,
+              "clusterMounts": 45,
+              "mounted": 46,
+              "minMounted": 1,
+              "frames": 64,
+              "frameIntervalMs": 16.7,
+              "maxGapMs": 51.2,
+              "blockedMs": 1.2,
+              "droppedFrames": 2
+            }
+          ],
+          "frames": 384,
+          "frameIntervalMs": 16.7,
+          "maxGapMs": 128.5,
+          "blockedMs": 143.2,
+          "droppedFrames": 19
+        },
+        "press": {
+          "pointCount": 2638,
+          "regionMs": 1221.4,
+          "markerMounts": 3,
+          "clusterMounts": 310,
+          "mounted": 247,
+          "minMounted": 46,
+          "frames": 130,
+          "frameIntervalMs": 16.7,
+          "maxGapMs": 89.2,
+          "blockedMs": 69.9,
+          "droppedFrames": 9
+        },
+        "live": {
+          "vehicles": 20,
+          "rateHz": 10,
+          "zoom": 12,
+          "updates": 100,
+          "updatesSent": 100,
+          "updatesShown": 70,
+          "stalenessMs": 198.5,
+          "lagMedianMs": 79,
+          "lagMaxMs": 135,
+          "lastUpdateMs": 83,
+          "builds": 100,
+          "markerMounts": 46,
+          "clusterMounts": 47,
+          "mounted": 58,
+          "minMounted": 51,
+          "frames": 655,
+          "frameIntervalMs": 16.7,
+          "maxGapMs": 59.6,
+          "blockedMs": 9.6,
+          "droppedFrames": 19
+        },
+        "jsHeap": {
+          "heapBytes": 138412032,
+          "allocatedBytes": 62961288
+        }
+      }
+    },
+    {
+      "run": 1,
+      "lib": "rnbc",
+      "count": 100000,
+      "attempt": 1,
+      "memory": {
+        "baseline": {
+          "pssBytes": 174697472,
+          "nativeHeapBytes": 93748224,
+          "javaHeapBytes": 6795264
+        },
+        "mounted": {
+          "pssBytes": 329621504,
+          "nativeHeapBytes": 186828800,
+          "javaHeapBytes": 12664832
+        },
+        "rerendered": {
+          "pssBytes": 803194880,
+          "nativeHeapBytes": 294275072,
+          "javaHeapBytes": 9142272
+        },
+        "pressed": {
+          "pssBytes": 918274048,
+          "nativeHeapBytes": 369121280,
+          "javaHeapBytes": 25624576
+        },
+        "done": {
+          "pssBytes": 766877696,
+          "nativeHeapBytes": 310134784,
+          "javaHeapBytes": 21065728
+        }
+      },
+      "result": {
+        "library": "react-native-better-clustering",
+        "version": "main + #126 + engine",
+        "count": 100000,
+        "platform": "android",
+        "osVersion": "35",
+        "frameIntervalMs": 16.6,
+        "baseline": {
+          "jsHeap": {
+            "heapBytes": 20971520,
+            "allocatedBytes": 15112112
+          }
+        },
+        "mount": {
+          "firstMarkersMs": 412.6,
+          "settledMs": 412.7,
+          "markerMounts": 0,
+          "clusterMounts": 46,
+          "mounted": 46,
+          "minMounted": 0,
+          "frames": 60,
+          "frameIntervalMs": 16.6,
+          "maxGapMs": 211.8,
+          "blockedMs": 296.5,
+          "droppedFrames": 25,
+          "jsHeap": {
+            "heapBytes": 67108864,
+            "allocatedBytes": 66054056
+          }
+        },
+        "rerender": {
+          "rerenders": 10,
+          "durationMs": 6033.3,
+          "markerMounts": 0,
+          "clusterMounts": 0,
+          "mounted": 46,
+          "minMounted": 46,
+          "frames": 170,
+          "frameIntervalMs": 16.6,
+          "maxGapMs": 449,
+          "blockedMs": 2875.1,
+          "droppedFrames": 195,
+          "jsHeap": {
+            "heapBytes": 440401920,
+            "allocatedBytes": 321009112
+          }
+        },
+        "zoom": {
+          "steps": [
+            {
+              "zoom": 8,
+              "regionMs": 63.6,
+              "updatedMs": 63.6,
+              "markerMounts": 0,
+              "clusterMounts": 90,
+              "mounted": 99,
+              "minMounted": 9,
+              "frames": 64,
+              "frameIntervalMs": 16.6,
+              "maxGapMs": 178.2,
+              "blockedMs": 128.2,
+              "droppedFrames": 12
+            },
+            {
+              "zoom": 10,
+              "regionMs": 76,
+              "updatedMs": 76,
+              "markerMounts": 10,
+              "clusterMounts": 103,
+              "mounted": 123,
+              "minMounted": 10,
+              "frames": 61,
+              "frameIntervalMs": 16.6,
+              "maxGapMs": 86,
+              "blockedMs": 36,
+              "droppedFrames": 6
+            },
+            {
+              "zoom": 12,
+              "regionMs": 45.4,
+              "updatedMs": 45.4,
+              "markerMounts": 61,
+              "clusterMounts": 20,
+              "mounted": 86,
+              "minMounted": 5,
+              "frames": 64,
+              "frameIntervalMs": 16.6,
+              "maxGapMs": 40,
+              "blockedMs": 0,
+              "droppedFrames": 1
+            },
+            {
+              "zoom": 14,
+              "regionMs": 39.1,
+              "updatedMs": 39.1,
+              "markerMounts": 6,
+              "clusterMounts": 0,
+              "mounted": 10,
+              "minMounted": 4,
+              "frames": 66,
+              "frameIntervalMs": 16.6,
+              "maxGapMs": 18.8,
+              "blockedMs": 0,
+              "droppedFrames": 0
+            },
+            {
+              "zoom": 10,
+              "regionMs": 52.1,
+              "updatedMs": 52.1,
+              "markerMounts": 10,
+              "clusterMounts": 113,
+              "mounted": 123,
+              "minMounted": 0,
+              "frames": 63,
+              "frameIntervalMs": 16.6,
+              "maxGapMs": 62.4,
+              "blockedMs": 16.7,
+              "droppedFrames": 5
+            },
+            {
+              "zoom": 6,
+              "regionMs": 36.8,
+              "updatedMs": 36.8,
+              "markerMounts": 0,
+              "clusterMounts": 45,
+              "mounted": 46,
+              "minMounted": 1,
+              "frames": 64,
+              "frameIntervalMs": 16.6,
+              "maxGapMs": 73.4,
+              "blockedMs": 23.4,
+              "droppedFrames": 3
+            }
+          ],
+          "frames": 382,
+          "frameIntervalMs": 16.6,
+          "maxGapMs": 178.2,
+          "blockedMs": 204.3,
+          "droppedFrames": 27
+        },
+        "press": {
+          "pointCount": 4558,
+          "regionMs": 1250.2,
+          "markerMounts": 0,
+          "clusterMounts": 372,
+          "mounted": 301,
+          "minMounted": 46,
+          "frames": 121,
+          "frameIntervalMs": 16.6,
+          "maxGapMs": 173.7,
+          "blockedMs": 181.3,
+          "droppedFrames": 17
+        },
+        "live": {
+          "vehicles": 20,
+          "rateHz": 10,
+          "zoom": 12,
+          "updates": 100,
+          "updatesSent": 100,
+          "updatesShown": 56,
+          "stalenessMs": 325.6,
+          "lagMedianMs": 189.8,
+          "lagMaxMs": 303.4,
+          "lastUpdateMs": 226.7,
+          "builds": 80,
+          "markerMounts": 41,
+          "clusterMounts": 43,
+          "mounted": 90,
+          "minMounted": 84,
+          "frames": 619,
+          "frameIntervalMs": 16.6,
+          "maxGapMs": 66.4,
+          "blockedMs": 39.8,
+          "droppedFrames": 84
+        },
+        "jsHeap": {
+          "heapBytes": 356515840,
+          "allocatedBytes": 124488896
+        }
+      }
+    },
+    {
+      "run": 2,
+      "lib": "rnbc",
+      "count": 10000,
+      "attempt": 1,
+      "memory": {
+        "baseline": {
+          "pssBytes": 175435776,
+          "nativeHeapBytes": 112506880,
+          "javaHeapBytes": 7233536
+        },
+        "mounted": {
+          "pssBytes": 218647552,
+          "nativeHeapBytes": 135010304,
+          "javaHeapBytes": 11653120
+        },
+        "rerendered": {
+          "pssBytes": 252426240,
+          "nativeHeapBytes": 130193408,
+          "javaHeapBytes": 13561856
+        },
+        "pressed": {
+          "pssBytes": 306733056,
+          "nativeHeapBytes": 160867328,
+          "javaHeapBytes": 20570112
+        },
+        "done": {
+          "pssBytes": 255833088,
+          "nativeHeapBytes": 138114048,
+          "javaHeapBytes": 26402816
+        }
+      },
+      "result": {
+        "library": "react-native-better-clustering",
+        "version": "main + #126 + engine",
+        "count": 10000,
+        "platform": "android",
+        "osVersion": "35",
+        "frameIntervalMs": 16.7,
+        "baseline": {
+          "jsHeap": {
+            "heapBytes": 8388608,
+            "allocatedBytes": 4546760
+          }
+        },
+        "mount": {
+          "firstMarkersMs": 211.1,
+          "settledMs": 211.2,
+          "markerMounts": 2,
+          "clusterMounts": 44,
+          "mounted": 46,
+          "minMounted": 0,
+          "frames": 68,
+          "frameIntervalMs": 16.7,
+          "maxGapMs": 142.2,
+          "blockedMs": 153.9,
+          "droppedFrames": 15,
+          "jsHeap": {
+            "heapBytes": 16777216,
+            "allocatedBytes": 10572864
+          }
+        },
+        "rerender": {
+          "rerenders": 10,
+          "durationMs": 5166,
+          "markerMounts": 0,
+          "clusterMounts": 0,
+          "mounted": 46,
+          "minMounted": 46,
+          "frames": 305,
+          "frameIntervalMs": 16.7,
+          "maxGapMs": 43.7,
+          "blockedMs": 0,
+          "droppedFrames": 9,
+          "jsHeap": {
+            "heapBytes": 50331648,
+            "allocatedBytes": 35957288
+          }
+        },
+        "zoom": {
+          "steps": [
+            {
+              "zoom": 8,
+              "regionMs": 86,
+              "updatedMs": 86,
+              "markerMounts": 5,
+              "clusterMounts": 88,
+              "mounted": 101,
+              "minMounted": 8,
+              "frames": 65,
+              "frameIntervalMs": 16.7,
+              "maxGapMs": 103.7,
+              "blockedMs": 57.2,
+              "droppedFrames": 10
+            },
+            {
+              "zoom": 10,
+              "regionMs": 41.7,
+              "updatedMs": 41.7,
+              "markerMounts": 62,
+              "clusterMounts": 26,
+              "mounted": 94,
+              "minMounted": 6,
+              "frames": 66,
+              "frameIntervalMs": 16.7,
+              "maxGapMs": 31.2,
+              "blockedMs": 0,
+              "droppedFrames": 1
+            },
+            {
+              "zoom": 12,
+              "regionMs": 38.7,
+              "updatedMs": 38.7,
+              "markerMounts": 17,
+              "clusterMounts": 0,
+              "mounted": 19,
+              "minMounted": 2,
+              "frames": 67,
+              "frameIntervalMs": 16.7,
+              "maxGapMs": 18.7,
+              "blockedMs": 0,
+              "droppedFrames": 0
+            },
+            {
+              "zoom": 14,
+              "regionMs": 35.4,
+              "updatedMs": 35.4,
+              "markerMounts": 0,
+              "clusterMounts": 0,
+              "mounted": 3,
+              "minMounted": 3,
+              "frames": 65,
+              "frameIntervalMs": 16.7,
+              "maxGapMs": 19.5,
+              "blockedMs": 0,
+              "droppedFrames": 0
+            },
+            {
+              "zoom": 10,
+              "regionMs": 40.4,
+              "updatedMs": 40.4,
+              "markerMounts": 63,
+              "clusterMounts": 31,
+              "mounted": 94,
+              "minMounted": 0,
+              "frames": 66,
+              "frameIntervalMs": 16.7,
+              "maxGapMs": 28.7,
+              "blockedMs": 0,
+              "droppedFrames": 1
+            },
+            {
+              "zoom": 6,
+              "regionMs": 27.3,
+              "updatedMs": 27.3,
+              "markerMounts": 2,
+              "clusterMounts": 43,
+              "mounted": 46,
+              "minMounted": 1,
+              "frames": 64,
+              "frameIntervalMs": 16.7,
+              "maxGapMs": 47.4,
+              "blockedMs": 0,
+              "droppedFrames": 2
+            }
+          ],
+          "frames": 393,
+          "frameIntervalMs": 16.7,
+          "maxGapMs": 103.7,
+          "blockedMs": 57.2,
+          "droppedFrames": 14
+        },
+        "press": {
+          "pointCount": 503,
+          "regionMs": 1221.7,
+          "markerMounts": 14,
+          "clusterMounts": 334,
+          "mounted": 211,
+          "minMounted": 46,
+          "frames": 124,
+          "frameIntervalMs": 16.7,
+          "maxGapMs": 129.2,
+          "blockedMs": 145.5,
+          "droppedFrames": 15
+        },
+        "live": {
+          "vehicles": 20,
+          "rateHz": 10,
+          "zoom": 12,
+          "updates": 100,
+          "updatesSent": 100,
+          "updatesShown": 80,
+          "stalenessMs": 137.3,
+          "lagMedianMs": 30.7,
+          "lagMaxMs": 51.1,
+          "lastUpdateMs": 29.5,
+          "builds": 100,
+          "markerMounts": 34,
+          "clusterMounts": 39,
+          "mounted": 23,
+          "minMounted": 17,
+          "frames": 657,
+          "frameIntervalMs": 16.7,
+          "maxGapMs": 26.1,
+          "blockedMs": 0,
+          "droppedFrames": 1
+        },
+        "jsHeap": {
+          "heapBytes": 25165824,
+          "allocatedBytes": 15976728
+        }
+      }
+    },
+    {
+      "run": 2,
+      "lib": "rnbc",
+      "count": 50000,
+      "attempt": 1,
+      "memory": {
+        "baseline": {
+          "pssBytes": 184811520,
+          "nativeHeapBytes": 104056832,
+          "javaHeapBytes": 20467712
+        },
+        "mounted": {
+          "pssBytes": 268024832,
+          "nativeHeapBytes": 160281600,
+          "javaHeapBytes": 10104832
+        },
+        "rerendered": {
+          "pssBytes": 492365824,
+          "nativeHeapBytes": 198013952,
+          "javaHeapBytes": 13918208
+        },
+        "pressed": {
+          "pssBytes": 563680256,
+          "nativeHeapBytes": 240464896,
+          "javaHeapBytes": 23531520
+        },
+        "done": {
+          "pssBytes": 474592256,
+          "nativeHeapBytes": 210805760,
+          "javaHeapBytes": 16220160
+        }
+      },
+      "result": {
+        "library": "react-native-better-clustering",
+        "version": "main + #126 + engine",
+        "count": 50000,
+        "platform": "android",
+        "osVersion": "35",
+        "frameIntervalMs": 16.7,
+        "baseline": {
+          "jsHeap": {
+            "heapBytes": 12582912,
+            "allocatedBytes": 9302256
+          }
+        },
+        "mount": {
+          "firstMarkersMs": 1070.8,
+          "settledMs": 1070.8,
+          "markerMounts": 0,
+          "clusterMounts": 46,
+          "mounted": 46,
+          "minMounted": 0,
+          "frames": 68,
+          "frameIntervalMs": 16.7,
+          "maxGapMs": 581.6,
+          "blockedMs": 986.4,
+          "droppedFrames": 70,
+          "jsHeap": {
+            "heapBytes": 41943040,
+            "allocatedBytes": 35055224
+          }
+        },
+        "rerender": {
+          "rerenders": 10,
+          "durationMs": 6630.7,
+          "markerMounts": 0,
+          "clusterMounts": 0,
+          "mounted": 46,
+          "minMounted": 46,
+          "frames": 121,
+          "frameIntervalMs": 16.7,
+          "maxGapMs": 726.5,
+          "blockedMs": 4204.2,
+          "droppedFrames": 275,
+          "jsHeap": {
+            "heapBytes": 222298112,
+            "allocatedBytes": 136008376
+          }
+        },
+        "zoom": {
+          "steps": [
+            {
+              "zoom": 8,
+              "regionMs": 132.4,
+              "updatedMs": 132.4,
+              "markerMounts": 4,
+              "clusterMounts": 88,
+              "mounted": 100,
+              "minMounted": 8,
+              "frames": 68,
+              "frameIntervalMs": 16.7,
+              "maxGapMs": 329.9,
+              "blockedMs": 301.3,
+              "droppedFrames": 23
+            },
+            {
+              "zoom": 10,
+              "regionMs": 118.1,
+              "updatedMs": 118.1,
+              "markerMounts": 24,
+              "clusterMounts": 84,
+              "mounted": 116,
+              "minMounted": 8,
+              "frames": 67,
+              "frameIntervalMs": 16.7,
+              "maxGapMs": 218.8,
+              "blockedMs": 201,
+              "droppedFrames": 17
+            },
+            {
+              "zoom": 12,
+              "regionMs": 38.5,
+              "updatedMs": 38.5,
+              "markerMounts": 45,
+              "clusterMounts": 6,
+              "mounted": 54,
+              "minMounted": 3,
+              "frames": 59,
+              "frameIntervalMs": 16.7,
+              "maxGapMs": 90.6,
+              "blockedMs": 40.6,
+              "droppedFrames": 5
+            },
+            {
+              "zoom": 14,
+              "regionMs": 76.6,
+              "updatedMs": 76.6,
+              "markerMounts": 4,
+              "clusterMounts": 0,
+              "mounted": 8,
+              "minMounted": 4,
+              "frames": 67,
+              "frameIntervalMs": 16.7,
+              "maxGapMs": 44.2,
+              "blockedMs": 0,
+              "droppedFrames": 2
+            },
+            {
+              "zoom": 10,
+              "regionMs": 87.6,
+              "updatedMs": 87.6,
+              "markerMounts": 24,
+              "clusterMounts": 92,
+              "mounted": 116,
+              "minMounted": 0,
+              "frames": 68,
+              "frameIntervalMs": 16.7,
+              "maxGapMs": 229.6,
+              "blockedMs": 183.8,
+              "droppedFrames": 16
+            },
+            {
+              "zoom": 6,
+              "regionMs": 53.4,
+              "updatedMs": 53.4,
+              "markerMounts": 0,
+              "clusterMounts": 45,
+              "mounted": 46,
+              "minMounted": 1,
+              "frames": 68,
+              "frameIntervalMs": 16.7,
+              "maxGapMs": 108.8,
+              "blockedMs": 58.8,
+              "droppedFrames": 9
+            }
+          ],
+          "frames": 397,
+          "frameIntervalMs": 16.7,
+          "maxGapMs": 329.9,
+          "blockedMs": 785.4,
+          "droppedFrames": 72
+        },
+        "press": {
+          "pointCount": 2638,
+          "regionMs": 1328.1,
+          "markerMounts": 3,
+          "clusterMounts": 307,
+          "mounted": 247,
+          "minMounted": 46,
+          "frames": 99,
+          "frameIntervalMs": 16.7,
+          "maxGapMs": 404,
+          "blockedMs": 897.5,
+          "droppedFrames": 67
+        },
+        "live": {
+          "vehicles": 20,
+          "rateHz": 10,
+          "zoom": 12,
+          "updates": 100,
+          "updatesSent": 100,
+          "updatesShown": 35,
+          "stalenessMs": 496.9,
+          "lagMedianMs": 286.1,
+          "lagMaxMs": 456.5,
+          "lastUpdateMs": 315.3,
+          "builds": 51,
+          "markerMounts": 35,
+          "clusterMounts": 42,
+          "mounted": 55,
+          "minMounted": 48,
+          "frames": 520,
+          "frameIntervalMs": 16.7,
+          "maxGapMs": 120.7,
+          "blockedMs": 556.2,
+          "droppedFrames": 173
+        },
+        "jsHeap": {
+          "heapBytes": 171966464,
+          "allocatedBytes": 61671376
+        }
+      }
+    },
+    {
+      "run": 2,
+      "lib": "rnbc",
+      "count": 100000,
+      "attempt": 1,
+      "memory": {
+        "baseline": {
+          "pssBytes": 186187776,
+          "nativeHeapBytes": 113743872,
+          "javaHeapBytes": 7409664
+        },
+        "mounted": {
+          "pssBytes": 331042816,
+          "nativeHeapBytes": 190724096,
+          "javaHeapBytes": 11747328
+        },
+        "rerendered": {
+          "pssBytes": 789749760,
+          "nativeHeapBytes": 282011648,
+          "javaHeapBytes": 13537280
+        },
+        "pressed": {
+          "pssBytes": 868464640,
+          "nativeHeapBytes": 327038976,
+          "javaHeapBytes": 22417408
+        },
+        "done": {
+          "pssBytes": 822481920,
+          "nativeHeapBytes": 308307968,
+          "javaHeapBytes": 19030016
+        }
+      },
+      "result": {
+        "library": "react-native-better-clustering",
+        "version": "main + #126 + engine",
+        "count": 100000,
+        "platform": "android",
+        "osVersion": "35",
+        "frameIntervalMs": 16.7,
+        "baseline": {
+          "jsHeap": {
+            "heapBytes": 20971520,
+            "allocatedBytes": 15112080
+          }
+        },
+        "mount": {
+          "firstMarkersMs": 496.6,
+          "settledMs": 496.6,
+          "markerMounts": 0,
+          "clusterMounts": 46,
+          "mounted": 46,
+          "minMounted": 0,
+          "frames": 67,
+          "frameIntervalMs": 16.7,
+          "maxGapMs": 300.3,
+          "blockedMs": 447.6,
+          "droppedFrames": 33,
+          "jsHeap": {
+            "heapBytes": 67108864,
+            "allocatedBytes": 66371968
+          }
+        },
+        "rerender": {
+          "rerenders": 10,
+          "durationMs": 17578.1,
+          "markerMounts": 0,
+          "clusterMounts": 0,
+          "mounted": 46,
+          "minMounted": 46,
+          "frames": 86,
+          "frameIntervalMs": 16.7,
+          "maxGapMs": 2504.6,
+          "blockedMs": 14963.2,
+          "droppedFrames": 970,
+          "jsHeap": {
+            "heapBytes": 436207616,
+            "allocatedBytes": 320570088
+          }
+        },
+        "zoom": {
+          "steps": [
+            {
+              "zoom": 8,
+              "regionMs": 256.8,
+              "updatedMs": 256.8,
+              "markerMounts": 0,
+              "clusterMounts": 90,
+              "mounted": 99,
+              "minMounted": 9,
+              "frames": 64,
+              "frameIntervalMs": 16.7,
+              "maxGapMs": 334.9,
+              "blockedMs": 392.1,
+              "droppedFrames": 31
+            },
+            {
+              "zoom": 10,
+              "regionMs": 183.3,
+              "updatedMs": 183.3,
+              "markerMounts": 10,
+              "clusterMounts": 103,
+              "mounted": 123,
+              "minMounted": 10,
+              "frames": 67,
+              "frameIntervalMs": 16.7,
+              "maxGapMs": 316.5,
+              "blockedMs": 368.6,
+              "droppedFrames": 27
+            },
+            {
+              "zoom": 12,
+              "regionMs": 136,
+              "updatedMs": 136,
+              "markerMounts": 61,
+              "clusterMounts": 20,
+              "mounted": 86,
+              "minMounted": 5,
+              "frames": 64,
+              "frameIntervalMs": 16.7,
+              "maxGapMs": 101.1,
+              "blockedMs": 102.1,
+              "droppedFrames": 12
+            },
+            {
+              "zoom": 14,
+              "regionMs": 38.8,
+              "updatedMs": 38.8,
+              "markerMounts": 6,
+              "clusterMounts": 0,
+              "mounted": 10,
+              "minMounted": 4,
+              "frames": 63,
+              "frameIntervalMs": 16.7,
+              "maxGapMs": 37.7,
+              "blockedMs": 0,
+              "droppedFrames": 4
+            },
+            {
+              "zoom": 10,
+              "regionMs": 193.1,
+              "updatedMs": 193.1,
+              "markerMounts": 10,
+              "clusterMounts": 113,
+              "mounted": 123,
+              "minMounted": 0,
+              "frames": 63,
+              "frameIntervalMs": 16.7,
+              "maxGapMs": 236.5,
+              "blockedMs": 297,
+              "droppedFrames": 23
+            },
+            {
+              "zoom": 6,
+              "regionMs": 67.4,
+              "updatedMs": 67.4,
+              "markerMounts": 0,
+              "clusterMounts": 45,
+              "mounted": 46,
+              "minMounted": 1,
+              "frames": 65,
+              "frameIntervalMs": 16.7,
+              "maxGapMs": 107.9,
+              "blockedMs": 57.9,
+              "droppedFrames": 11
+            }
+          ],
+          "frames": 386,
+          "frameIntervalMs": 16.7,
+          "maxGapMs": 334.9,
+          "blockedMs": 1217.7,
+          "droppedFrames": 108
+        },
+        "press": {
+          "pointCount": 4558,
+          "regionMs": 1877.3,
+          "markerMounts": 0,
+          "clusterMounts": 375,
+          "mounted": 301,
+          "minMounted": 46,
+          "frames": 98,
+          "frameIntervalMs": 16.7,
+          "maxGapMs": 594.7,
+          "blockedMs": 992.9,
+          "droppedFrames": 78
+        },
+        "live": {
+          "vehicles": 20,
+          "rateHz": 10,
+          "zoom": 12,
+          "updates": 100,
+          "updatesSent": 74,
+          "updatesShown": 13,
+          "stalenessMs": 1735.1,
+          "lagMedianMs": 675.7,
+          "lagMaxMs": 3301.1,
+          "lastUpdateMs": 675.7,
+          "builds": 19,
+          "markerMounts": 23,
+          "clusterMounts": 27,
+          "mounted": 86,
+          "minMounted": 79,
+          "frames": 344,
+          "frameIntervalMs": 16.7,
+          "maxGapMs": 1358.3,
+          "blockedMs": 4308.6,
+          "droppedFrames": 406
+        },
+        "jsHeap": {
+          "heapBytes": 419430400,
+          "allocatedBytes": 128632584
+        }
+      }
+    },
+    {
+      "run": 3,
+      "lib": "rnbc",
+      "count": 10000,
+      "attempt": 1,
+      "memory": {
+        "baseline": {
+          "pssBytes": 175409152,
+          "nativeHeapBytes": 112376832,
+          "javaHeapBytes": 7704576
+        },
+        "mounted": {
+          "pssBytes": 222799872,
+          "nativeHeapBytes": 133988352,
+          "javaHeapBytes": 15167488
+        },
+        "rerendered": {
+          "pssBytes": 257245184,
+          "nativeHeapBytes": 134959104,
+          "javaHeapBytes": 12738560
+        },
+        "pressed": {
+          "pssBytes": 308600832,
+          "nativeHeapBytes": 161168384,
+          "javaHeapBytes": 20975616
+        },
+        "done": {
+          "pssBytes": 257862656,
+          "nativeHeapBytes": 138976256,
+          "javaHeapBytes": 27406336
+        }
+      },
+      "result": {
+        "library": "react-native-better-clustering",
+        "version": "main + #126 + engine",
+        "count": 10000,
+        "platform": "android",
+        "osVersion": "35",
+        "frameIntervalMs": 16.6,
+        "baseline": {
+          "jsHeap": {
+            "heapBytes": 8388608,
+            "allocatedBytes": 4543152
+          }
+        },
+        "mount": {
+          "firstMarkersMs": 261.4,
+          "settledMs": 261.5,
+          "markerMounts": 2,
+          "clusterMounts": 44,
+          "mounted": 46,
+          "minMounted": 0,
+          "frames": 65,
+          "frameIntervalMs": 16.6,
+          "maxGapMs": 194.3,
+          "blockedMs": 267.2,
+          "droppedFrames": 21,
+          "jsHeap": {
+            "heapBytes": 16777216,
+            "allocatedBytes": 10634384
+          }
+        },
+        "rerender": {
+          "rerenders": 10,
+          "durationMs": 5166.3,
+          "markerMounts": 0,
+          "clusterMounts": 0,
+          "mounted": 46,
+          "minMounted": 46,
+          "frames": 304,
+          "frameIntervalMs": 16.6,
+          "maxGapMs": 51.6,
+          "blockedMs": 1.6,
+          "droppedFrames": 13,
+          "jsHeap": {
+            "heapBytes": 50331648,
+            "allocatedBytes": 35713384
+          }
+        },
+        "zoom": {
+          "steps": [
+            {
+              "zoom": 8,
+              "regionMs": 76.6,
+              "updatedMs": 76.6,
+              "markerMounts": 5,
+              "clusterMounts": 88,
+              "mounted": 101,
+              "minMounted": 8,
+              "frames": 59,
+              "frameIntervalMs": 16.6,
+              "maxGapMs": 93.5,
+              "blockedMs": 43.5,
+              "droppedFrames": 7
+            },
+            {
+              "zoom": 10,
+              "regionMs": 66.6,
+              "updatedMs": 66.6,
+              "markerMounts": 62,
+              "clusterMounts": 26,
+              "mounted": 94,
+              "minMounted": 6,
+              "frames": 67,
+              "frameIntervalMs": 16.6,
+              "maxGapMs": 33.1,
+              "blockedMs": 0,
+              "droppedFrames": 1
+            },
+            {
+              "zoom": 12,
+              "regionMs": 36.7,
+              "updatedMs": 36.7,
+              "markerMounts": 17,
+              "clusterMounts": 0,
+              "mounted": 19,
+              "minMounted": 2,
+              "frames": 66,
+              "frameIntervalMs": 16.6,
+              "maxGapMs": 18.9,
+              "blockedMs": 0,
+              "droppedFrames": 0
+            },
+            {
+              "zoom": 14,
+              "regionMs": 34,
+              "updatedMs": 34,
+              "markerMounts": 0,
+              "clusterMounts": 0,
+              "mounted": 3,
+              "minMounted": 3,
+              "frames": 66,
+              "frameIntervalMs": 16.6,
+              "maxGapMs": 19.6,
+              "blockedMs": 0,
+              "droppedFrames": 0
+            },
+            {
+              "zoom": 10,
+              "regionMs": 39.3,
+              "updatedMs": 39.3,
+              "markerMounts": 63,
+              "clusterMounts": 31,
+              "mounted": 94,
+              "minMounted": 0,
+              "frames": 67,
+              "frameIntervalMs": 16.6,
+              "maxGapMs": 28.4,
+              "blockedMs": 0,
+              "droppedFrames": 1
+            },
+            {
+              "zoom": 6,
+              "regionMs": 41.8,
+              "updatedMs": 41.8,
+              "markerMounts": 2,
+              "clusterMounts": 43,
+              "mounted": 46,
+              "minMounted": 1,
+              "frames": 64,
+              "frameIntervalMs": 16.6,
+              "maxGapMs": 38.1,
+              "blockedMs": 0,
+              "droppedFrames": 1
+            }
+          ],
+          "frames": 389,
+          "frameIntervalMs": 16.6,
+          "maxGapMs": 93.5,
+          "blockedMs": 43.5,
+          "droppedFrames": 10
+        },
+        "press": {
+          "pointCount": 503,
+          "regionMs": 1221.9,
+          "markerMounts": 14,
+          "clusterMounts": 358,
+          "mounted": 211,
+          "minMounted": 46,
+          "frames": 127,
+          "frameIntervalMs": 16.6,
+          "maxGapMs": 102.1,
+          "blockedMs": 92.5,
+          "droppedFrames": 10
+        },
+        "live": {
+          "vehicles": 20,
+          "rateHz": 10,
+          "zoom": 12,
+          "updates": 100,
+          "updatesSent": 100,
+          "updatesShown": 80,
+          "stalenessMs": 139.7,
+          "lagMedianMs": 32.8,
+          "lagMaxMs": 62.1,
+          "lastUpdateMs": 29.6,
+          "builds": 100,
+          "markerMounts": 34,
+          "clusterMounts": 39,
+          "mounted": 23,
+          "minMounted": 17,
+          "frames": 657,
+          "frameIntervalMs": 16.6,
+          "maxGapMs": 41.6,
+          "blockedMs": 0,
+          "droppedFrames": 3
+        },
+        "jsHeap": {
+          "heapBytes": 25165824,
+          "allocatedBytes": 15981600
+        }
+      }
+    },
+    {
+      "run": 3,
+      "lib": "rnbc",
+      "count": 50000,
+      "attempt": 1,
+      "memory": {
+        "baseline": {
+          "pssBytes": 172445696,
+          "nativeHeapBytes": 106273792,
+          "javaHeapBytes": 5939200
+        },
+        "mounted": {
+          "pssBytes": 270901248,
+          "nativeHeapBytes": 162352128,
+          "javaHeapBytes": 11317248
+        },
+        "rerendered": {
+          "pssBytes": 501374976,
+          "nativeHeapBytes": 196566016,
+          "javaHeapBytes": 11104256
+        },
+        "pressed": {
+          "pssBytes": 565001216,
+          "nativeHeapBytes": 228346880,
+          "javaHeapBytes": 22781952
+        },
+        "done": {
+          "pssBytes": 500239360,
+          "nativeHeapBytes": 213122048,
+          "javaHeapBytes": 29310976
+        }
+      },
+      "result": {
+        "library": "react-native-better-clustering",
+        "version": "main + #126 + engine",
+        "count": 50000,
+        "platform": "android",
+        "osVersion": "35",
+        "frameIntervalMs": 16.6,
+        "baseline": {
+          "jsHeap": {
+            "heapBytes": 12582912,
+            "allocatedBytes": 9742112
+          }
+        },
+        "mount": {
+          "firstMarkersMs": 331.7,
+          "settledMs": 331.7,
+          "markerMounts": 0,
+          "clusterMounts": 46,
+          "mounted": 46,
+          "minMounted": 0,
+          "frames": 64,
+          "frameIntervalMs": 16.6,
+          "maxGapMs": 163.1,
+          "blockedMs": 283.7,
+          "droppedFrames": 25,
+          "jsHeap": {
+            "heapBytes": 37748736,
+            "allocatedBytes": 35033112
+          }
+        },
+        "rerender": {
+          "rerenders": 10,
+          "durationMs": 6625,
+          "markerMounts": 0,
+          "clusterMounts": 0,
+          "mounted": 46,
+          "minMounted": 46,
+          "frames": 145,
+          "frameIntervalMs": 16.6,
+          "maxGapMs": 904.4,
+          "blockedMs": 3874,
+          "droppedFrames": 256,
+          "jsHeap": {
+            "heapBytes": 234881024,
+            "allocatedBytes": 136782168
+          }
+        },
+        "zoom": {
+          "steps": [
+            {
+              "zoom": 8,
+              "regionMs": 259.4,
+              "updatedMs": 259.4,
+              "markerMounts": 4,
+              "clusterMounts": 88,
+              "mounted": 100,
+              "minMounted": 8,
+              "frames": 78,
+              "frameIntervalMs": 16.6,
+              "maxGapMs": 394,
+              "blockedMs": 536.1,
+              "droppedFrames": 44
+            },
+            {
+              "zoom": 10,
+              "regionMs": 117.7,
+              "updatedMs": 117.7,
+              "markerMounts": 24,
+              "clusterMounts": 84,
+              "mounted": 116,
+              "minMounted": 8,
+              "frames": 64,
+              "frameIntervalMs": 16.6,
+              "maxGapMs": 224.3,
+              "blockedMs": 215.2,
+              "droppedFrames": 20
+            },
+            {
+              "zoom": 12,
+              "regionMs": 66.7,
+              "updatedMs": 66.7,
+              "markerMounts": 45,
+              "clusterMounts": 6,
+              "mounted": 54,
+              "minMounted": 3,
+              "frames": 61,
+              "frameIntervalMs": 16.6,
+              "maxGapMs": 61.8,
+              "blockedMs": 11.8,
+              "droppedFrames": 8
+            },
+            {
+              "zoom": 14,
+              "regionMs": 52.3,
+              "updatedMs": 52.3,
+              "markerMounts": 4,
+              "clusterMounts": 0,
+              "mounted": 8,
+              "minMounted": 4,
+              "frames": 61,
+              "frameIntervalMs": 16.6,
+              "maxGapMs": 32.8,
+              "blockedMs": 0,
+              "droppedFrames": 5
+            },
+            {
+              "zoom": 10,
+              "regionMs": 129.3,
+              "updatedMs": 129.3,
+              "markerMounts": 24,
+              "clusterMounts": 92,
+              "mounted": 116,
+              "minMounted": 0,
+              "frames": 69,
+              "frameIntervalMs": 16.6,
+              "maxGapMs": 207.3,
+              "blockedMs": 197.5,
+              "droppedFrames": 15
+            },
+            {
+              "zoom": 6,
+              "regionMs": 81.1,
+              "updatedMs": 81.1,
+              "markerMounts": 0,
+              "clusterMounts": 45,
+              "mounted": 46,
+              "minMounted": 1,
+              "frames": 63,
+              "frameIntervalMs": 16.6,
+              "maxGapMs": 171.8,
+              "blockedMs": 121.8,
+              "droppedFrames": 13
+            }
+          ],
+          "frames": 396,
+          "frameIntervalMs": 16.6,
+          "maxGapMs": 394,
+          "blockedMs": 1082.3,
+          "droppedFrames": 105
+        },
+        "press": {
+          "pointCount": 2638,
+          "regionMs": 1288.5,
+          "markerMounts": 3,
+          "clusterMounts": 305,
+          "mounted": 247,
+          "minMounted": 46,
+          "frames": 112,
+          "frameIntervalMs": 16.6,
+          "maxGapMs": 442.8,
+          "blockedMs": 658.8,
+          "droppedFrames": 53
+        },
+        "live": {
+          "vehicles": 20,
+          "rateHz": 10,
+          "zoom": 12,
+          "updates": 100,
+          "updatesSent": 97,
+          "updatesShown": 33,
+          "stalenessMs": 509.8,
+          "lagMedianMs": 283.2,
+          "lagMaxMs": 441.3,
+          "lastUpdateMs": 105.3,
+          "builds": 51,
+          "markerMounts": 37,
+          "clusterMounts": 42,
+          "mounted": 55,
+          "minMounted": 48,
+          "frames": 482,
+          "frameIntervalMs": 16.6,
+          "maxGapMs": 202.1,
+          "blockedMs": 910.8,
+          "droppedFrames": 200
+        },
+        "jsHeap": {
+          "heapBytes": 184549376,
+          "allocatedBytes": 63963136
+        }
+      }
+    },
+    {
+      "run": 3,
+      "lib": "rnbc",
+      "count": 100000,
+      "attempt": 1,
+      "memory": {
+        "baseline": {
+          "pssBytes": 185692160,
+          "nativeHeapBytes": 113826816,
+          "javaHeapBytes": 6795264
+        },
+        "mounted": {
+          "pssBytes": 331325440,
+          "nativeHeapBytes": 187817984,
+          "javaHeapBytes": 14430208
+        },
+        "rerendered": {
+          "pssBytes": 844358656,
+          "nativeHeapBytes": 295092224,
+          "javaHeapBytes": 17260544
+        },
+        "pressed": {
+          "pssBytes": 951073792,
+          "nativeHeapBytes": 369422336,
+          "javaHeapBytes": 24379392
+        },
+        "done": {
+          "pssBytes": 803375104,
+          "nativeHeapBytes": 308056064,
+          "javaHeapBytes": 21323776
+        }
+      },
+      "result": {
+        "library": "react-native-better-clustering",
+        "version": "main + #126 + engine",
+        "count": 100000,
+        "platform": "android",
+        "osVersion": "35",
+        "frameIntervalMs": 16.7,
+        "baseline": {
+          "jsHeap": {
+            "heapBytes": 20971520,
+            "allocatedBytes": 15111984
+          }
+        },
+        "mount": {
+          "firstMarkersMs": 557.8,
+          "settledMs": 557.9,
+          "markerMounts": 0,
+          "clusterMounts": 46,
+          "mounted": 46,
+          "minMounted": 0,
+          "frames": 59,
+          "frameIntervalMs": 16.7,
+          "maxGapMs": 334,
+          "blockedMs": 473.7,
+          "droppedFrames": 36,
+          "jsHeap": {
+            "heapBytes": 67108864,
+            "allocatedBytes": 66336192
+          }
+        },
+        "rerender": {
+          "rerenders": 10,
+          "durationMs": 6166.5,
+          "markerMounts": 0,
+          "clusterMounts": 0,
+          "mounted": 46,
+          "minMounted": 46,
+          "frames": 143,
+          "frameIntervalMs": 16.7,
+          "maxGapMs": 514.4,
+          "blockedMs": 3486.1,
+          "droppedFrames": 233,
+          "jsHeap": {
+            "heapBytes": 473956352,
+            "allocatedBytes": 269283904
+          }
+        },
+        "zoom": {
+          "steps": [
+            {
+              "zoom": 8,
+              "regionMs": 53.3,
+              "updatedMs": 53.3,
+              "markerMounts": 0,
+              "clusterMounts": 90,
+              "mounted": 99,
+              "minMounted": 9,
+              "frames": 66,
+              "frameIntervalMs": 16.7,
+              "maxGapMs": 307,
+              "blockedMs": 257,
+              "droppedFrames": 18
+            },
+            {
+              "zoom": 10,
+              "regionMs": 185.4,
+              "updatedMs": 185.4,
+              "markerMounts": 10,
+              "clusterMounts": 103,
+              "mounted": 123,
+              "minMounted": 10,
+              "frames": 64,
+              "frameIntervalMs": 16.7,
+              "maxGapMs": 152.5,
+              "blockedMs": 182.6,
+              "droppedFrames": 15
+            },
+            {
+              "zoom": 12,
+              "regionMs": 44.9,
+              "updatedMs": 44.9,
+              "markerMounts": 61,
+              "clusterMounts": 20,
+              "mounted": 86,
+              "minMounted": 5,
+              "frames": 65,
+              "frameIntervalMs": 16.7,
+              "maxGapMs": 32.4,
+              "blockedMs": 0,
+              "droppedFrames": 1
+            },
+            {
+              "zoom": 14,
+              "regionMs": 20.1,
+              "updatedMs": 20.1,
+              "markerMounts": 6,
+              "clusterMounts": 0,
+              "mounted": 10,
+              "minMounted": 4,
+              "frames": 65,
+              "frameIntervalMs": 16.7,
+              "maxGapMs": 18.1,
+              "blockedMs": 0,
+              "droppedFrames": 0
+            },
+            {
+              "zoom": 10,
+              "regionMs": 52.2,
+              "updatedMs": 52.2,
+              "markerMounts": 10,
+              "clusterMounts": 113,
+              "mounted": 123,
+              "minMounted": 0,
+              "frames": 58,
+              "frameIntervalMs": 16.7,
+              "maxGapMs": 79.1,
+              "blockedMs": 29.1,
+              "droppedFrames": 6
+            },
+            {
+              "zoom": 6,
+              "regionMs": 44.7,
+              "updatedMs": 44.7,
+              "markerMounts": 0,
+              "clusterMounts": 45,
+              "mounted": 46,
+              "minMounted": 1,
+              "frames": 64,
+              "frameIntervalMs": 16.7,
+              "maxGapMs": 63.4,
+              "blockedMs": 13.4,
+              "droppedFrames": 3
+            }
+          ],
+          "frames": 382,
+          "frameIntervalMs": 16.7,
+          "maxGapMs": 307,
+          "blockedMs": 482.2,
+          "droppedFrames": 43
+        },
+        "press": {
+          "pointCount": 4558,
+          "regionMs": 1285.7,
+          "markerMounts": 0,
+          "clusterMounts": 376,
+          "mounted": 301,
+          "minMounted": 46,
+          "frames": 121,
+          "frameIntervalMs": 16.7,
+          "maxGapMs": 211.8,
+          "blockedMs": 225.9,
+          "droppedFrames": 20
+        },
+        "live": {
+          "vehicles": 20,
+          "rateHz": 10,
+          "zoom": 12,
+          "updates": 100,
+          "updatesSent": 100,
+          "updatesShown": 55,
+          "stalenessMs": 336.2,
+          "lagMedianMs": 196.8,
+          "lagMaxMs": 303.6,
+          "lastUpdateMs": 177.3,
+          "builds": 77,
+          "markerMounts": 44,
+          "clusterMounts": 41,
+          "mounted": 90,
+          "minMounted": 84,
+          "frames": 607,
+          "frameIntervalMs": 16.7,
+          "maxGapMs": 69,
+          "blockedMs": 51.9,
+          "droppedFrames": 95
+        },
+        "jsHeap": {
+          "heapBytes": 398458880,
+          "allocatedBytes": 122779600
+        }
+      }
+    }
+  ]
+}
