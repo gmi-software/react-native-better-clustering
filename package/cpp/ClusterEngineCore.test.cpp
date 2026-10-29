@@ -1774,6 +1774,107 @@ static void testSkippedQueriesBuildTheSameIndex() {
     "skipped queries", [](ClusterEngineCore& engine, bool on) { engine.setSkipLonelyQueries(on); }, false);
 }
 
+// A node that skips its queries must still notice a cluster that forms far
+// from it and comes closer than every node it was certified against. Node j
+// is certified at maxZoom with its exact distance to a pair of nodes, which
+// zoom 16 merges. Their centroid lies between them, a hair nearer to j than
+// either, and beyond the reach of the queries around the new cluster, so only
+// lowering j's certificate makes j query at zoom 10, where the centroid is
+// within the radius and the pair isn't. A few or many other nodes, far away,
+// make the level lower every certificate at once or query around its cluster.
+static void testSkippingNodesSeeDistantClusters() {
+  const int32_t extent = 512;
+  const double radius = 40.0;
+  const double r16 = clusterRadiusAtZoom(radius, 16);
+  const double r10 = clusterRadiusAtZoom(radius, 10);
+  // The pair is 0.9 * r16 apart: merged at zoom 16, not at 17.
+  const double h = 0.45 * r16;
+  // j to the centroid: D. j to the pair: sqrt(D² + h²). r10² falls between.
+  const double d = std::sqrt(r10 * r10 - h * h / 2);
+  for (const int32_t others : {10, 70}) {
+    std::vector<double> xs = {256.0, 256.0 + d, 256.0 + d};
+    std::vector<double> ys = {256.0, 256.0 - h, 256.0 + h};
+    for (int32_t k = 0; k < others; k++) {
+      xs.push_back(266.0 + k);
+      ys.push_back(256.0);
+    }
+    std::vector<int32_t> ids(xs.size());
+    std::vector<double> lats(xs.size());
+    std::vector<double> lngs(xs.size());
+    for (size_t i = 0; i < xs.size(); i++) {
+      ids[i] = static_cast<int32_t>(i);
+      lngs[i] = xToLng(xs[i], extent);
+      lats[i] = yToLat(ys[i], extent);
+    }
+    auto build = [&](bool skip) {
+      ClusterEngineCore engine;
+      ClusterEngineConfig config;
+      config.radius = radius;
+      config.extent = extent;
+      engine.setOptions(config);
+      engine.setPoints(ids.data(), lats.data(), lngs.data(), ids.size());
+      engine.setSkipLonelyQueries(skip);
+      engine.build();
+      return engine;
+    };
+    const ClusterEngineCore skipping = build(true);
+    const ClusterEngineCore querying = build(false);
+
+    const ViewportBounds world{85.0, -85.0, 180.0, -180.0, 10.0};
+    const auto nodes = querying.getClusters(world);
+    // The scenario holds: j and the pair are one cluster at zoom 10.
+    assert(std::any_of(nodes.begin(), nodes.end(), [](const ClusterNode& node) {
+      return node.isCluster && node.count == 3 && node.minLeafId == 0;
+    }));
+    for (int32_t z = 1; z <= 21; z++) {
+      const ViewportBounds view{85.0, -85.0, 180.0, -180.0, static_cast<double>(z)};
+      assert(sameNodes(skipping.getClusters(view), querying.getClusters(view)));
+    }
+  }
+}
+
+// Certificates are stored as floats, rounded down: rounded to nearest, a
+// distance just below a float's halfway point would come out above itself.
+// Here two nodes are exactly the zoom 10 radius apart, so they merge there,
+// at a distance whose square rounds up to a float.
+static void testCertificatesRoundDown() {
+  const int32_t extent = 512;
+  // About half of all distances qualify.
+  double lng = 1e-3;
+  double gap = 0.0;
+  bool found = false;
+  for (int32_t step = 0; step < 10000; step++, lng += 1e-9) {
+    gap = lngToX(lng, extent) - 256.0;
+    const double d2 = gap * gap;
+    if (static_cast<double>(static_cast<float>(d2 * (1.0 - 1e-9))) > d2) {
+      found = true;
+      break;
+    }
+  }
+  assert(found);
+  const int32_t ids[] = {0, 1};
+  const double lats[] = {0.0, 0.0};
+  const double lngs[] = {0.0, lng};
+  auto build = [&](bool skip) {
+    ClusterEngineCore engine;
+    ClusterEngineConfig config;
+    // clusterRadiusAtZoom(radius, 10) is `gap`, exactly.
+    config.radius = gap * 1024;
+    config.extent = extent;
+    engine.setOptions(config);
+    engine.setPoints(ids, lats, lngs, 2);
+    engine.setSkipLonelyQueries(skip);
+    engine.build();
+    return engine;
+  };
+  for (const bool skip : {true, false}) {
+    const ClusterEngineCore engine = build(skip);
+    assert(engine.getClusters({85.0, -85.0, 180.0, -180.0, 11.0}).size() == 2);
+    const auto nodes = engine.getClusters({85.0, -85.0, 180.0, -180.0, 10.0});
+    assert(nodes.size() == 1 && nodes[0].count == 2);
+  }
+}
+
 // A level of build() that changes few nodes patches the tree of the level
 // above it. Nothing may depend on that but the order in which getClusters()
 // returns a level's nodes.
@@ -2035,6 +2136,8 @@ int main() {
   testBoundaryOptions();
   testInvalidOptionsNameTheOption();
   testSkippedQueriesBuildTheSameIndex();
+  testSkippingNodesSeeDistantClusters();
+  testCertificatesRoundDown();
   testPatchedTreesBuildTheSameIndex();
   testWithinFindsItemsOnTheRoundingEdge();
   testPatchedTreeMatchesAScan();

@@ -12,6 +12,7 @@
 #include <cstdint>
 #include <cstring>
 #include <algorithm>
+#include <bit>
 #include <cmath>
 #include <limits>
 #include <optional>
@@ -524,10 +525,12 @@ public:
     // level being clustered (0 when unknown): while it exceeds the radius
     // squared, the query would find only node i, so the node skips it. A lonely
     // node's query certifies it with the nearest item it reads or subtree it
-    // prunes, up to kCertificateReach radii; each cluster a level forms lowers
-    // the certificates of the nodes near it, and nodes that leave only make the
-    // others conservative. The trees, the order of the nodes and every query
-    // that does run are unchanged, so the index is the same.
+    // prunes, however far that is, so a sparse node skips its queries for as
+    // many levels as its neighbours allow. Each cluster a level forms lowers the
+    // certificates of the nodes it may have come closer to (see
+    // certifyNewClusters and lowerCertificates), and nodes that leave only make
+    // the others conservative. The trees, the order of the nodes and every
+    // query that does run are unchanged, so the index is the same.
     bool certifying = _skipLonelyQueries;
     // Empty until a node is first certified, so dense data never allocates it.
     std::vector<float> certificate;
@@ -565,8 +568,6 @@ public:
 
       // Certificates only serve the levels below this one.
       const bool probing = certifying && z > _options.minZoom;
-      const double reach = r * kCertificateReach;
-      const double reach2 = reach * reach;
       const size_t firstNewNode = _nodes.size();
       size_t visited = 0;
       size_t lonely = 0;
@@ -601,7 +602,7 @@ public:
               certificate.reserve(std::max(_nodes.size(), pointCount + pointCount / 8));
               certificate.assign(_nodes.size(), 0.0f);
             }
-            certificate[index] = certifiedBound(std::min(bound2, reach2));
+            certificate[index] = certifiedBound(bound2);
             largestCertificate = std::max(largestCertificate, certificate[index]);
           }
         } else {
@@ -731,7 +732,9 @@ public:
       }
       if (probing && certifying && !certificate.empty() && firstNewNode < _nodes.size()) {
         if ((_nodes.size() - firstNewNode) * kClustersPerNodeQuery <= next.size()) {
-          certifyNewClusters(_trees[_treeByZoom[slot]], firstNewNode, largestCertificate, certificate);
+          // No farther than any certificate reaches, which dense data keeps short.
+          const double radius = std::min(r * kCertificateReach, std::sqrt(static_cast<double>(largestCertificate)));
+          certifyNewClusters(_trees[_treeByZoom[slot]], next, firstNewNode, radius, r, certificate);
         } else {
           lowerCertificates(next, firstNewNode, r, certificate);
         }
@@ -1084,9 +1087,8 @@ private:
     return maxPointId + 1;
   }
 
-  // The farthest a certificate reaches in build(), in radii of the level that
-  // set it: it covers up to log2 of this many levels below, and bounds how far
-  // around a new cluster certificates need updating.
+  // How far around each new cluster certifyNewClusters() updates certificates
+  // exactly, at most, in radii of the level that formed it.
   static constexpr double kCertificateReach = 32.0;
   // Below this share of lonely nodes in a level, build() stops certifying:
   // the cluster updates would cost more than the queries they save.
@@ -1108,23 +1110,38 @@ private:
     }
     float result = static_cast<float>(bound);
     if (static_cast<double>(result) > bound) {
-      result = std::nextafter(result, 0.0f);
+      // The float below, as std::nextafter would give it, without the call:
+      // `result` is positive and finite here.
+      result = std::bit_cast<float>(std::bit_cast<uint32_t>(result) - 1);
     }
     return result;
   }
 
-  // Lowers the certificate of every node near a cluster created from
-  // `firstNewNode` on, and certifies those clusters, by querying `tree`, the
-  // tree that holds them all. No certificate exceeds `largest`, so a node
-  // farther than that from a cluster keeps its own.
-  void certifyNewClusters(const KDTree& tree, size_t firstNewNode, float largest,
-                          std::vector<float>& certificate) const {
-    // Room for rounding in the tree's pruning tests, as in prunedGap2().
-    const double reach = std::sqrt(static_cast<double>(largest)) * (1.0 + 1e-6) +
+  // After a level that formed the clusters from `firstNewNode` on, with radius
+  // `r`, updates the certificates of `nodes`, the nodes of that level, and
+  // certifies those clusters, by querying `tree`, the tree that holds them
+  // all, `radius` around each cluster. A node within that of a cluster gets
+  // the distance to it. A node farther than that from every cluster keeps its
+  // certificate up to `radius`, and beyond that what lowerCertificates() would
+  // leave it: the distance less `r`. Any `radius` is safe; a larger one keeps
+  // more of the certificates and queries more nodes.
+  void certifyNewClusters(const KDTree& tree, const std::vector<int32_t>& nodes, size_t firstNewNode, double radius,
+                          double r, std::vector<float>& certificate) const {
+    // What a node farther than `radius` from every new cluster is certified for.
+    const float beyondRadius = certifiedBound(radius * radius);
+    const double margin = r * (1.0 + 1e-6) + static_cast<double>(_options.extent) * 16 *
+                                                  std::numeric_limits<double>::epsilon();
+    for (const int32_t index : nodes) {
+      if (static_cast<size_t>(index) >= firstNewNode || certificate[index] <= beyondRadius) continue;
+      const double distance = std::sqrt(static_cast<double>(certificate[index])) - margin;
+      certificate[index] = std::max(beyondRadius, distance > 0 ? certifiedBound(distance * distance) : 0.0f);
+    }
+    // Room for rounding, as in prunedGap2().
+    const double reach = radius * (1.0 + 1e-6) +
                          static_cast<double>(_options.extent) * 16 * std::numeric_limits<double>::epsilon();
     for (size_t cluster = firstNewNode; cluster < _nodes.size(); cluster++) {
       const ClusterNode& node = _nodes[cluster];
-      float nearest = largest;
+      float nearest = beyondRadius;
       tree.forEachWithin(node.x, node.y, reach, [&](int32_t nb) {
         if (static_cast<size_t>(nb) == cluster) return;
         const double dx = _nodes[nb].x - node.x;
