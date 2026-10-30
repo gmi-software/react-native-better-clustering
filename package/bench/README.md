@@ -121,6 +121,7 @@ Refresh it after an intended change in cost, such as an engine optimization, or 
 | --- | --- |
 | `children_to_features` | `React.Children.toArray` over one `<Marker>` per point, then `isMarker` and `markerToGeoJSONFeature`, as `MapView` does for markers it has not seen |
 | `live_update`, `live_update_unclustered` | `flattenChildren` and `splitMarkerChildren`, as `MapView` runs them on a live update: the markers above created once, and 20 markers next to them re-created with new coordinates, clustered or with `cluster={false}` |
+| `rerender_same_props` | The markers above created again, each with a new `coordinate` object of the same values, then `flattenChildren` and `splitMarkerChildren`, as `MapView` runs them when a parent renders the same markers again |
 | `partition_points` | `partitionValidPoints` over one point feature per point, as every index build starts |
 | `pack_points`, `pack_points_values` | `packPoints`, without and with two aggregation values per point |
 | `coords_to_features` | `coordsToGeoJSONFeature` per point |
