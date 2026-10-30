@@ -1,7 +1,12 @@
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { Platform, Pressable, StyleSheet, Text, View } from 'react-native'
+import { Platform, StyleSheet, Text, View } from 'react-native'
 import type { Region } from 'react-native-maps'
-import { ControlPanel, ControlRow, StatusText } from '../components/Controls'
+import {
+  Chip,
+  ControlPanel,
+  ControlRow,
+  StatusText,
+} from '../components/Controls'
 import { useSetHudHidden } from '../hud/HudVisibility'
 import {
   generatePoints,
@@ -24,6 +29,7 @@ import {
 } from './BenchMarkers'
 import {
   frameStats,
+  lastLongFrameAt,
   medianFrameInterval,
   round,
   startFrameMonitor,
@@ -35,6 +41,7 @@ import {
   type BenchLibrary,
   type BenchLibraryId,
 } from './libraries'
+import { sleep, waitUntil } from './wait'
 
 const COUNTS = [10_000, 50_000, 100_000]
 /** The seed `LargeDatasetScreen` uses: the same markers across Poland. */
@@ -117,19 +124,6 @@ const WAITING: Phase[] = ['ready', 'mounted', 'rerendered', 'pressed']
 
 interface MapHandle {
   animateToRegion(region: Region, duration?: number): void
-}
-
-const sleep = (ms: number) =>
-  new Promise<void>((resolve) => setTimeout(resolve, ms))
-
-async function waitUntil(condition: () => boolean, timeoutMs: number) {
-  const deadline = performance.now() + timeoutMs
-  while (!condition()) {
-    if (performance.now() > deadline) {
-      throw new Error('timed out')
-    }
-    await sleep(50)
-  }
 }
 
 /** Hermes' heap statistics, in release builds too. */
@@ -298,15 +292,9 @@ export function BenchmarkScreen() {
     const waitForQuiet = () =>
       waitUntil(() => {
         const now = performance.now()
-        let lastLongFrame = 0
-        for (let index = frames.length - 1; index > 0; index -= 1) {
-          if (frames[index] - frames[index - 1] > 100) {
-            lastLongFrame = frames[index]
-            break
-          }
-        }
         return (
-          now - Math.max(benchCounters.lastActivityAt, lastLongFrame) >=
+          now -
+            Math.max(benchCounters.lastActivityAt, lastLongFrameAt(frames, 100)) >=
           QUIET_MS
         )
       }, MOUNT_TIMEOUT_MS)
@@ -644,32 +632,6 @@ export function BenchmarkScreen() {
   )
 }
 
-function Chip({
-  label,
-  selected,
-  onPress,
-  testID,
-}: {
-  label: string
-  selected: boolean
-  onPress: () => void
-  testID: string
-}) {
-  return (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityState={{ selected }}
-      onPress={onPress}
-      style={[styles.chip, selected && styles.chipSelected]}
-      testID={testID}
-    >
-      <Text style={[styles.chipLabel, selected && styles.chipLabelSelected]}>
-        {label}
-      </Text>
-    </Pressable>
-  )
-}
-
 const styles = StyleSheet.create({
   mapArea: {
     flex: 1,
@@ -723,23 +685,5 @@ const styles = StyleSheet.create({
     color: '#111827',
     fontFamily: Platform.select({ ios: 'Menlo', default: 'monospace' }),
     fontSize: 9,
-  },
-  chip: {
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 16,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: '#9CA3AF',
-  },
-  chipSelected: {
-    borderColor: '#0F52FF',
-    backgroundColor: '#0F52FF',
-  },
-  chipLabel: {
-    color: '#111827',
-    fontSize: 14,
-  },
-  chipLabelSelected: {
-    color: '#FFFFFF',
   },
 })

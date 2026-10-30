@@ -1,0 +1,5576 @@
+{
+  "generatedAt": "2026-10-30T14:32:10.759Z",
+  "platform": "ios",
+  "appId": "com.nitromapcluster.example",
+  "flow": "hook-flow.yaml",
+  "device": {
+    "kind": "iOS Simulator",
+    "name": "Clustering hooks bench (iPhone 17 Pro)",
+    "runtime": "iOS-26-5",
+    "host": "Apple M5 Pro"
+  },
+  "runs": [
+    {
+      "run": 1,
+      "lib": "rnc",
+      "count": 10000,
+      "attempt": 1,
+      "memory": {},
+      "result": {
+        "library": "react-native-clusterer",
+        "version": "5.0.2",
+        "count": 10000,
+        "platform": "ios",
+        "osVersion": "26.5",
+        "dimensions": {
+          "width": 402,
+          "height": 874
+        },
+        "frameIntervalMs": 16.7,
+        "engine": {
+          "jsMs": 21.8,
+          "totalMs": 21.8,
+          "builds": [
+            {
+              "jsMs": 22.5,
+              "totalMs": 22.5
+            },
+            {
+              "jsMs": 21.8,
+              "totalMs": 21.8
+            },
+            {
+              "jsMs": 20.3,
+              "totalMs": 20.3
+            }
+          ]
+        },
+        "mount": {
+          "firstClustersMs": 40.1,
+          "settledMs": 82.7,
+          "features": 6,
+          "builds": 4,
+          "frames": 19,
+          "frameIntervalMs": 16.7,
+          "maxGapMs": 82.7,
+          "blockedMs": 32.7,
+          "droppedFrames": 4
+        },
+        "rerender": {
+          "renderMs": 20.6,
+          "builds": 10,
+          "frames": 310,
+          "frameIntervalMs": 16.7,
+          "maxGapMs": 27.4,
+          "blockedMs": 0,
+          "droppedFrames": 1,
+          "steps": [
+            {
+              "updatedMs": 20.8,
+              "indexMs": null,
+              "features": 6
+            },
+            {
+              "updatedMs": 21.8,
+              "indexMs": null,
+              "features": 6
+            },
+            {
+              "updatedMs": 23.2,
+              "indexMs": null,
+              "features": 6
+            },
+            {
+              "updatedMs": 19,
+              "indexMs": null,
+              "features": 6
+            },
+            {
+              "updatedMs": 19.5,
+              "indexMs": null,
+              "features": 6
+            },
+            {
+              "updatedMs": 19,
+              "indexMs": null,
+              "features": 6
+            },
+            {
+              "updatedMs": 19.2,
+              "indexMs": null,
+              "features": 6
+            },
+            {
+              "updatedMs": 27.2,
+              "indexMs": null,
+              "features": 6
+            },
+            {
+              "updatedMs": 20.2,
+              "indexMs": null,
+              "features": 6
+            },
+            {
+              "updatedMs": 20.6,
+              "indexMs": null,
+              "features": 6
+            }
+          ]
+        },
+        "pan": {
+          "updatedMs": 41.7,
+          "builds": 20,
+          "frames": 288,
+          "frameIntervalMs": 16.7,
+          "maxGapMs": 51.3,
+          "blockedMs": 1.3,
+          "droppedFrames": 20,
+          "steps": [
+            {
+              "updatedMs": 41.7,
+              "indexMs": null,
+              "features": 25
+            },
+            {
+              "updatedMs": 45.8,
+              "indexMs": null,
+              "features": 25
+            },
+            {
+              "updatedMs": 46.7,
+              "indexMs": null,
+              "features": 23
+            },
+            {
+              "updatedMs": 40,
+              "indexMs": null,
+              "features": 23
+            },
+            {
+              "updatedMs": 40.4,
+              "indexMs": null,
+              "features": 19
+            },
+            {
+              "updatedMs": 39.3,
+              "indexMs": null,
+              "features": 15
+            },
+            {
+              "updatedMs": 51.2,
+              "indexMs": null,
+              "features": 19
+            },
+            {
+              "updatedMs": 38.5,
+              "indexMs": null,
+              "features": 23
+            },
+            {
+              "updatedMs": 41.9,
+              "indexMs": null,
+              "features": 23
+            },
+            {
+              "updatedMs": 38.1,
+              "indexMs": null,
+              "features": 25
+            }
+          ]
+        },
+        "update": {
+          "indexMs": 61.6,
+          "builds": 20,
+          "frames": 284,
+          "frameIntervalMs": 16.7,
+          "maxGapMs": 85.9,
+          "blockedMs": 154.2,
+          "droppedFrames": 20,
+          "steps": [
+            {
+              "updatedMs": 76,
+              "indexMs": 57.5,
+              "features": 25
+            },
+            {
+              "updatedMs": 83.9,
+              "indexMs": 63.5,
+              "features": 25
+            },
+            {
+              "updatedMs": 75.6,
+              "indexMs": 55.8,
+              "features": 25
+            },
+            {
+              "updatedMs": 81.9,
+              "indexMs": 61.6,
+              "features": 25
+            },
+            {
+              "updatedMs": 85.7,
+              "indexMs": 66.2,
+              "features": 25
+            }
+          ]
+        }
+      }
+    },
+    {
+      "run": 1,
+      "lib": "usc",
+      "count": 10000,
+      "attempt": 1,
+      "memory": {},
+      "result": {
+        "library": "use-supercluster",
+        "version": "1.2.0",
+        "count": 10000,
+        "platform": "ios",
+        "osVersion": "26.5",
+        "dimensions": {
+          "width": 402,
+          "height": 874
+        },
+        "frameIntervalMs": 16.7,
+        "engine": {
+          "jsMs": 229,
+          "totalMs": 229,
+          "builds": [
+            {
+              "jsMs": 223.7,
+              "totalMs": 223.7
+            },
+            {
+              "jsMs": 235.7,
+              "totalMs": 235.7
+            },
+            {
+              "jsMs": 229,
+              "totalMs": 229
+            }
+          ]
+        },
+        "mount": {
+          "firstClustersMs": 224.8,
+          "settledMs": 224.8,
+          "features": 72,
+          "builds": 1,
+          "frames": 20,
+          "frameIntervalMs": 16.7,
+          "maxGapMs": 224.8,
+          "blockedMs": 174.8,
+          "droppedFrames": 13
+        },
+        "rerender": {
+          "renderMs": 0.6,
+          "builds": 0,
+          "frames": 309,
+          "frameIntervalMs": 16.7,
+          "maxGapMs": 17.2,
+          "blockedMs": 0,
+          "droppedFrames": 0,
+          "steps": [
+            {
+              "updatedMs": 0.6,
+              "indexMs": null,
+              "features": 72
+            },
+            {
+              "updatedMs": 0.9,
+              "indexMs": null,
+              "features": 72
+            },
+            {
+              "updatedMs": 0.6,
+              "indexMs": null,
+              "features": 72
+            },
+            {
+              "updatedMs": 0.6,
+              "indexMs": null,
+              "features": 72
+            },
+            {
+              "updatedMs": 0.6,
+              "indexMs": null,
+              "features": 72
+            },
+            {
+              "updatedMs": 0.5,
+              "indexMs": null,
+              "features": 72
+            },
+            {
+              "updatedMs": 0.6,
+              "indexMs": null,
+              "features": 72
+            },
+            {
+              "updatedMs": 0.6,
+              "indexMs": null,
+              "features": 72
+            },
+            {
+              "updatedMs": 0.7,
+              "indexMs": null,
+              "features": 72
+            },
+            {
+              "updatedMs": 0.8,
+              "indexMs": null,
+              "features": 72
+            }
+          ]
+        },
+        "pan": {
+          "updatedMs": 222.9,
+          "builds": 10,
+          "frames": 199,
+          "frameIntervalMs": 16.7,
+          "maxGapMs": 232.1,
+          "blockedMs": 1730.2,
+          "droppedFrames": 127,
+          "steps": [
+            {
+              "updatedMs": 221.8,
+              "indexMs": 221.8,
+              "features": 27
+            },
+            {
+              "updatedMs": 219.8,
+              "indexMs": 219.8,
+              "features": 25
+            },
+            {
+              "updatedMs": 220,
+              "indexMs": 220,
+              "features": 23
+            },
+            {
+              "updatedMs": 231,
+              "indexMs": 231,
+              "features": 26
+            },
+            {
+              "updatedMs": 216.3,
+              "indexMs": 216.3,
+              "features": 23
+            },
+            {
+              "updatedMs": 226,
+              "indexMs": 226,
+              "features": 17
+            },
+            {
+              "updatedMs": 223.2,
+              "indexMs": 223.2,
+              "features": 23
+            },
+            {
+              "updatedMs": 232,
+              "indexMs": 232,
+              "features": 26
+            },
+            {
+              "updatedMs": 216.4,
+              "indexMs": 216.4,
+              "features": 23
+            },
+            {
+              "updatedMs": 222.9,
+              "indexMs": 222.9,
+              "features": 25
+            }
+          ]
+        },
+        "update": {
+          "indexMs": 230.5,
+          "builds": 5,
+          "frames": 239,
+          "frameIntervalMs": 16.7,
+          "maxGapMs": 241.8,
+          "blockedMs": 893.6,
+          "droppedFrames": 64,
+          "steps": [
+            {
+              "updatedMs": 218,
+              "indexMs": 218,
+              "features": 25
+            },
+            {
+              "updatedMs": 236,
+              "indexMs": 236,
+              "features": 25
+            },
+            {
+              "updatedMs": 241.5,
+              "indexMs": 241.5,
+              "features": 25
+            },
+            {
+              "updatedMs": 216.2,
+              "indexMs": 216.2,
+              "features": 25
+            },
+            {
+              "updatedMs": 230.5,
+              "indexMs": 230.5,
+              "features": 25
+            }
+          ]
+        }
+      }
+    },
+    {
+      "run": 1,
+      "lib": "rnbc",
+      "count": 10000,
+      "attempt": 1,
+      "memory": {},
+      "result": {
+        "library": "react-native-better-clustering",
+        "version": "main",
+        "count": 10000,
+        "platform": "ios",
+        "osVersion": "26.5",
+        "dimensions": {
+          "width": 402,
+          "height": 874
+        },
+        "frameIntervalMs": 16.7,
+        "engine": {
+          "jsMs": 1.2,
+          "totalMs": 9,
+          "builds": [
+            {
+              "jsMs": 1.2,
+              "totalMs": 9
+            },
+            {
+              "jsMs": 1.2,
+              "totalMs": 8.8
+            },
+            {
+              "jsMs": 1.1,
+              "totalMs": 9.3
+            }
+          ]
+        },
+        "mount": {
+          "firstClustersMs": 15.1,
+          "settledMs": 15.1,
+          "features": 6,
+          "builds": 1,
+          "frames": 20,
+          "frameIntervalMs": 16.7,
+          "maxGapMs": 17.1,
+          "blockedMs": 0,
+          "droppedFrames": 0
+        },
+        "rerender": {
+          "renderMs": 0.7,
+          "builds": 0,
+          "frames": 310,
+          "frameIntervalMs": 16.7,
+          "maxGapMs": 17.2,
+          "blockedMs": 0,
+          "droppedFrames": 0,
+          "steps": [
+            {
+              "updatedMs": 0.6,
+              "indexMs": null,
+              "features": 6
+            },
+            {
+              "updatedMs": 0.6,
+              "indexMs": null,
+              "features": 6
+            },
+            {
+              "updatedMs": 0.7,
+              "indexMs": null,
+              "features": 6
+            },
+            {
+              "updatedMs": 0.9,
+              "indexMs": null,
+              "features": 6
+            },
+            {
+              "updatedMs": 0.6,
+              "indexMs": null,
+              "features": 6
+            },
+            {
+              "updatedMs": 0.7,
+              "indexMs": null,
+              "features": 6
+            },
+            {
+              "updatedMs": 0.6,
+              "indexMs": null,
+              "features": 6
+            },
+            {
+              "updatedMs": 0.6,
+              "indexMs": null,
+              "features": 6
+            },
+            {
+              "updatedMs": 0.8,
+              "indexMs": null,
+              "features": 6
+            },
+            {
+              "updatedMs": 1,
+              "indexMs": null,
+              "features": 6
+            }
+          ]
+        },
+        "pan": {
+          "updatedMs": 0.8,
+          "builds": 0,
+          "frames": 309,
+          "frameIntervalMs": 16.7,
+          "maxGapMs": 17.3,
+          "blockedMs": 0,
+          "droppedFrames": 0,
+          "steps": [
+            {
+              "updatedMs": 1.1,
+              "indexMs": null,
+              "features": 25
+            },
+            {
+              "updatedMs": 0.8,
+              "indexMs": null,
+              "features": 25
+            },
+            {
+              "updatedMs": 0.7,
+              "indexMs": null,
+              "features": 23
+            },
+            {
+              "updatedMs": 0.5,
+              "indexMs": null,
+              "features": 23
+            },
+            {
+              "updatedMs": 1.2,
+              "indexMs": null,
+              "features": 19
+            },
+            {
+              "updatedMs": 0.9,
+              "indexMs": null,
+              "features": 15
+            },
+            {
+              "updatedMs": 0.5,
+              "indexMs": null,
+              "features": 19
+            },
+            {
+              "updatedMs": 0.7,
+              "indexMs": null,
+              "features": 23
+            },
+            {
+              "updatedMs": 0.7,
+              "indexMs": null,
+              "features": 23
+            },
+            {
+              "updatedMs": 1,
+              "indexMs": null,
+              "features": 25
+            }
+          ]
+        },
+        "update": {
+          "indexMs": 15.9,
+          "builds": 5,
+          "frames": 305,
+          "frameIntervalMs": 16.7,
+          "maxGapMs": 20.2,
+          "blockedMs": 0,
+          "droppedFrames": 0,
+          "steps": [
+            {
+              "updatedMs": 19.5,
+              "indexMs": 19.5,
+              "features": 25
+            },
+            {
+              "updatedMs": 12.5,
+              "indexMs": 12.5,
+              "features": 25
+            },
+            {
+              "updatedMs": 25.4,
+              "indexMs": 25.4,
+              "features": 25
+            },
+            {
+              "updatedMs": 11.3,
+              "indexMs": 11.3,
+              "features": 25
+            },
+            {
+              "updatedMs": 15.9,
+              "indexMs": 15.9,
+              "features": 25
+            }
+          ]
+        }
+      }
+    },
+    {
+      "run": 1,
+      "lib": "rnc",
+      "count": 50000,
+      "attempt": 1,
+      "memory": {},
+      "result": {
+        "library": "react-native-clusterer",
+        "version": "5.0.2",
+        "count": 50000,
+        "platform": "ios",
+        "osVersion": "26.5",
+        "dimensions": {
+          "width": 402,
+          "height": 874
+        },
+        "frameIntervalMs": 16.7,
+        "engine": {
+          "jsMs": 118.1,
+          "totalMs": 118.1,
+          "builds": [
+            {
+              "jsMs": 113.6,
+              "totalMs": 113.6
+            },
+            {
+              "jsMs": 150.6,
+              "totalMs": 150.6
+            },
+            {
+              "jsMs": 118.1,
+              "totalMs": 118.1
+            }
+          ]
+        },
+        "mount": {
+          "firstClustersMs": 243.9,
+          "settledMs": 483.1,
+          "features": 6,
+          "builds": 4,
+          "frames": 19,
+          "frameIntervalMs": 16.7,
+          "maxGapMs": 483.2,
+          "blockedMs": 433.2,
+          "droppedFrames": 28
+        },
+        "rerender": {
+          "renderMs": 110.7,
+          "builds": 10,
+          "frames": 249,
+          "frameIntervalMs": 16.7,
+          "maxGapMs": 118.3,
+          "blockedMs": 595.4,
+          "droppedFrames": 59,
+          "steps": [
+            {
+              "updatedMs": 113.7,
+              "indexMs": null,
+              "features": 6
+            },
+            {
+              "updatedMs": 118.1,
+              "indexMs": null,
+              "features": 6
+            },
+            {
+              "updatedMs": 116.3,
+              "indexMs": null,
+              "features": 6
+            },
+            {
+              "updatedMs": 110.7,
+              "indexMs": null,
+              "features": 6
+            },
+            {
+              "updatedMs": 114.1,
+              "indexMs": null,
+              "features": 6
+            },
+            {
+              "updatedMs": 107.4,
+              "indexMs": null,
+              "features": 6
+            },
+            {
+              "updatedMs": 105,
+              "indexMs": null,
+              "features": 6
+            },
+            {
+              "updatedMs": 98.2,
+              "indexMs": null,
+              "features": 6
+            },
+            {
+              "updatedMs": 105.3,
+              "indexMs": null,
+              "features": 6
+            },
+            {
+              "updatedMs": 105.8,
+              "indexMs": null,
+              "features": 6
+            }
+          ]
+        },
+        "pan": {
+          "updatedMs": 215.8,
+          "builds": 20,
+          "frames": 196,
+          "frameIntervalMs": 16.7,
+          "maxGapMs": 232,
+          "blockedMs": 1634,
+          "droppedFrames": 120,
+          "steps": [
+            {
+              "updatedMs": 201.9,
+              "indexMs": null,
+              "features": 27
+            },
+            {
+              "updatedMs": 210,
+              "indexMs": null,
+              "features": 27
+            },
+            {
+              "updatedMs": 201.6,
+              "indexMs": null,
+              "features": 26
+            },
+            {
+              "updatedMs": 215.8,
+              "indexMs": null,
+              "features": 24
+            },
+            {
+              "updatedMs": 203.8,
+              "indexMs": null,
+              "features": 19
+            },
+            {
+              "updatedMs": 215.8,
+              "indexMs": null,
+              "features": 15
+            },
+            {
+              "updatedMs": 216.8,
+              "indexMs": null,
+              "features": 19
+            },
+            {
+              "updatedMs": 231.9,
+              "indexMs": null,
+              "features": 24
+            },
+            {
+              "updatedMs": 212.8,
+              "indexMs": null,
+              "features": 26
+            },
+            {
+              "updatedMs": 223,
+              "indexMs": null,
+              "features": 27
+            }
+          ]
+        },
+        "update": {
+          "indexMs": 321.4,
+          "builds": 20,
+          "frames": 182,
+          "frameIntervalMs": 16.7,
+          "maxGapMs": 436.8,
+          "blockedMs": 1872.5,
+          "droppedFrames": 123,
+          "steps": [
+            {
+              "updatedMs": 433.8,
+              "indexMs": 324.1,
+              "features": 27
+            },
+            {
+              "updatedMs": 418.8,
+              "indexMs": 313.5,
+              "features": 27
+            },
+            {
+              "updatedMs": 426.1,
+              "indexMs": 321.4,
+              "features": 27
+            },
+            {
+              "updatedMs": 416.1,
+              "indexMs": 308.2,
+              "features": 27
+            },
+            {
+              "updatedMs": 422.8,
+              "indexMs": 322,
+              "features": 27
+            }
+          ]
+        }
+      }
+    },
+    {
+      "run": 1,
+      "lib": "usc",
+      "count": 50000,
+      "attempt": 1,
+      "memory": {},
+      "result": {
+        "library": "use-supercluster",
+        "version": "1.2.0",
+        "count": 50000,
+        "platform": "ios",
+        "osVersion": "26.5",
+        "dimensions": {
+          "width": 402,
+          "height": 874
+        },
+        "frameIntervalMs": 16.7,
+        "engine": {
+          "jsMs": 1082.8,
+          "totalMs": 1082.8,
+          "builds": [
+            {
+              "jsMs": 1056.4,
+              "totalMs": 1056.4
+            },
+            {
+              "jsMs": 1096.3,
+              "totalMs": 1096.3
+            },
+            {
+              "jsMs": 1082.8,
+              "totalMs": 1082.8
+            }
+          ]
+        },
+        "mount": {
+          "firstClustersMs": 1143.4,
+          "settledMs": 1143.4,
+          "features": 72,
+          "builds": 1,
+          "frames": 19,
+          "frameIntervalMs": 16.7,
+          "maxGapMs": 1143.5,
+          "blockedMs": 1093.5,
+          "droppedFrames": 68
+        },
+        "rerender": {
+          "renderMs": 0.7,
+          "builds": 0,
+          "frames": 310,
+          "frameIntervalMs": 16.7,
+          "maxGapMs": 17.3,
+          "blockedMs": 0,
+          "droppedFrames": 0,
+          "steps": [
+            {
+              "updatedMs": 0.7,
+              "indexMs": null,
+              "features": 72
+            },
+            {
+              "updatedMs": 0.7,
+              "indexMs": null,
+              "features": 72
+            },
+            {
+              "updatedMs": 0.6,
+              "indexMs": null,
+              "features": 72
+            },
+            {
+              "updatedMs": 0.6,
+              "indexMs": null,
+              "features": 72
+            },
+            {
+              "updatedMs": 0.7,
+              "indexMs": null,
+              "features": 72
+            },
+            {
+              "updatedMs": 1.2,
+              "indexMs": null,
+              "features": 72
+            },
+            {
+              "updatedMs": 0.7,
+              "indexMs": null,
+              "features": 72
+            },
+            {
+              "updatedMs": 0.7,
+              "indexMs": null,
+              "features": 72
+            },
+            {
+              "updatedMs": 0.6,
+              "indexMs": null,
+              "features": 72
+            },
+            {
+              "updatedMs": 0.8,
+              "indexMs": null,
+              "features": 72
+            }
+          ]
+        },
+        "pan": {
+          "updatedMs": 1193.7,
+          "builds": 10,
+          "frames": 199,
+          "frameIntervalMs": 16.7,
+          "maxGapMs": 1340,
+          "blockedMs": 11485.8,
+          "droppedFrames": 712,
+          "steps": [
+            {
+              "updatedMs": 1083.6,
+              "indexMs": 1083.6,
+              "features": 29
+            },
+            {
+              "updatedMs": 1136.2,
+              "indexMs": 1136.2,
+              "features": 26
+            },
+            {
+              "updatedMs": 1138.5,
+              "indexMs": 1138.5,
+              "features": 26
+            },
+            {
+              "updatedMs": 1193.7,
+              "indexMs": 1193.7,
+              "features": 27
+            },
+            {
+              "updatedMs": 1189.1,
+              "indexMs": 1189.1,
+              "features": 25
+            },
+            {
+              "updatedMs": 1150.3,
+              "indexMs": 1150.3,
+              "features": 17
+            },
+            {
+              "updatedMs": 1281.3,
+              "indexMs": 1281.3,
+              "features": 25
+            },
+            {
+              "updatedMs": 1262.6,
+              "indexMs": 1262.6,
+              "features": 27
+            },
+            {
+              "updatedMs": 1209.7,
+              "indexMs": 1209.7,
+              "features": 26
+            },
+            {
+              "updatedMs": 1339.9,
+              "indexMs": 1339.9,
+              "features": 26
+            }
+          ]
+        },
+        "update": {
+          "indexMs": 1360,
+          "builds": 5,
+          "frames": 96,
+          "frameIntervalMs": 16.7,
+          "maxGapMs": 1374.2,
+          "blockedMs": 6443.2,
+          "droppedFrames": 398,
+          "steps": [
+            {
+              "updatedMs": 1360,
+              "indexMs": 1360,
+              "features": 26
+            },
+            {
+              "updatedMs": 1346.3,
+              "indexMs": 1346.3,
+              "features": 26
+            },
+            {
+              "updatedMs": 1364.5,
+              "indexMs": 1364.5,
+              "features": 26
+            },
+            {
+              "updatedMs": 1373.4,
+              "indexMs": 1373.4,
+              "features": 26
+            },
+            {
+              "updatedMs": 1242.5,
+              "indexMs": 1242.5,
+              "features": 26
+            }
+          ]
+        }
+      }
+    },
+    {
+      "run": 1,
+      "lib": "rnbc",
+      "count": 50000,
+      "attempt": 1,
+      "memory": {},
+      "result": {
+        "library": "react-native-better-clustering",
+        "version": "main",
+        "count": 50000,
+        "platform": "ios",
+        "osVersion": "26.5",
+        "dimensions": {
+          "width": 402,
+          "height": 874
+        },
+        "frameIntervalMs": 16.7,
+        "engine": {
+          "jsMs": 4.9,
+          "totalMs": 48.9,
+          "builds": [
+            {
+              "jsMs": 4.8,
+              "totalMs": 48.9
+            },
+            {
+              "jsMs": 4.9,
+              "totalMs": 46.6
+            },
+            {
+              "jsMs": 5,
+              "totalMs": 49.3
+            }
+          ]
+        },
+        "mount": {
+          "firstClustersMs": 83.6,
+          "settledMs": 83.6,
+          "features": 6,
+          "builds": 1,
+          "frames": 24,
+          "frameIntervalMs": 16.7,
+          "maxGapMs": 17.3,
+          "blockedMs": 0,
+          "droppedFrames": 0
+        },
+        "rerender": {
+          "renderMs": 0.6,
+          "builds": 0,
+          "frames": 310,
+          "frameIntervalMs": 16.7,
+          "maxGapMs": 17,
+          "blockedMs": 0,
+          "droppedFrames": 0,
+          "steps": [
+            {
+              "updatedMs": 0.9,
+              "indexMs": null,
+              "features": 6
+            },
+            {
+              "updatedMs": 0.5,
+              "indexMs": null,
+              "features": 6
+            },
+            {
+              "updatedMs": 0.7,
+              "indexMs": null,
+              "features": 6
+            },
+            {
+              "updatedMs": 0.6,
+              "indexMs": null,
+              "features": 6
+            },
+            {
+              "updatedMs": 0.7,
+              "indexMs": null,
+              "features": 6
+            },
+            {
+              "updatedMs": 0.6,
+              "indexMs": null,
+              "features": 6
+            },
+            {
+              "updatedMs": 0.6,
+              "indexMs": null,
+              "features": 6
+            },
+            {
+              "updatedMs": 0.6,
+              "indexMs": null,
+              "features": 6
+            },
+            {
+              "updatedMs": 0.6,
+              "indexMs": null,
+              "features": 6
+            },
+            {
+              "updatedMs": 0.7,
+              "indexMs": null,
+              "features": 6
+            }
+          ]
+        },
+        "pan": {
+          "updatedMs": 0.8,
+          "builds": 0,
+          "frames": 310,
+          "frameIntervalMs": 16.7,
+          "maxGapMs": 17.8,
+          "blockedMs": 0,
+          "droppedFrames": 0,
+          "steps": [
+            {
+              "updatedMs": 0.8,
+              "indexMs": null,
+              "features": 27
+            },
+            {
+              "updatedMs": 0.6,
+              "indexMs": null,
+              "features": 27
+            },
+            {
+              "updatedMs": 0.9,
+              "indexMs": null,
+              "features": 26
+            },
+            {
+              "updatedMs": 0.7,
+              "indexMs": null,
+              "features": 24
+            },
+            {
+              "updatedMs": 0.9,
+              "indexMs": null,
+              "features": 19
+            },
+            {
+              "updatedMs": 1.8,
+              "indexMs": null,
+              "features": 15
+            },
+            {
+              "updatedMs": 0.5,
+              "indexMs": null,
+              "features": 19
+            },
+            {
+              "updatedMs": 0.7,
+              "indexMs": null,
+              "features": 24
+            },
+            {
+              "updatedMs": 0.6,
+              "indexMs": null,
+              "features": 26
+            },
+            {
+              "updatedMs": 0.8,
+              "indexMs": null,
+              "features": 27
+            }
+          ]
+        },
+        "update": {
+          "indexMs": 67.1,
+          "builds": 5,
+          "frames": 302,
+          "frameIntervalMs": 16.7,
+          "maxGapMs": 57.5,
+          "blockedMs": 7.5,
+          "droppedFrames": 3,
+          "steps": [
+            {
+              "updatedMs": 130.8,
+              "indexMs": 130.8,
+              "features": 27
+            },
+            {
+              "updatedMs": 148.3,
+              "indexMs": 148.3,
+              "features": 27
+            },
+            {
+              "updatedMs": 52.5,
+              "indexMs": 52.5,
+              "features": 27
+            },
+            {
+              "updatedMs": 67.1,
+              "indexMs": 67.1,
+              "features": 27
+            },
+            {
+              "updatedMs": 54.8,
+              "indexMs": 54.8,
+              "features": 27
+            }
+          ]
+        }
+      }
+    },
+    {
+      "run": 1,
+      "lib": "rnc",
+      "count": 100000,
+      "attempt": 1,
+      "memory": {},
+      "result": {
+        "library": "react-native-clusterer",
+        "version": "5.0.2",
+        "count": 100000,
+        "platform": "ios",
+        "osVersion": "26.5",
+        "dimensions": {
+          "width": 402,
+          "height": 874
+        },
+        "frameIntervalMs": 16.7,
+        "engine": {
+          "jsMs": 265.4,
+          "totalMs": 265.4,
+          "builds": [
+            {
+              "jsMs": 219.9,
+              "totalMs": 219.9
+            },
+            {
+              "jsMs": 282.3,
+              "totalMs": 282.3
+            },
+            {
+              "jsMs": 265.4,
+              "totalMs": 265.4
+            }
+          ]
+        },
+        "mount": {
+          "firstClustersMs": 525.9,
+          "settledMs": 1034.7,
+          "features": 6,
+          "builds": 4,
+          "frames": 21,
+          "frameIntervalMs": 16.7,
+          "maxGapMs": 1034.8,
+          "blockedMs": 984.8,
+          "droppedFrames": 61
+        },
+        "rerender": {
+          "renderMs": 258.1,
+          "builds": 10,
+          "frames": 197,
+          "frameIntervalMs": 16.7,
+          "maxGapMs": 267,
+          "blockedMs": 2007.1,
+          "droppedFrames": 143,
+          "steps": [
+            {
+              "updatedMs": 248,
+              "indexMs": null,
+              "features": 6
+            },
+            {
+              "updatedMs": 266.9,
+              "indexMs": null,
+              "features": 6
+            },
+            {
+              "updatedMs": 261.9,
+              "indexMs": null,
+              "features": 6
+            },
+            {
+              "updatedMs": 259.3,
+              "indexMs": null,
+              "features": 6
+            },
+            {
+              "updatedMs": 258.1,
+              "indexMs": null,
+              "features": 6
+            },
+            {
+              "updatedMs": 255,
+              "indexMs": null,
+              "features": 6
+            },
+            {
+              "updatedMs": 265.6,
+              "indexMs": null,
+              "features": 6
+            },
+            {
+              "updatedMs": 246.1,
+              "indexMs": null,
+              "features": 6
+            },
+            {
+              "updatedMs": 230.9,
+              "indexMs": null,
+              "features": 6
+            },
+            {
+              "updatedMs": 214.5,
+              "indexMs": null,
+              "features": 6
+            }
+          ]
+        },
+        "pan": {
+          "updatedMs": 437.7,
+          "builds": 20,
+          "frames": 198,
+          "frameIntervalMs": 16.7,
+          "maxGapMs": 541.7,
+          "blockedMs": 4019.9,
+          "droppedFrames": 263,
+          "steps": [
+            {
+              "updatedMs": 425,
+              "indexMs": null,
+              "features": 24
+            },
+            {
+              "updatedMs": 422.9,
+              "indexMs": null,
+              "features": 23
+            },
+            {
+              "updatedMs": 427.1,
+              "indexMs": null,
+              "features": 23
+            },
+            {
+              "updatedMs": 429.5,
+              "indexMs": null,
+              "features": 23
+            },
+            {
+              "updatedMs": 437.7,
+              "indexMs": null,
+              "features": 19
+            },
+            {
+              "updatedMs": 423.5,
+              "indexMs": null,
+              "features": 15
+            },
+            {
+              "updatedMs": 541.6,
+              "indexMs": null,
+              "features": 19
+            },
+            {
+              "updatedMs": 482,
+              "indexMs": null,
+              "features": 23
+            },
+            {
+              "updatedMs": 477.4,
+              "indexMs": null,
+              "features": 23
+            },
+            {
+              "updatedMs": 452.5,
+              "indexMs": null,
+              "features": 23
+            }
+          ]
+        },
+        "update": {
+          "indexMs": 673.7,
+          "builds": 20,
+          "frames": 100,
+          "frameIntervalMs": 16.7,
+          "maxGapMs": 1870.5,
+          "blockedMs": 5164.7,
+          "droppedFrames": 322,
+          "steps": [
+            {
+              "updatedMs": 863.7,
+              "indexMs": 649,
+              "features": 23
+            },
+            {
+              "updatedMs": 889,
+              "indexMs": 674.3,
+              "features": 23
+            },
+            {
+              "updatedMs": 1869.4,
+              "indexMs": 1650.1,
+              "features": 23
+            },
+            {
+              "updatedMs": 886.4,
+              "indexMs": 670.7,
+              "features": 23
+            },
+            {
+              "updatedMs": 895,
+              "indexMs": 673.7,
+              "features": 23
+            }
+          ]
+        }
+      }
+    },
+    {
+      "run": 1,
+      "lib": "usc",
+      "count": 100000,
+      "attempt": 1,
+      "memory": {},
+      "result": {
+        "library": "use-supercluster",
+        "version": "1.2.0",
+        "count": 100000,
+        "platform": "ios",
+        "osVersion": "26.5",
+        "dimensions": {
+          "width": 402,
+          "height": 874
+        },
+        "frameIntervalMs": 16.7,
+        "engine": {
+          "jsMs": 2134.7,
+          "totalMs": 2134.7,
+          "builds": [
+            {
+              "jsMs": 2134.7,
+              "totalMs": 2134.7
+            },
+            {
+              "jsMs": 2242.6,
+              "totalMs": 2242.6
+            },
+            {
+              "jsMs": 2133.7,
+              "totalMs": 2133.7
+            }
+          ]
+        },
+        "mount": {
+          "firstClustersMs": 2259.4,
+          "settledMs": 2259.4,
+          "features": 71,
+          "builds": 1,
+          "frames": 19,
+          "frameIntervalMs": 16.7,
+          "maxGapMs": 2259.5,
+          "blockedMs": 2209.5,
+          "droppedFrames": 135
+        },
+        "rerender": {
+          "renderMs": 0.6,
+          "builds": 0,
+          "frames": 310,
+          "frameIntervalMs": 16.7,
+          "maxGapMs": 17.2,
+          "blockedMs": 0,
+          "droppedFrames": 0,
+          "steps": [
+            {
+              "updatedMs": 0.6,
+              "indexMs": null,
+              "features": 71
+            },
+            {
+              "updatedMs": 0.5,
+              "indexMs": null,
+              "features": 71
+            },
+            {
+              "updatedMs": 0.6,
+              "indexMs": null,
+              "features": 71
+            },
+            {
+              "updatedMs": 0.8,
+              "indexMs": null,
+              "features": 71
+            },
+            {
+              "updatedMs": 0.5,
+              "indexMs": null,
+              "features": 71
+            },
+            {
+              "updatedMs": 0.7,
+              "indexMs": null,
+              "features": 71
+            },
+            {
+              "updatedMs": 0.7,
+              "indexMs": null,
+              "features": 71
+            },
+            {
+              "updatedMs": 0.5,
+              "indexMs": null,
+              "features": 71
+            },
+            {
+              "updatedMs": 0.6,
+              "indexMs": null,
+              "features": 71
+            },
+            {
+              "updatedMs": 0.6,
+              "indexMs": null,
+              "features": 71
+            }
+          ]
+        },
+        "pan": {
+          "updatedMs": 2215.7,
+          "builds": 10,
+          "frames": 198,
+          "frameIntervalMs": 16.7,
+          "maxGapMs": 2568.5,
+          "blockedMs": 22016.9,
+          "droppedFrames": 1344,
+          "steps": [
+            {
+              "updatedMs": 2191.4,
+              "indexMs": 2191.4,
+              "features": 28
+            },
+            {
+              "updatedMs": 2111.6,
+              "indexMs": 2111.6,
+              "features": 26
+            },
+            {
+              "updatedMs": 2192.8,
+              "indexMs": 2192.8,
+              "features": 25
+            },
+            {
+              "updatedMs": 2235.7,
+              "indexMs": 2235.7,
+              "features": 25
+            },
+            {
+              "updatedMs": 2568.4,
+              "indexMs": 2568.4,
+              "features": 25
+            },
+            {
+              "updatedMs": 2215.7,
+              "indexMs": 2215.7,
+              "features": 18
+            },
+            {
+              "updatedMs": 2345.7,
+              "indexMs": 2345.7,
+              "features": 25
+            },
+            {
+              "updatedMs": 2237.7,
+              "indexMs": 2237.7,
+              "features": 25
+            },
+            {
+              "updatedMs": 2201.6,
+              "indexMs": 2201.6,
+              "features": 25
+            },
+            {
+              "updatedMs": 2214.9,
+              "indexMs": 2214.9,
+              "features": 26
+            }
+          ]
+        },
+        "update": {
+          "indexMs": 2189.4,
+          "builds": 5,
+          "frames": 98,
+          "frameIntervalMs": 16.7,
+          "maxGapMs": 2268.9,
+          "blockedMs": 10796.8,
+          "droppedFrames": 659,
+          "steps": [
+            {
+              "updatedMs": 2260.1,
+              "indexMs": 2260.1,
+              "features": 26
+            },
+            {
+              "updatedMs": 2234.6,
+              "indexMs": 2234.6,
+              "features": 26
+            },
+            {
+              "updatedMs": 2189.4,
+              "indexMs": 2189.4,
+              "features": 26
+            },
+            {
+              "updatedMs": 2164.5,
+              "indexMs": 2164.5,
+              "features": 26
+            },
+            {
+              "updatedMs": 2177.6,
+              "indexMs": 2177.6,
+              "features": 26
+            }
+          ]
+        }
+      }
+    },
+    {
+      "run": 1,
+      "lib": "rnbc",
+      "count": 100000,
+      "attempt": 1,
+      "memory": {},
+      "result": {
+        "library": "react-native-better-clustering",
+        "version": "main",
+        "count": 100000,
+        "platform": "ios",
+        "osVersion": "26.5",
+        "dimensions": {
+          "width": 402,
+          "height": 874
+        },
+        "frameIntervalMs": 16.7,
+        "engine": {
+          "jsMs": 10.7,
+          "totalMs": 125.1,
+          "builds": [
+            {
+              "jsMs": 9.8,
+              "totalMs": 127.4
+            },
+            {
+              "jsMs": 10.7,
+              "totalMs": 125.1
+            },
+            {
+              "jsMs": 12,
+              "totalMs": 123.9
+            }
+          ]
+        },
+        "mount": {
+          "firstClustersMs": 164.3,
+          "settledMs": 164.3,
+          "features": 6,
+          "builds": 1,
+          "frames": 28,
+          "frameIntervalMs": 16.7,
+          "maxGapMs": 17,
+          "blockedMs": 0,
+          "droppedFrames": 0
+        },
+        "rerender": {
+          "renderMs": 0.7,
+          "builds": 0,
+          "frames": 309,
+          "frameIntervalMs": 16.7,
+          "maxGapMs": 17.3,
+          "blockedMs": 0,
+          "droppedFrames": 0,
+          "steps": [
+            {
+              "updatedMs": 0.6,
+              "indexMs": null,
+              "features": 6
+            },
+            {
+              "updatedMs": 1.1,
+              "indexMs": null,
+              "features": 6
+            },
+            {
+              "updatedMs": 0.8,
+              "indexMs": null,
+              "features": 6
+            },
+            {
+              "updatedMs": 0.7,
+              "indexMs": null,
+              "features": 6
+            },
+            {
+              "updatedMs": 0.8,
+              "indexMs": null,
+              "features": 6
+            },
+            {
+              "updatedMs": 0.6,
+              "indexMs": null,
+              "features": 6
+            },
+            {
+              "updatedMs": 0.6,
+              "indexMs": null,
+              "features": 6
+            },
+            {
+              "updatedMs": 1.4,
+              "indexMs": null,
+              "features": 6
+            },
+            {
+              "updatedMs": 0.6,
+              "indexMs": null,
+              "features": 6
+            },
+            {
+              "updatedMs": 0.7,
+              "indexMs": null,
+              "features": 6
+            }
+          ]
+        },
+        "pan": {
+          "updatedMs": 0.6,
+          "builds": 0,
+          "frames": 309,
+          "frameIntervalMs": 16.7,
+          "maxGapMs": 17.2,
+          "blockedMs": 0,
+          "droppedFrames": 0,
+          "steps": [
+            {
+              "updatedMs": 0.9,
+              "indexMs": null,
+              "features": 24
+            },
+            {
+              "updatedMs": 0.7,
+              "indexMs": null,
+              "features": 23
+            },
+            {
+              "updatedMs": 0.5,
+              "indexMs": null,
+              "features": 23
+            },
+            {
+              "updatedMs": 0.6,
+              "indexMs": null,
+              "features": 23
+            },
+            {
+              "updatedMs": 1.4,
+              "indexMs": null,
+              "features": 19
+            },
+            {
+              "updatedMs": 0.7,
+              "indexMs": null,
+              "features": 15
+            },
+            {
+              "updatedMs": 0.5,
+              "indexMs": null,
+              "features": 19
+            },
+            {
+              "updatedMs": 0.6,
+              "indexMs": null,
+              "features": 23
+            },
+            {
+              "updatedMs": 0.4,
+              "indexMs": null,
+              "features": 23
+            },
+            {
+              "updatedMs": 0.5,
+              "indexMs": null,
+              "features": 23
+            }
+          ]
+        },
+        "update": {
+          "indexMs": 153.4,
+          "builds": 5,
+          "frames": 302,
+          "frameIntervalMs": 16.7,
+          "maxGapMs": 71.4,
+          "blockedMs": 21.4,
+          "droppedFrames": 5,
+          "steps": [
+            {
+              "updatedMs": 187.5,
+              "indexMs": 187.5,
+              "features": 23
+            },
+            {
+              "updatedMs": 163.8,
+              "indexMs": 163.8,
+              "features": 23
+            },
+            {
+              "updatedMs": 153.4,
+              "indexMs": 153.4,
+              "features": 23
+            },
+            {
+              "updatedMs": 110.8,
+              "indexMs": 110.8,
+              "features": 23
+            },
+            {
+              "updatedMs": 119.8,
+              "indexMs": 119.8,
+              "features": 23
+            }
+          ]
+        }
+      }
+    },
+    {
+      "run": 2,
+      "lib": "rnc",
+      "count": 10000,
+      "attempt": 1,
+      "memory": {},
+      "result": {
+        "library": "react-native-clusterer",
+        "version": "5.0.2",
+        "count": 10000,
+        "platform": "ios",
+        "osVersion": "26.5",
+        "dimensions": {
+          "width": 402,
+          "height": 874
+        },
+        "frameIntervalMs": 16.7,
+        "engine": {
+          "jsMs": 18.9,
+          "totalMs": 18.9,
+          "builds": [
+            {
+              "jsMs": 18.9,
+              "totalMs": 18.9
+            },
+            {
+              "jsMs": 19.3,
+              "totalMs": 19.3
+            },
+            {
+              "jsMs": 18.6,
+              "totalMs": 18.6
+            }
+          ]
+        },
+        "mount": {
+          "firstClustersMs": 39.4,
+          "settledMs": 82,
+          "features": 6,
+          "builds": 4,
+          "frames": 19,
+          "frameIntervalMs": 16.7,
+          "maxGapMs": 82,
+          "blockedMs": 32,
+          "droppedFrames": 4
+        },
+        "rerender": {
+          "renderMs": 21.1,
+          "builds": 10,
+          "frames": 308,
+          "frameIntervalMs": 16.7,
+          "maxGapMs": 23.3,
+          "blockedMs": 0,
+          "droppedFrames": 0,
+          "steps": [
+            {
+              "updatedMs": 19.5,
+              "indexMs": null,
+              "features": 6
+            },
+            {
+              "updatedMs": 20.5,
+              "indexMs": null,
+              "features": 6
+            },
+            {
+              "updatedMs": 22.3,
+              "indexMs": null,
+              "features": 6
+            },
+            {
+              "updatedMs": 19.6,
+              "indexMs": null,
+              "features": 6
+            },
+            {
+              "updatedMs": 23.1,
+              "indexMs": null,
+              "features": 6
+            },
+            {
+              "updatedMs": 19.9,
+              "indexMs": null,
+              "features": 6
+            },
+            {
+              "updatedMs": 21.1,
+              "indexMs": null,
+              "features": 6
+            },
+            {
+              "updatedMs": 22.7,
+              "indexMs": null,
+              "features": 6
+            },
+            {
+              "updatedMs": 22.4,
+              "indexMs": null,
+              "features": 6
+            },
+            {
+              "updatedMs": 21,
+              "indexMs": null,
+              "features": 6
+            }
+          ]
+        },
+        "pan": {
+          "updatedMs": 43.8,
+          "builds": 20,
+          "frames": 288,
+          "frameIntervalMs": 16.7,
+          "maxGapMs": 55.1,
+          "blockedMs": 5.1,
+          "droppedFrames": 21,
+          "steps": [
+            {
+              "updatedMs": 40.4,
+              "indexMs": null,
+              "features": 25
+            },
+            {
+              "updatedMs": 46.2,
+              "indexMs": null,
+              "features": 25
+            },
+            {
+              "updatedMs": 42.7,
+              "indexMs": null,
+              "features": 23
+            },
+            {
+              "updatedMs": 39.1,
+              "indexMs": null,
+              "features": 23
+            },
+            {
+              "updatedMs": 44.6,
+              "indexMs": null,
+              "features": 19
+            },
+            {
+              "updatedMs": 45.7,
+              "indexMs": null,
+              "features": 15
+            },
+            {
+              "updatedMs": 43.8,
+              "indexMs": null,
+              "features": 19
+            },
+            {
+              "updatedMs": 42.1,
+              "indexMs": null,
+              "features": 23
+            },
+            {
+              "updatedMs": 55,
+              "indexMs": null,
+              "features": 23
+            },
+            {
+              "updatedMs": 39.1,
+              "indexMs": null,
+              "features": 25
+            }
+          ]
+        },
+        "update": {
+          "indexMs": 74.2,
+          "builds": 20,
+          "frames": 282,
+          "frameIntervalMs": 16.7,
+          "maxGapMs": 96.4,
+          "blockedMs": 203.1,
+          "droppedFrames": 24,
+          "steps": [
+            {
+              "updatedMs": 85.7,
+              "indexMs": 64.5,
+              "features": 25
+            },
+            {
+              "updatedMs": 95.9,
+              "indexMs": 74.2,
+              "features": 25
+            },
+            {
+              "updatedMs": 78.5,
+              "indexMs": 59,
+              "features": 25
+            },
+            {
+              "updatedMs": 95.6,
+              "indexMs": 75.3,
+              "features": 25
+            },
+            {
+              "updatedMs": 96.2,
+              "indexMs": 77.4,
+              "features": 25
+            }
+          ]
+        }
+      }
+    },
+    {
+      "run": 2,
+      "lib": "usc",
+      "count": 10000,
+      "attempt": 1,
+      "memory": {},
+      "result": {
+        "library": "use-supercluster",
+        "version": "1.2.0",
+        "count": 10000,
+        "platform": "ios",
+        "osVersion": "26.5",
+        "dimensions": {
+          "width": 402,
+          "height": 874
+        },
+        "frameIntervalMs": 16.7,
+        "engine": {
+          "jsMs": 231.4,
+          "totalMs": 231.4,
+          "builds": [
+            {
+              "jsMs": 252.6,
+              "totalMs": 252.6
+            },
+            {
+              "jsMs": 231.4,
+              "totalMs": 231.4
+            },
+            {
+              "jsMs": 215.3,
+              "totalMs": 215.3
+            }
+          ]
+        },
+        "mount": {
+          "firstClustersMs": 229.1,
+          "settledMs": 229.1,
+          "features": 72,
+          "builds": 1,
+          "frames": 19,
+          "frameIntervalMs": 16.7,
+          "maxGapMs": 229.1,
+          "blockedMs": 179.1,
+          "droppedFrames": 13
+        },
+        "rerender": {
+          "renderMs": 0.8,
+          "builds": 0,
+          "frames": 310,
+          "frameIntervalMs": 16.7,
+          "maxGapMs": 17.1,
+          "blockedMs": 0,
+          "droppedFrames": 0,
+          "steps": [
+            {
+              "updatedMs": 0.9,
+              "indexMs": null,
+              "features": 72
+            },
+            {
+              "updatedMs": 0.6,
+              "indexMs": null,
+              "features": 72
+            },
+            {
+              "updatedMs": 0.7,
+              "indexMs": null,
+              "features": 72
+            },
+            {
+              "updatedMs": 0.6,
+              "indexMs": null,
+              "features": 72
+            },
+            {
+              "updatedMs": 0.6,
+              "indexMs": null,
+              "features": 72
+            },
+            {
+              "updatedMs": 1.1,
+              "indexMs": null,
+              "features": 72
+            },
+            {
+              "updatedMs": 0.6,
+              "indexMs": null,
+              "features": 72
+            },
+            {
+              "updatedMs": 0.9,
+              "indexMs": null,
+              "features": 72
+            },
+            {
+              "updatedMs": 1.3,
+              "indexMs": null,
+              "features": 72
+            },
+            {
+              "updatedMs": 0.8,
+              "indexMs": null,
+              "features": 72
+            }
+          ]
+        },
+        "pan": {
+          "updatedMs": 234,
+          "builds": 10,
+          "frames": 202,
+          "frameIntervalMs": 16.7,
+          "maxGapMs": 257,
+          "blockedMs": 1851.4,
+          "droppedFrames": 134,
+          "steps": [
+            {
+              "updatedMs": 251.8,
+              "indexMs": 251.8,
+              "features": 27
+            },
+            {
+              "updatedMs": 222.3,
+              "indexMs": 222.3,
+              "features": 25
+            },
+            {
+              "updatedMs": 228.3,
+              "indexMs": 228.3,
+              "features": 23
+            },
+            {
+              "updatedMs": 234,
+              "indexMs": 234,
+              "features": 26
+            },
+            {
+              "updatedMs": 256.9,
+              "indexMs": 256.9,
+              "features": 23
+            },
+            {
+              "updatedMs": 250.5,
+              "indexMs": 250.5,
+              "features": 17
+            },
+            {
+              "updatedMs": 243,
+              "indexMs": 243,
+              "features": 23
+            },
+            {
+              "updatedMs": 222.4,
+              "indexMs": 222.4,
+              "features": 26
+            },
+            {
+              "updatedMs": 218.4,
+              "indexMs": 218.4,
+              "features": 23
+            },
+            {
+              "updatedMs": 222.9,
+              "indexMs": 222.9,
+              "features": 25
+            }
+          ]
+        },
+        "update": {
+          "indexMs": 226.2,
+          "builds": 5,
+          "frames": 239,
+          "frameIntervalMs": 16.7,
+          "maxGapMs": 239.2,
+          "blockedMs": 889.4,
+          "droppedFrames": 66,
+          "steps": [
+            {
+              "updatedMs": 226.2,
+              "indexMs": 226.2,
+              "features": 25
+            },
+            {
+              "updatedMs": 223.4,
+              "indexMs": 223.4,
+              "features": 25
+            },
+            {
+              "updatedMs": 221.2,
+              "indexMs": 221.2,
+              "features": 25
+            },
+            {
+              "updatedMs": 238.3,
+              "indexMs": 238.3,
+              "features": 25
+            },
+            {
+              "updatedMs": 228.1,
+              "indexMs": 228.1,
+              "features": 25
+            }
+          ]
+        }
+      }
+    },
+    {
+      "run": 2,
+      "lib": "rnbc",
+      "count": 10000,
+      "attempt": 1,
+      "memory": {},
+      "result": {
+        "library": "react-native-better-clustering",
+        "version": "main",
+        "count": 10000,
+        "platform": "ios",
+        "osVersion": "26.5",
+        "dimensions": {
+          "width": 402,
+          "height": 874
+        },
+        "frameIntervalMs": 16.7,
+        "engine": {
+          "jsMs": 1,
+          "totalMs": 10.7,
+          "builds": [
+            {
+              "jsMs": 1.2,
+              "totalMs": 9.6
+            },
+            {
+              "jsMs": 1,
+              "totalMs": 11.1
+            },
+            {
+              "jsMs": 1,
+              "totalMs": 10.7
+            }
+          ]
+        },
+        "mount": {
+          "firstClustersMs": 18,
+          "settledMs": 18,
+          "features": 6,
+          "builds": 1,
+          "frames": 20,
+          "frameIntervalMs": 16.7,
+          "maxGapMs": 18.1,
+          "blockedMs": 0,
+          "droppedFrames": 0
+        },
+        "rerender": {
+          "renderMs": 0.7,
+          "builds": 0,
+          "frames": 309,
+          "frameIntervalMs": 16.7,
+          "maxGapMs": 18.7,
+          "blockedMs": 0,
+          "droppedFrames": 0,
+          "steps": [
+            {
+              "updatedMs": 0.6,
+              "indexMs": null,
+              "features": 6
+            },
+            {
+              "updatedMs": 0.6,
+              "indexMs": null,
+              "features": 6
+            },
+            {
+              "updatedMs": 0.9,
+              "indexMs": null,
+              "features": 6
+            },
+            {
+              "updatedMs": 0.8,
+              "indexMs": null,
+              "features": 6
+            },
+            {
+              "updatedMs": 0.6,
+              "indexMs": null,
+              "features": 6
+            },
+            {
+              "updatedMs": 0.6,
+              "indexMs": null,
+              "features": 6
+            },
+            {
+              "updatedMs": 0.8,
+              "indexMs": null,
+              "features": 6
+            },
+            {
+              "updatedMs": 0.5,
+              "indexMs": null,
+              "features": 6
+            },
+            {
+              "updatedMs": 0.7,
+              "indexMs": null,
+              "features": 6
+            },
+            {
+              "updatedMs": 0.8,
+              "indexMs": null,
+              "features": 6
+            }
+          ]
+        },
+        "pan": {
+          "updatedMs": 0.6,
+          "builds": 0,
+          "frames": 309,
+          "frameIntervalMs": 16.7,
+          "maxGapMs": 17.2,
+          "blockedMs": 0,
+          "droppedFrames": 0,
+          "steps": [
+            {
+              "updatedMs": 0.8,
+              "indexMs": null,
+              "features": 25
+            },
+            {
+              "updatedMs": 0.6,
+              "indexMs": null,
+              "features": 25
+            },
+            {
+              "updatedMs": 1.1,
+              "indexMs": null,
+              "features": 23
+            },
+            {
+              "updatedMs": 0.5,
+              "indexMs": null,
+              "features": 23
+            },
+            {
+              "updatedMs": 0.8,
+              "indexMs": null,
+              "features": 19
+            },
+            {
+              "updatedMs": 0.6,
+              "indexMs": null,
+              "features": 15
+            },
+            {
+              "updatedMs": 0.5,
+              "indexMs": null,
+              "features": 19
+            },
+            {
+              "updatedMs": 0.5,
+              "indexMs": null,
+              "features": 23
+            },
+            {
+              "updatedMs": 0.5,
+              "indexMs": null,
+              "features": 23
+            },
+            {
+              "updatedMs": 1.6,
+              "indexMs": null,
+              "features": 25
+            }
+          ]
+        },
+        "update": {
+          "indexMs": 11,
+          "builds": 5,
+          "frames": 305,
+          "frameIntervalMs": 16.7,
+          "maxGapMs": 17.2,
+          "blockedMs": 0,
+          "droppedFrames": 0,
+          "steps": [
+            {
+              "updatedMs": 15.8,
+              "indexMs": 15.8,
+              "features": 25
+            },
+            {
+              "updatedMs": 11,
+              "indexMs": 11,
+              "features": 25
+            },
+            {
+              "updatedMs": 9.8,
+              "indexMs": 9.8,
+              "features": 25
+            },
+            {
+              "updatedMs": 14,
+              "indexMs": 14,
+              "features": 25
+            },
+            {
+              "updatedMs": 9.5,
+              "indexMs": 9.5,
+              "features": 25
+            }
+          ]
+        }
+      }
+    },
+    {
+      "run": 2,
+      "lib": "rnc",
+      "count": 50000,
+      "attempt": 1,
+      "memory": {},
+      "result": {
+        "library": "react-native-clusterer",
+        "version": "5.0.2",
+        "count": 50000,
+        "platform": "ios",
+        "osVersion": "26.5",
+        "dimensions": {
+          "width": 402,
+          "height": 874
+        },
+        "frameIntervalMs": 16.7,
+        "engine": {
+          "jsMs": 100.7,
+          "totalMs": 100.7,
+          "builds": [
+            {
+              "jsMs": 104.2,
+              "totalMs": 104.2
+            },
+            {
+              "jsMs": 100.7,
+              "totalMs": 100.7
+            },
+            {
+              "jsMs": 93.7,
+              "totalMs": 93.7
+            }
+          ]
+        },
+        "mount": {
+          "firstClustersMs": 215.3,
+          "settledMs": 422.2,
+          "features": 6,
+          "builds": 4,
+          "frames": 20,
+          "frameIntervalMs": 16.7,
+          "maxGapMs": 422.2,
+          "blockedMs": 372.2,
+          "droppedFrames": 25
+        },
+        "rerender": {
+          "renderMs": 112.2,
+          "builds": 10,
+          "frames": 251,
+          "frameIntervalMs": 16.7,
+          "maxGapMs": 119.9,
+          "blockedMs": 597.8,
+          "droppedFrames": 58,
+          "steps": [
+            {
+              "updatedMs": 102.9,
+              "indexMs": null,
+              "features": 6
+            },
+            {
+              "updatedMs": 103.7,
+              "indexMs": null,
+              "features": 6
+            },
+            {
+              "updatedMs": 107.5,
+              "indexMs": null,
+              "features": 6
+            },
+            {
+              "updatedMs": 102.5,
+              "indexMs": null,
+              "features": 6
+            },
+            {
+              "updatedMs": 116.3,
+              "indexMs": null,
+              "features": 6
+            },
+            {
+              "updatedMs": 119.8,
+              "indexMs": null,
+              "features": 6
+            },
+            {
+              "updatedMs": 112.2,
+              "indexMs": null,
+              "features": 6
+            },
+            {
+              "updatedMs": 105.4,
+              "indexMs": null,
+              "features": 6
+            },
+            {
+              "updatedMs": 114.2,
+              "indexMs": null,
+              "features": 6
+            },
+            {
+              "updatedMs": 112.3,
+              "indexMs": null,
+              "features": 6
+            }
+          ]
+        },
+        "pan": {
+          "updatedMs": 213.8,
+          "builds": 20,
+          "frames": 196,
+          "frameIntervalMs": 16.7,
+          "maxGapMs": 225.1,
+          "blockedMs": 1614.9,
+          "droppedFrames": 119,
+          "steps": [
+            {
+              "updatedMs": 199.9,
+              "indexMs": null,
+              "features": 27
+            },
+            {
+              "updatedMs": 202,
+              "indexMs": null,
+              "features": 27
+            },
+            {
+              "updatedMs": 221.6,
+              "indexMs": null,
+              "features": 26
+            },
+            {
+              "updatedMs": 213.8,
+              "indexMs": null,
+              "features": 24
+            },
+            {
+              "updatedMs": 225,
+              "indexMs": null,
+              "features": 19
+            },
+            {
+              "updatedMs": 208.6,
+              "indexMs": null,
+              "features": 15
+            },
+            {
+              "updatedMs": 218.6,
+              "indexMs": null,
+              "features": 19
+            },
+            {
+              "updatedMs": 207.4,
+              "indexMs": null,
+              "features": 24
+            },
+            {
+              "updatedMs": 216.8,
+              "indexMs": null,
+              "features": 26
+            },
+            {
+              "updatedMs": 200.3,
+              "indexMs": null,
+              "features": 27
+            }
+          ]
+        },
+        "update": {
+          "indexMs": 324.9,
+          "builds": 20,
+          "frames": 180,
+          "frameIntervalMs": 16.7,
+          "maxGapMs": 437.6,
+          "blockedMs": 1889.1,
+          "droppedFrames": 125,
+          "steps": [
+            {
+              "updatedMs": 437.5,
+              "indexMs": 338.4,
+              "features": 27
+            },
+            {
+              "updatedMs": 437.2,
+              "indexMs": 331.3,
+              "features": 27
+            },
+            {
+              "updatedMs": 412.9,
+              "indexMs": 312.6,
+              "features": 27
+            },
+            {
+              "updatedMs": 431.1,
+              "indexMs": 324.9,
+              "features": 27
+            },
+            {
+              "updatedMs": 418.7,
+              "indexMs": 316.7,
+              "features": 27
+            }
+          ]
+        }
+      }
+    },
+    {
+      "run": 2,
+      "lib": "usc",
+      "count": 50000,
+      "attempt": 1,
+      "memory": {},
+      "result": {
+        "library": "use-supercluster",
+        "version": "1.2.0",
+        "count": 50000,
+        "platform": "ios",
+        "osVersion": "26.5",
+        "dimensions": {
+          "width": 402,
+          "height": 874
+        },
+        "frameIntervalMs": 16.7,
+        "engine": {
+          "jsMs": 1141.2,
+          "totalMs": 1141.2,
+          "builds": [
+            {
+              "jsMs": 1089,
+              "totalMs": 1089
+            },
+            {
+              "jsMs": 1141.2,
+              "totalMs": 1141.2
+            },
+            {
+              "jsMs": 1156,
+              "totalMs": 1156
+            }
+          ]
+        },
+        "mount": {
+          "firstClustersMs": 1106.8,
+          "settledMs": 1106.8,
+          "features": 72,
+          "builds": 1,
+          "frames": 20,
+          "frameIntervalMs": 16.7,
+          "maxGapMs": 1106.9,
+          "blockedMs": 1056.9,
+          "droppedFrames": 66
+        },
+        "rerender": {
+          "renderMs": 0.6,
+          "builds": 0,
+          "frames": 309,
+          "frameIntervalMs": 16.7,
+          "maxGapMs": 17.5,
+          "blockedMs": 0,
+          "droppedFrames": 0,
+          "steps": [
+            {
+              "updatedMs": 0.6,
+              "indexMs": null,
+              "features": 72
+            },
+            {
+              "updatedMs": 0.6,
+              "indexMs": null,
+              "features": 72
+            },
+            {
+              "updatedMs": 0.7,
+              "indexMs": null,
+              "features": 72
+            },
+            {
+              "updatedMs": 0.5,
+              "indexMs": null,
+              "features": 72
+            },
+            {
+              "updatedMs": 0.6,
+              "indexMs": null,
+              "features": 72
+            },
+            {
+              "updatedMs": 0.6,
+              "indexMs": null,
+              "features": 72
+            },
+            {
+              "updatedMs": 0.5,
+              "indexMs": null,
+              "features": 72
+            },
+            {
+              "updatedMs": 0.5,
+              "indexMs": null,
+              "features": 72
+            },
+            {
+              "updatedMs": 1,
+              "indexMs": null,
+              "features": 72
+            },
+            {
+              "updatedMs": 0.7,
+              "indexMs": null,
+              "features": 72
+            }
+          ]
+        },
+        "pan": {
+          "updatedMs": 1214.7,
+          "builds": 10,
+          "frames": 194,
+          "frameIntervalMs": 16.7,
+          "maxGapMs": 1280.4,
+          "blockedMs": 11550.7,
+          "droppedFrames": 715,
+          "steps": [
+            {
+              "updatedMs": 1126.6,
+              "indexMs": 1126.6,
+              "features": 29
+            },
+            {
+              "updatedMs": 1143,
+              "indexMs": 1143,
+              "features": 26
+            },
+            {
+              "updatedMs": 1228.1,
+              "indexMs": 1228.1,
+              "features": 26
+            },
+            {
+              "updatedMs": 1280.3,
+              "indexMs": 1280.3,
+              "features": 27
+            },
+            {
+              "updatedMs": 1279.6,
+              "indexMs": 1279.6,
+              "features": 25
+            },
+            {
+              "updatedMs": 1169.7,
+              "indexMs": 1169.7,
+              "features": 17
+            },
+            {
+              "updatedMs": 1214.7,
+              "indexMs": 1214.7,
+              "features": 25
+            },
+            {
+              "updatedMs": 1213.8,
+              "indexMs": 1213.8,
+              "features": 27
+            },
+            {
+              "updatedMs": 1175.2,
+              "indexMs": 1175.2,
+              "features": 26
+            },
+            {
+              "updatedMs": 1218.5,
+              "indexMs": 1218.5,
+              "features": 26
+            }
+          ]
+        },
+        "update": {
+          "indexMs": 1201.9,
+          "builds": 5,
+          "frames": 99,
+          "frameIntervalMs": 16.7,
+          "maxGapMs": 1250.6,
+          "blockedMs": 5765.3,
+          "droppedFrames": 356,
+          "steps": [
+            {
+              "updatedMs": 1247.2,
+              "indexMs": 1247.2,
+              "features": 26
+            },
+            {
+              "updatedMs": 1214.1,
+              "indexMs": 1214.1,
+              "features": 26
+            },
+            {
+              "updatedMs": 1148.1,
+              "indexMs": 1148.1,
+              "features": 26
+            },
+            {
+              "updatedMs": 1197.7,
+              "indexMs": 1197.7,
+              "features": 26
+            },
+            {
+              "updatedMs": 1201.9,
+              "indexMs": 1201.9,
+              "features": 26
+            }
+          ]
+        }
+      }
+    },
+    {
+      "run": 2,
+      "lib": "rnbc",
+      "count": 50000,
+      "attempt": 1,
+      "memory": {},
+      "result": {
+        "library": "react-native-better-clustering",
+        "version": "main",
+        "count": 50000,
+        "platform": "ios",
+        "osVersion": "26.5",
+        "dimensions": {
+          "width": 402,
+          "height": 874
+        },
+        "frameIntervalMs": 16.7,
+        "engine": {
+          "jsMs": 5,
+          "totalMs": 49.5,
+          "builds": [
+            {
+              "jsMs": 5.7,
+              "totalMs": 51.2
+            },
+            {
+              "jsMs": 5,
+              "totalMs": 47.3
+            },
+            {
+              "jsMs": 4.9,
+              "totalMs": 49.5
+            }
+          ]
+        },
+        "mount": {
+          "firstClustersMs": 56.9,
+          "settledMs": 56.9,
+          "features": 6,
+          "builds": 1,
+          "frames": 22,
+          "frameIntervalMs": 16.7,
+          "maxGapMs": 17.1,
+          "blockedMs": 0,
+          "droppedFrames": 0
+        },
+        "rerender": {
+          "renderMs": 0.6,
+          "builds": 0,
+          "frames": 309,
+          "frameIntervalMs": 16.7,
+          "maxGapMs": 17.5,
+          "blockedMs": 0,
+          "droppedFrames": 0,
+          "steps": [
+            {
+              "updatedMs": 0.7,
+              "indexMs": null,
+              "features": 6
+            },
+            {
+              "updatedMs": 0.6,
+              "indexMs": null,
+              "features": 6
+            },
+            {
+              "updatedMs": 0.6,
+              "indexMs": null,
+              "features": 6
+            },
+            {
+              "updatedMs": 0.6,
+              "indexMs": null,
+              "features": 6
+            },
+            {
+              "updatedMs": 0.9,
+              "indexMs": null,
+              "features": 6
+            },
+            {
+              "updatedMs": 0.6,
+              "indexMs": null,
+              "features": 6
+            },
+            {
+              "updatedMs": 0.6,
+              "indexMs": null,
+              "features": 6
+            },
+            {
+              "updatedMs": 0.6,
+              "indexMs": null,
+              "features": 6
+            },
+            {
+              "updatedMs": 0.8,
+              "indexMs": null,
+              "features": 6
+            },
+            {
+              "updatedMs": 0.6,
+              "indexMs": null,
+              "features": 6
+            }
+          ]
+        },
+        "pan": {
+          "updatedMs": 0.8,
+          "builds": 0,
+          "frames": 307,
+          "frameIntervalMs": 16.7,
+          "maxGapMs": 47.1,
+          "blockedMs": 0,
+          "droppedFrames": 2,
+          "steps": [
+            {
+              "updatedMs": 0.7,
+              "indexMs": null,
+              "features": 27
+            },
+            {
+              "updatedMs": 0.5,
+              "indexMs": null,
+              "features": 27
+            },
+            {
+              "updatedMs": 0.8,
+              "indexMs": null,
+              "features": 26
+            },
+            {
+              "updatedMs": 0.8,
+              "indexMs": null,
+              "features": 24
+            },
+            {
+              "updatedMs": 10,
+              "indexMs": null,
+              "features": 19
+            },
+            {
+              "updatedMs": 4.1,
+              "indexMs": null,
+              "features": 15
+            },
+            {
+              "updatedMs": 1.2,
+              "indexMs": null,
+              "features": 19
+            },
+            {
+              "updatedMs": 0.6,
+              "indexMs": null,
+              "features": 24
+            },
+            {
+              "updatedMs": 1.2,
+              "indexMs": null,
+              "features": 26
+            },
+            {
+              "updatedMs": 0.5,
+              "indexMs": null,
+              "features": 27
+            }
+          ]
+        },
+        "update": {
+          "indexMs": 59.2,
+          "builds": 5,
+          "frames": 302,
+          "frameIntervalMs": 16.7,
+          "maxGapMs": 62.3,
+          "blockedMs": 12.3,
+          "droppedFrames": 4,
+          "steps": [
+            {
+              "updatedMs": 123.2,
+              "indexMs": 123.2,
+              "features": 27
+            },
+            {
+              "updatedMs": 68.2,
+              "indexMs": 68.2,
+              "features": 27
+            },
+            {
+              "updatedMs": 59.2,
+              "indexMs": 59.2,
+              "features": 27
+            },
+            {
+              "updatedMs": 50.6,
+              "indexMs": 50.6,
+              "features": 27
+            },
+            {
+              "updatedMs": 52.8,
+              "indexMs": 52.8,
+              "features": 27
+            }
+          ]
+        }
+      }
+    },
+    {
+      "run": 2,
+      "lib": "rnc",
+      "count": 100000,
+      "attempt": 1,
+      "memory": {},
+      "result": {
+        "library": "react-native-clusterer",
+        "version": "5.0.2",
+        "count": 100000,
+        "platform": "ios",
+        "osVersion": "26.5",
+        "dimensions": {
+          "width": 402,
+          "height": 874
+        },
+        "frameIntervalMs": 16.7,
+        "engine": {
+          "jsMs": 213,
+          "totalMs": 213,
+          "builds": [
+            {
+              "jsMs": 219.3,
+              "totalMs": 219.3
+            },
+            {
+              "jsMs": 204.8,
+              "totalMs": 204.8
+            },
+            {
+              "jsMs": 213,
+              "totalMs": 213
+            }
+          ]
+        },
+        "mount": {
+          "firstClustersMs": 501.6,
+          "settledMs": 961,
+          "features": 6,
+          "builds": 4,
+          "frames": 19,
+          "frameIntervalMs": 16.7,
+          "maxGapMs": 961.1,
+          "blockedMs": 911.1,
+          "droppedFrames": 57
+        },
+        "rerender": {
+          "renderMs": 235.4,
+          "builds": 10,
+          "frames": 197,
+          "frameIntervalMs": 16.7,
+          "maxGapMs": 242,
+          "blockedMs": 1798.3,
+          "droppedFrames": 131,
+          "steps": [
+            {
+              "updatedMs": 226.1,
+              "indexMs": null,
+              "features": 6
+            },
+            {
+              "updatedMs": 235.4,
+              "indexMs": null,
+              "features": 6
+            },
+            {
+              "updatedMs": 241.9,
+              "indexMs": null,
+              "features": 6
+            },
+            {
+              "updatedMs": 222,
+              "indexMs": null,
+              "features": 6
+            },
+            {
+              "updatedMs": 231.5,
+              "indexMs": null,
+              "features": 6
+            },
+            {
+              "updatedMs": 207.4,
+              "indexMs": null,
+              "features": 6
+            },
+            {
+              "updatedMs": 239.2,
+              "indexMs": null,
+              "features": 6
+            },
+            {
+              "updatedMs": 239.2,
+              "indexMs": null,
+              "features": 6
+            },
+            {
+              "updatedMs": 236.7,
+              "indexMs": null,
+              "features": 6
+            },
+            {
+              "updatedMs": 218,
+              "indexMs": null,
+              "features": 6
+            }
+          ]
+        },
+        "pan": {
+          "updatedMs": 454.5,
+          "builds": 20,
+          "frames": 195,
+          "frameIntervalMs": 16.7,
+          "maxGapMs": 464.3,
+          "blockedMs": 3995,
+          "droppedFrames": 264,
+          "steps": [
+            {
+              "updatedMs": 454.6,
+              "indexMs": null,
+              "features": 24
+            },
+            {
+              "updatedMs": 454.5,
+              "indexMs": null,
+              "features": 23
+            },
+            {
+              "updatedMs": 463.4,
+              "indexMs": null,
+              "features": 23
+            },
+            {
+              "updatedMs": 442.8,
+              "indexMs": null,
+              "features": 23
+            },
+            {
+              "updatedMs": 425.8,
+              "indexMs": null,
+              "features": 19
+            },
+            {
+              "updatedMs": 439.4,
+              "indexMs": null,
+              "features": 15
+            },
+            {
+              "updatedMs": 447.3,
+              "indexMs": null,
+              "features": 19
+            },
+            {
+              "updatedMs": 464.2,
+              "indexMs": null,
+              "features": 23
+            },
+            {
+              "updatedMs": 459.6,
+              "indexMs": null,
+              "features": 23
+            },
+            {
+              "updatedMs": 442.6,
+              "indexMs": null,
+              "features": 23
+            }
+          ]
+        },
+        "update": {
+          "indexMs": 660.3,
+          "builds": 20,
+          "frames": 99,
+          "frameIntervalMs": 16.7,
+          "maxGapMs": 2647.4,
+          "blockedMs": 5879.3,
+          "droppedFrames": 364,
+          "steps": [
+            {
+              "updatedMs": 874.3,
+              "indexMs": 660.3,
+              "features": 23
+            },
+            {
+              "updatedMs": 881.8,
+              "indexMs": 667.7,
+              "features": 23
+            },
+            {
+              "updatedMs": 2646.4,
+              "indexMs": 2437.8,
+              "features": 23
+            },
+            {
+              "updatedMs": 854.2,
+              "indexMs": 642,
+              "features": 23
+            },
+            {
+              "updatedMs": 860.8,
+              "indexMs": 650.5,
+              "features": 23
+            }
+          ]
+        }
+      }
+    },
+    {
+      "run": 2,
+      "lib": "usc",
+      "count": 100000,
+      "attempt": 1,
+      "memory": {},
+      "result": {
+        "library": "use-supercluster",
+        "version": "1.2.0",
+        "count": 100000,
+        "platform": "ios",
+        "osVersion": "26.5",
+        "dimensions": {
+          "width": 402,
+          "height": 874
+        },
+        "frameIntervalMs": 16.7,
+        "engine": {
+          "jsMs": 2339.8,
+          "totalMs": 2339.8,
+          "builds": [
+            {
+              "jsMs": 2339.8,
+              "totalMs": 2339.8
+            },
+            {
+              "jsMs": 2376.9,
+              "totalMs": 2376.9
+            },
+            {
+              "jsMs": 2339.2,
+              "totalMs": 2339.2
+            }
+          ]
+        },
+        "mount": {
+          "firstClustersMs": 2329.9,
+          "settledMs": 2329.9,
+          "features": 71,
+          "builds": 1,
+          "frames": 19,
+          "frameIntervalMs": 16.7,
+          "maxGapMs": 2329.9,
+          "blockedMs": 2279.9,
+          "droppedFrames": 139
+        },
+        "rerender": {
+          "renderMs": 0.7,
+          "builds": 0,
+          "frames": 310,
+          "frameIntervalMs": 16.7,
+          "maxGapMs": 17,
+          "blockedMs": 0,
+          "droppedFrames": 0,
+          "steps": [
+            {
+              "updatedMs": 0.8,
+              "indexMs": null,
+              "features": 71
+            },
+            {
+              "updatedMs": 0.7,
+              "indexMs": null,
+              "features": 71
+            },
+            {
+              "updatedMs": 0.6,
+              "indexMs": null,
+              "features": 71
+            },
+            {
+              "updatedMs": 0.7,
+              "indexMs": null,
+              "features": 71
+            },
+            {
+              "updatedMs": 0.7,
+              "indexMs": null,
+              "features": 71
+            },
+            {
+              "updatedMs": 0.6,
+              "indexMs": null,
+              "features": 71
+            },
+            {
+              "updatedMs": 1.3,
+              "indexMs": null,
+              "features": 71
+            },
+            {
+              "updatedMs": 0.5,
+              "indexMs": null,
+              "features": 71
+            },
+            {
+              "updatedMs": 0.6,
+              "indexMs": null,
+              "features": 71
+            },
+            {
+              "updatedMs": 0.8,
+              "indexMs": null,
+              "features": 71
+            }
+          ]
+        },
+        "pan": {
+          "updatedMs": 2424.3,
+          "builds": 10,
+          "frames": 198,
+          "frameIntervalMs": 16.7,
+          "maxGapMs": 2529.7,
+          "blockedMs": 23243.5,
+          "droppedFrames": 1418,
+          "steps": [
+            {
+              "updatedMs": 2212.8,
+              "indexMs": 2212.8,
+              "features": 28
+            },
+            {
+              "updatedMs": 2252.1,
+              "indexMs": 2252.1,
+              "features": 26
+            },
+            {
+              "updatedMs": 2529.4,
+              "indexMs": 2529.4,
+              "features": 25
+            },
+            {
+              "updatedMs": 2483.5,
+              "indexMs": 2483.5,
+              "features": 25
+            },
+            {
+              "updatedMs": 2241.3,
+              "indexMs": 2241.3,
+              "features": 25
+            },
+            {
+              "updatedMs": 2311.4,
+              "indexMs": 2311.4,
+              "features": 18
+            },
+            {
+              "updatedMs": 2424.3,
+              "indexMs": 2424.3,
+              "features": 25
+            },
+            {
+              "updatedMs": 2503.8,
+              "indexMs": 2503.8,
+              "features": 25
+            },
+            {
+              "updatedMs": 2317,
+              "indexMs": 2317,
+              "features": 25
+            },
+            {
+              "updatedMs": 2466.7,
+              "indexMs": 2466.7,
+              "features": 26
+            }
+          ]
+        },
+        "update": {
+          "indexMs": 2377.5,
+          "builds": 5,
+          "frames": 97,
+          "frameIntervalMs": 16.7,
+          "maxGapMs": 2625.9,
+          "blockedMs": 12016.7,
+          "droppedFrames": 730,
+          "steps": [
+            {
+              "updatedMs": 2377.5,
+              "indexMs": 2377.5,
+              "features": 26
+            },
+            {
+              "updatedMs": 2372.7,
+              "indexMs": 2372.7,
+              "features": 26
+            },
+            {
+              "updatedMs": 2295.8,
+              "indexMs": 2295.8,
+              "features": 26
+            },
+            {
+              "updatedMs": 2622.2,
+              "indexMs": 2622.2,
+              "features": 26
+            },
+            {
+              "updatedMs": 2579.5,
+              "indexMs": 2579.5,
+              "features": 26
+            }
+          ]
+        }
+      }
+    },
+    {
+      "run": 2,
+      "lib": "rnbc",
+      "count": 100000,
+      "attempt": 1,
+      "memory": {},
+      "result": {
+        "library": "react-native-better-clustering",
+        "version": "main",
+        "count": 100000,
+        "platform": "ios",
+        "osVersion": "26.5",
+        "dimensions": {
+          "width": 402,
+          "height": 874
+        },
+        "frameIntervalMs": 16.7,
+        "engine": {
+          "jsMs": 12.5,
+          "totalMs": 122,
+          "builds": [
+            {
+              "jsMs": 13.4,
+              "totalMs": 122
+            },
+            {
+              "jsMs": 10.3,
+              "totalMs": 112.4
+            },
+            {
+              "jsMs": 12.5,
+              "totalMs": 138.8
+            }
+          ]
+        },
+        "mount": {
+          "firstClustersMs": 164.6,
+          "settledMs": 164.6,
+          "features": 6,
+          "builds": 1,
+          "frames": 28,
+          "frameIntervalMs": 16.7,
+          "maxGapMs": 17.2,
+          "blockedMs": 0,
+          "droppedFrames": 0
+        },
+        "rerender": {
+          "renderMs": 0.7,
+          "builds": 0,
+          "frames": 310,
+          "frameIntervalMs": 16.7,
+          "maxGapMs": 21.7,
+          "blockedMs": 0,
+          "droppedFrames": 0,
+          "steps": [
+            {
+              "updatedMs": 0.6,
+              "indexMs": null,
+              "features": 6
+            },
+            {
+              "updatedMs": 0.7,
+              "indexMs": null,
+              "features": 6
+            },
+            {
+              "updatedMs": 1,
+              "indexMs": null,
+              "features": 6
+            },
+            {
+              "updatedMs": 0.8,
+              "indexMs": null,
+              "features": 6
+            },
+            {
+              "updatedMs": 0.7,
+              "indexMs": null,
+              "features": 6
+            },
+            {
+              "updatedMs": 0.6,
+              "indexMs": null,
+              "features": 6
+            },
+            {
+              "updatedMs": 0.6,
+              "indexMs": null,
+              "features": 6
+            },
+            {
+              "updatedMs": 0.5,
+              "indexMs": null,
+              "features": 6
+            },
+            {
+              "updatedMs": 0.6,
+              "indexMs": null,
+              "features": 6
+            },
+            {
+              "updatedMs": 1.3,
+              "indexMs": null,
+              "features": 6
+            }
+          ]
+        },
+        "pan": {
+          "updatedMs": 1,
+          "builds": 0,
+          "frames": 308,
+          "frameIntervalMs": 16.7,
+          "maxGapMs": 17.3,
+          "blockedMs": 0,
+          "droppedFrames": 0,
+          "steps": [
+            {
+              "updatedMs": 1,
+              "indexMs": null,
+              "features": 24
+            },
+            {
+              "updatedMs": 1,
+              "indexMs": null,
+              "features": 23
+            },
+            {
+              "updatedMs": 0.6,
+              "indexMs": null,
+              "features": 23
+            },
+            {
+              "updatedMs": 0.4,
+              "indexMs": null,
+              "features": 23
+            },
+            {
+              "updatedMs": 0.9,
+              "indexMs": null,
+              "features": 19
+            },
+            {
+              "updatedMs": 1.1,
+              "indexMs": null,
+              "features": 15
+            },
+            {
+              "updatedMs": 0.8,
+              "indexMs": null,
+              "features": 19
+            },
+            {
+              "updatedMs": 1.1,
+              "indexMs": null,
+              "features": 23
+            },
+            {
+              "updatedMs": 0.5,
+              "indexMs": null,
+              "features": 23
+            },
+            {
+              "updatedMs": 1.7,
+              "indexMs": null,
+              "features": 23
+            }
+          ]
+        },
+        "update": {
+          "indexMs": 152.1,
+          "builds": 5,
+          "frames": 299,
+          "frameIntervalMs": 16.7,
+          "maxGapMs": 60,
+          "blockedMs": 10,
+          "droppedFrames": 6,
+          "steps": [
+            {
+              "updatedMs": 228.2,
+              "indexMs": 228.2,
+              "features": 23
+            },
+            {
+              "updatedMs": 152.1,
+              "indexMs": 152.1,
+              "features": 23
+            },
+            {
+              "updatedMs": 175.5,
+              "indexMs": 175.5,
+              "features": 23
+            },
+            {
+              "updatedMs": 137.2,
+              "indexMs": 137.2,
+              "features": 23
+            },
+            {
+              "updatedMs": 137.6,
+              "indexMs": 137.6,
+              "features": 23
+            }
+          ]
+        }
+      }
+    },
+    {
+      "run": 3,
+      "lib": "rnc",
+      "count": 10000,
+      "attempt": 1,
+      "memory": {},
+      "result": {
+        "library": "react-native-clusterer",
+        "version": "5.0.2",
+        "count": 10000,
+        "platform": "ios",
+        "osVersion": "26.5",
+        "dimensions": {
+          "width": 402,
+          "height": 874
+        },
+        "frameIntervalMs": 16.7,
+        "engine": {
+          "jsMs": 19.3,
+          "totalMs": 19.3,
+          "builds": [
+            {
+              "jsMs": 21.4,
+              "totalMs": 21.4
+            },
+            {
+              "jsMs": 18.8,
+              "totalMs": 18.8
+            },
+            {
+              "jsMs": 19.3,
+              "totalMs": 19.3
+            }
+          ]
+        },
+        "mount": {
+          "firstClustersMs": 40.2,
+          "settledMs": 84.3,
+          "features": 6,
+          "builds": 4,
+          "frames": 21,
+          "frameIntervalMs": 16.7,
+          "maxGapMs": 84.3,
+          "blockedMs": 34.3,
+          "droppedFrames": 4
+        },
+        "rerender": {
+          "renderMs": 23.3,
+          "builds": 10,
+          "frames": 304,
+          "frameIntervalMs": 16.7,
+          "maxGapMs": 89.4,
+          "blockedMs": 39.4,
+          "droppedFrames": 7,
+          "steps": [
+            {
+              "updatedMs": 28.1,
+              "indexMs": null,
+              "features": 6
+            },
+            {
+              "updatedMs": 31.4,
+              "indexMs": null,
+              "features": 6
+            },
+            {
+              "updatedMs": 23.3,
+              "indexMs": null,
+              "features": 6
+            },
+            {
+              "updatedMs": 20.9,
+              "indexMs": null,
+              "features": 6
+            },
+            {
+              "updatedMs": 89.5,
+              "indexMs": null,
+              "features": 6
+            },
+            {
+              "updatedMs": 24.3,
+              "indexMs": null,
+              "features": 6
+            },
+            {
+              "updatedMs": 22.4,
+              "indexMs": null,
+              "features": 6
+            },
+            {
+              "updatedMs": 22,
+              "indexMs": null,
+              "features": 6
+            },
+            {
+              "updatedMs": 19.3,
+              "indexMs": null,
+              "features": 6
+            },
+            {
+              "updatedMs": 21,
+              "indexMs": null,
+              "features": 6
+            }
+          ]
+        },
+        "pan": {
+          "updatedMs": 43,
+          "builds": 20,
+          "frames": 287,
+          "frameIntervalMs": 16.7,
+          "maxGapMs": 53.5,
+          "blockedMs": 5.4,
+          "droppedFrames": 20,
+          "steps": [
+            {
+              "updatedMs": 51.8,
+              "indexMs": null,
+              "features": 25
+            },
+            {
+              "updatedMs": 46.1,
+              "indexMs": null,
+              "features": 25
+            },
+            {
+              "updatedMs": 46.6,
+              "indexMs": null,
+              "features": 23
+            },
+            {
+              "updatedMs": 41.7,
+              "indexMs": null,
+              "features": 23
+            },
+            {
+              "updatedMs": 53.5,
+              "indexMs": null,
+              "features": 19
+            },
+            {
+              "updatedMs": 40.9,
+              "indexMs": null,
+              "features": 15
+            },
+            {
+              "updatedMs": 43,
+              "indexMs": null,
+              "features": 19
+            },
+            {
+              "updatedMs": 42.3,
+              "indexMs": null,
+              "features": 23
+            },
+            {
+              "updatedMs": 39.8,
+              "indexMs": null,
+              "features": 23
+            },
+            {
+              "updatedMs": 41.3,
+              "indexMs": null,
+              "features": 25
+            }
+          ]
+        },
+        "update": {
+          "indexMs": 63,
+          "builds": 20,
+          "frames": 282,
+          "frameIntervalMs": 16.7,
+          "maxGapMs": 115.6,
+          "blockedMs": 197.3,
+          "droppedFrames": 23,
+          "steps": [
+            {
+              "updatedMs": 84.7,
+              "indexMs": 63,
+              "features": 25
+            },
+            {
+              "updatedMs": 90,
+              "indexMs": 70.3,
+              "features": 25
+            },
+            {
+              "updatedMs": 115.4,
+              "indexMs": 93.4,
+              "features": 25
+            },
+            {
+              "updatedMs": 74.5,
+              "indexMs": 56.4,
+              "features": 25
+            },
+            {
+              "updatedMs": 81.5,
+              "indexMs": 60.1,
+              "features": 25
+            }
+          ]
+        }
+      }
+    },
+    {
+      "run": 3,
+      "lib": "usc",
+      "count": 10000,
+      "attempt": 1,
+      "memory": {},
+      "result": {
+        "library": "use-supercluster",
+        "version": "1.2.0",
+        "count": 10000,
+        "platform": "ios",
+        "osVersion": "26.5",
+        "dimensions": {
+          "width": 402,
+          "height": 874
+        },
+        "frameIntervalMs": 16.7,
+        "engine": {
+          "jsMs": 217,
+          "totalMs": 217,
+          "builds": [
+            {
+              "jsMs": 254,
+              "totalMs": 254
+            },
+            {
+              "jsMs": 215.4,
+              "totalMs": 215.4
+            },
+            {
+              "jsMs": 217,
+              "totalMs": 217
+            }
+          ]
+        },
+        "mount": {
+          "firstClustersMs": 229,
+          "settledMs": 229,
+          "features": 72,
+          "builds": 1,
+          "frames": 19,
+          "frameIntervalMs": 16.7,
+          "maxGapMs": 229,
+          "blockedMs": 179,
+          "droppedFrames": 13
+        },
+        "rerender": {
+          "renderMs": 0.7,
+          "builds": 0,
+          "frames": 310,
+          "frameIntervalMs": 16.7,
+          "maxGapMs": 17.4,
+          "blockedMs": 0,
+          "droppedFrames": 0,
+          "steps": [
+            {
+              "updatedMs": 0.7,
+              "indexMs": null,
+              "features": 72
+            },
+            {
+              "updatedMs": 0.6,
+              "indexMs": null,
+              "features": 72
+            },
+            {
+              "updatedMs": 0.7,
+              "indexMs": null,
+              "features": 72
+            },
+            {
+              "updatedMs": 0.8,
+              "indexMs": null,
+              "features": 72
+            },
+            {
+              "updatedMs": 0.8,
+              "indexMs": null,
+              "features": 72
+            },
+            {
+              "updatedMs": 0.7,
+              "indexMs": null,
+              "features": 72
+            },
+            {
+              "updatedMs": 0.7,
+              "indexMs": null,
+              "features": 72
+            },
+            {
+              "updatedMs": 0.6,
+              "indexMs": null,
+              "features": 72
+            },
+            {
+              "updatedMs": 0.5,
+              "indexMs": null,
+              "features": 72
+            },
+            {
+              "updatedMs": 0.6,
+              "indexMs": null,
+              "features": 72
+            }
+          ]
+        },
+        "pan": {
+          "updatedMs": 220.8,
+          "builds": 10,
+          "frames": 198,
+          "frameIntervalMs": 16.7,
+          "maxGapMs": 247.5,
+          "blockedMs": 1749.8,
+          "droppedFrames": 127,
+          "steps": [
+            {
+              "updatedMs": 215.7,
+              "indexMs": 215.7,
+              "features": 27
+            },
+            {
+              "updatedMs": 247.4,
+              "indexMs": 247.4,
+              "features": 25
+            },
+            {
+              "updatedMs": 220.2,
+              "indexMs": 220.2,
+              "features": 23
+            },
+            {
+              "updatedMs": 210.4,
+              "indexMs": 210.4,
+              "features": 26
+            },
+            {
+              "updatedMs": 219,
+              "indexMs": 219,
+              "features": 23
+            },
+            {
+              "updatedMs": 235.5,
+              "indexMs": 235.5,
+              "features": 17
+            },
+            {
+              "updatedMs": 215.6,
+              "indexMs": 215.6,
+              "features": 23
+            },
+            {
+              "updatedMs": 220.8,
+              "indexMs": 220.8,
+              "features": 26
+            },
+            {
+              "updatedMs": 235.3,
+              "indexMs": 235.3,
+              "features": 23
+            },
+            {
+              "updatedMs": 229.2,
+              "indexMs": 229.2,
+              "features": 25
+            }
+          ]
+        },
+        "update": {
+          "indexMs": 220.3,
+          "builds": 5,
+          "frames": 242,
+          "frameIntervalMs": 16.7,
+          "maxGapMs": 223.3,
+          "blockedMs": 848.8,
+          "droppedFrames": 63,
+          "steps": [
+            {
+              "updatedMs": 217.3,
+              "indexMs": 217.3,
+              "features": 25
+            },
+            {
+              "updatedMs": 221.4,
+              "indexMs": 221.4,
+              "features": 25
+            },
+            {
+              "updatedMs": 215.3,
+              "indexMs": 215.3,
+              "features": 25
+            },
+            {
+              "updatedMs": 222.2,
+              "indexMs": 222.2,
+              "features": 25
+            },
+            {
+              "updatedMs": 220.3,
+              "indexMs": 220.3,
+              "features": 25
+            }
+          ]
+        }
+      }
+    },
+    {
+      "run": 3,
+      "lib": "rnbc",
+      "count": 10000,
+      "attempt": 1,
+      "memory": {},
+      "result": {
+        "library": "react-native-better-clustering",
+        "version": "main",
+        "count": 10000,
+        "platform": "ios",
+        "osVersion": "26.5",
+        "dimensions": {
+          "width": 402,
+          "height": 874
+        },
+        "frameIntervalMs": 16.7,
+        "engine": {
+          "jsMs": 1.3,
+          "totalMs": 9.5,
+          "builds": [
+            {
+              "jsMs": 1.4,
+              "totalMs": 9.5
+            },
+            {
+              "jsMs": 1.2,
+              "totalMs": 9.5
+            },
+            {
+              "jsMs": 1.3,
+              "totalMs": 10.5
+            }
+          ]
+        },
+        "mount": {
+          "firstClustersMs": 12.2,
+          "settledMs": 12.2,
+          "features": 6,
+          "builds": 1,
+          "frames": 20,
+          "frameIntervalMs": 16.7,
+          "maxGapMs": 17.8,
+          "blockedMs": 0,
+          "droppedFrames": 0
+        },
+        "rerender": {
+          "renderMs": 0.7,
+          "builds": 0,
+          "frames": 310,
+          "frameIntervalMs": 16.7,
+          "maxGapMs": 17.4,
+          "blockedMs": 0,
+          "droppedFrames": 0,
+          "steps": [
+            {
+              "updatedMs": 2.9,
+              "indexMs": null,
+              "features": 6
+            },
+            {
+              "updatedMs": 1.1,
+              "indexMs": null,
+              "features": 6
+            },
+            {
+              "updatedMs": 0.7,
+              "indexMs": null,
+              "features": 6
+            },
+            {
+              "updatedMs": 1.2,
+              "indexMs": null,
+              "features": 6
+            },
+            {
+              "updatedMs": 0.7,
+              "indexMs": null,
+              "features": 6
+            },
+            {
+              "updatedMs": 0.8,
+              "indexMs": null,
+              "features": 6
+            },
+            {
+              "updatedMs": 0.7,
+              "indexMs": null,
+              "features": 6
+            },
+            {
+              "updatedMs": 0.7,
+              "indexMs": null,
+              "features": 6
+            },
+            {
+              "updatedMs": 0.6,
+              "indexMs": null,
+              "features": 6
+            },
+            {
+              "updatedMs": 0.6,
+              "indexMs": null,
+              "features": 6
+            }
+          ]
+        },
+        "pan": {
+          "updatedMs": 0.7,
+          "builds": 0,
+          "frames": 310,
+          "frameIntervalMs": 16.7,
+          "maxGapMs": 21.5,
+          "blockedMs": 0,
+          "droppedFrames": 0,
+          "steps": [
+            {
+              "updatedMs": 7.2,
+              "indexMs": null,
+              "features": 25
+            },
+            {
+              "updatedMs": 0.8,
+              "indexMs": null,
+              "features": 25
+            },
+            {
+              "updatedMs": 1.2,
+              "indexMs": null,
+              "features": 23
+            },
+            {
+              "updatedMs": 0.5,
+              "indexMs": null,
+              "features": 23
+            },
+            {
+              "updatedMs": 0.9,
+              "indexMs": null,
+              "features": 19
+            },
+            {
+              "updatedMs": 0.7,
+              "indexMs": null,
+              "features": 15
+            },
+            {
+              "updatedMs": 0.7,
+              "indexMs": null,
+              "features": 19
+            },
+            {
+              "updatedMs": 0.6,
+              "indexMs": null,
+              "features": 23
+            },
+            {
+              "updatedMs": 0.4,
+              "indexMs": null,
+              "features": 23
+            },
+            {
+              "updatedMs": 0.7,
+              "indexMs": null,
+              "features": 25
+            }
+          ]
+        },
+        "update": {
+          "indexMs": 13.9,
+          "builds": 5,
+          "frames": 303,
+          "frameIntervalMs": 16.7,
+          "maxGapMs": 40.5,
+          "blockedMs": 0,
+          "droppedFrames": 2,
+          "steps": [
+            {
+              "updatedMs": 39.8,
+              "indexMs": 39.8,
+              "features": 25
+            },
+            {
+              "updatedMs": 13.9,
+              "indexMs": 13.9,
+              "features": 25
+            },
+            {
+              "updatedMs": 29,
+              "indexMs": 29,
+              "features": 25
+            },
+            {
+              "updatedMs": 11.4,
+              "indexMs": 11.4,
+              "features": 25
+            },
+            {
+              "updatedMs": 10.8,
+              "indexMs": 10.8,
+              "features": 25
+            }
+          ]
+        }
+      }
+    },
+    {
+      "run": 3,
+      "lib": "rnc",
+      "count": 50000,
+      "attempt": 1,
+      "memory": {},
+      "result": {
+        "library": "react-native-clusterer",
+        "version": "5.0.2",
+        "count": 50000,
+        "platform": "ios",
+        "osVersion": "26.5",
+        "dimensions": {
+          "width": 402,
+          "height": 874
+        },
+        "frameIntervalMs": 16.7,
+        "engine": {
+          "jsMs": 104,
+          "totalMs": 104,
+          "builds": [
+            {
+              "jsMs": 104,
+              "totalMs": 104
+            },
+            {
+              "jsMs": 98.5,
+              "totalMs": 98.5
+            },
+            {
+              "jsMs": 116.4,
+              "totalMs": 116.4
+            }
+          ]
+        },
+        "mount": {
+          "firstClustersMs": 221,
+          "settledMs": 430.3,
+          "features": 6,
+          "builds": 4,
+          "frames": 19,
+          "frameIntervalMs": 16.7,
+          "maxGapMs": 430.4,
+          "blockedMs": 380.4,
+          "droppedFrames": 25
+        },
+        "rerender": {
+          "renderMs": 107.5,
+          "builds": 10,
+          "frames": 253,
+          "frameIntervalMs": 16.7,
+          "maxGapMs": 121,
+          "blockedMs": 569.2,
+          "droppedFrames": 57,
+          "steps": [
+            {
+              "updatedMs": 100.5,
+              "indexMs": null,
+              "features": 6
+            },
+            {
+              "updatedMs": 109.1,
+              "indexMs": null,
+              "features": 6
+            },
+            {
+              "updatedMs": 107.5,
+              "indexMs": null,
+              "features": 6
+            },
+            {
+              "updatedMs": 102.5,
+              "indexMs": null,
+              "features": 6
+            },
+            {
+              "updatedMs": 108.6,
+              "indexMs": null,
+              "features": 6
+            },
+            {
+              "updatedMs": 102.4,
+              "indexMs": null,
+              "features": 6
+            },
+            {
+              "updatedMs": 102.5,
+              "indexMs": null,
+              "features": 6
+            },
+            {
+              "updatedMs": 107.7,
+              "indexMs": null,
+              "features": 6
+            },
+            {
+              "updatedMs": 106.9,
+              "indexMs": null,
+              "features": 6
+            },
+            {
+              "updatedMs": 120.9,
+              "indexMs": null,
+              "features": 6
+            }
+          ]
+        },
+        "pan": {
+          "updatedMs": 215.8,
+          "builds": 20,
+          "frames": 197,
+          "frameIntervalMs": 16.7,
+          "maxGapMs": 223.6,
+          "blockedMs": 1648.2,
+          "droppedFrames": 122,
+          "steps": [
+            {
+              "updatedMs": 220.1,
+              "indexMs": null,
+              "features": 27
+            },
+            {
+              "updatedMs": 209.4,
+              "indexMs": null,
+              "features": 27
+            },
+            {
+              "updatedMs": 215.6,
+              "indexMs": null,
+              "features": 26
+            },
+            {
+              "updatedMs": 207.2,
+              "indexMs": null,
+              "features": 24
+            },
+            {
+              "updatedMs": 223.5,
+              "indexMs": null,
+              "features": 19
+            },
+            {
+              "updatedMs": 215.8,
+              "indexMs": null,
+              "features": 15
+            },
+            {
+              "updatedMs": 215.4,
+              "indexMs": null,
+              "features": 19
+            },
+            {
+              "updatedMs": 204,
+              "indexMs": null,
+              "features": 24
+            },
+            {
+              "updatedMs": 217.2,
+              "indexMs": null,
+              "features": 26
+            },
+            {
+              "updatedMs": 219.3,
+              "indexMs": null,
+              "features": 27
+            }
+          ]
+        },
+        "update": {
+          "indexMs": 317.5,
+          "builds": 20,
+          "frames": 180,
+          "frameIntervalMs": 16.7,
+          "maxGapMs": 462.1,
+          "blockedMs": 1892.1,
+          "droppedFrames": 125,
+          "steps": [
+            {
+              "updatedMs": 458.9,
+              "indexMs": 346.6,
+              "features": 27
+            },
+            {
+              "updatedMs": 435.8,
+              "indexMs": 326.2,
+              "features": 27
+            },
+            {
+              "updatedMs": 422,
+              "indexMs": 317.5,
+              "features": 27
+            },
+            {
+              "updatedMs": 410.4,
+              "indexMs": 310.2,
+              "features": 27
+            },
+            {
+              "updatedMs": 409.3,
+              "indexMs": 306.2,
+              "features": 27
+            }
+          ]
+        }
+      }
+    },
+    {
+      "run": 3,
+      "lib": "usc",
+      "count": 50000,
+      "attempt": 1,
+      "memory": {},
+      "result": {
+        "library": "use-supercluster",
+        "version": "1.2.0",
+        "count": 50000,
+        "platform": "ios",
+        "osVersion": "26.5",
+        "dimensions": {
+          "width": 402,
+          "height": 874
+        },
+        "frameIntervalMs": 16.7,
+        "engine": {
+          "jsMs": 1125.5,
+          "totalMs": 1125.5,
+          "builds": [
+            {
+              "jsMs": 1110.3,
+              "totalMs": 1110.3
+            },
+            {
+              "jsMs": 1125.5,
+              "totalMs": 1125.5
+            },
+            {
+              "jsMs": 1132.1,
+              "totalMs": 1132.1
+            }
+          ]
+        },
+        "mount": {
+          "firstClustersMs": 1199.5,
+          "settledMs": 1199.5,
+          "features": 72,
+          "builds": 1,
+          "frames": 19,
+          "frameIntervalMs": 16.7,
+          "maxGapMs": 1199.5,
+          "blockedMs": 1149.5,
+          "droppedFrames": 71
+        },
+        "rerender": {
+          "renderMs": 0.7,
+          "builds": 0,
+          "frames": 309,
+          "frameIntervalMs": 16.7,
+          "maxGapMs": 17.3,
+          "blockedMs": 0,
+          "droppedFrames": 0,
+          "steps": [
+            {
+              "updatedMs": 0.7,
+              "indexMs": null,
+              "features": 72
+            },
+            {
+              "updatedMs": 0.7,
+              "indexMs": null,
+              "features": 72
+            },
+            {
+              "updatedMs": 0.5,
+              "indexMs": null,
+              "features": 72
+            },
+            {
+              "updatedMs": 0.7,
+              "indexMs": null,
+              "features": 72
+            },
+            {
+              "updatedMs": 0.5,
+              "indexMs": null,
+              "features": 72
+            },
+            {
+              "updatedMs": 0.6,
+              "indexMs": null,
+              "features": 72
+            },
+            {
+              "updatedMs": 0.6,
+              "indexMs": null,
+              "features": 72
+            },
+            {
+              "updatedMs": 0.9,
+              "indexMs": null,
+              "features": 72
+            },
+            {
+              "updatedMs": 0.7,
+              "indexMs": null,
+              "features": 72
+            },
+            {
+              "updatedMs": 1,
+              "indexMs": null,
+              "features": 72
+            }
+          ]
+        },
+        "pan": {
+          "updatedMs": 1205.2,
+          "builds": 10,
+          "frames": 198,
+          "frameIntervalMs": 16.7,
+          "maxGapMs": 1263,
+          "blockedMs": 11561.7,
+          "droppedFrames": 716,
+          "steps": [
+            {
+              "updatedMs": 1205.2,
+              "indexMs": 1205.2,
+              "features": 29
+            },
+            {
+              "updatedMs": 1262.9,
+              "indexMs": 1262.9,
+              "features": 26
+            },
+            {
+              "updatedMs": 1216.7,
+              "indexMs": 1216.7,
+              "features": 26
+            },
+            {
+              "updatedMs": 1249.6,
+              "indexMs": 1249.6,
+              "features": 27
+            },
+            {
+              "updatedMs": 1199.8,
+              "indexMs": 1199.8,
+              "features": 25
+            },
+            {
+              "updatedMs": 1183.3,
+              "indexMs": 1183.3,
+              "features": 17
+            },
+            {
+              "updatedMs": 1208.4,
+              "indexMs": 1208.4,
+              "features": 25
+            },
+            {
+              "updatedMs": 1194.2,
+              "indexMs": 1194.2,
+              "features": 27
+            },
+            {
+              "updatedMs": 1203.9,
+              "indexMs": 1203.9,
+              "features": 26
+            },
+            {
+              "updatedMs": 1136.7,
+              "indexMs": 1136.7,
+              "features": 26
+            }
+          ]
+        },
+        "update": {
+          "indexMs": 1173.8,
+          "builds": 5,
+          "frames": 98,
+          "frameIntervalMs": 16.7,
+          "maxGapMs": 1246.4,
+          "blockedMs": 5662.9,
+          "droppedFrames": 351,
+          "steps": [
+            {
+              "updatedMs": 1211.7,
+              "indexMs": 1211.7,
+              "features": 26
+            },
+            {
+              "updatedMs": 1245.8,
+              "indexMs": 1245.8,
+              "features": 26
+            },
+            {
+              "updatedMs": 1173.8,
+              "indexMs": 1173.8,
+              "features": 26
+            },
+            {
+              "updatedMs": 1129.3,
+              "indexMs": 1129.3,
+              "features": 26
+            },
+            {
+              "updatedMs": 1145.8,
+              "indexMs": 1145.8,
+              "features": 26
+            }
+          ]
+        }
+      }
+    },
+    {
+      "run": 3,
+      "lib": "rnbc",
+      "count": 50000,
+      "attempt": 1,
+      "memory": {},
+      "result": {
+        "library": "react-native-better-clustering",
+        "version": "main",
+        "count": 50000,
+        "platform": "ios",
+        "osVersion": "26.5",
+        "dimensions": {
+          "width": 402,
+          "height": 874
+        },
+        "frameIntervalMs": 16.7,
+        "engine": {
+          "jsMs": 5.6,
+          "totalMs": 60.4,
+          "builds": [
+            {
+              "jsMs": 6.4,
+              "totalMs": 61.5
+            },
+            {
+              "jsMs": 5.4,
+              "totalMs": 58
+            },
+            {
+              "jsMs": 5.6,
+              "totalMs": 60.4
+            }
+          ]
+        },
+        "mount": {
+          "firstClustersMs": 63.9,
+          "settledMs": 63.9,
+          "features": 6,
+          "builds": 1,
+          "frames": 22,
+          "frameIntervalMs": 16.7,
+          "maxGapMs": 18.1,
+          "blockedMs": 0,
+          "droppedFrames": 0
+        },
+        "rerender": {
+          "renderMs": 0.7,
+          "builds": 0,
+          "frames": 309,
+          "frameIntervalMs": 16.7,
+          "maxGapMs": 17.2,
+          "blockedMs": 0,
+          "droppedFrames": 0,
+          "steps": [
+            {
+              "updatedMs": 0.6,
+              "indexMs": null,
+              "features": 6
+            },
+            {
+              "updatedMs": 0.7,
+              "indexMs": null,
+              "features": 6
+            },
+            {
+              "updatedMs": 0.8,
+              "indexMs": null,
+              "features": 6
+            },
+            {
+              "updatedMs": 0.7,
+              "indexMs": null,
+              "features": 6
+            },
+            {
+              "updatedMs": 0.9,
+              "indexMs": null,
+              "features": 6
+            },
+            {
+              "updatedMs": 0.6,
+              "indexMs": null,
+              "features": 6
+            },
+            {
+              "updatedMs": 2.3,
+              "indexMs": null,
+              "features": 6
+            },
+            {
+              "updatedMs": 0.7,
+              "indexMs": null,
+              "features": 6
+            },
+            {
+              "updatedMs": 0.7,
+              "indexMs": null,
+              "features": 6
+            },
+            {
+              "updatedMs": 0.6,
+              "indexMs": null,
+              "features": 6
+            }
+          ]
+        },
+        "pan": {
+          "updatedMs": 0.9,
+          "builds": 0,
+          "frames": 310,
+          "frameIntervalMs": 16.7,
+          "maxGapMs": 17.2,
+          "blockedMs": 0,
+          "droppedFrames": 0,
+          "steps": [
+            {
+              "updatedMs": 0.8,
+              "indexMs": null,
+              "features": 27
+            },
+            {
+              "updatedMs": 0.9,
+              "indexMs": null,
+              "features": 27
+            },
+            {
+              "updatedMs": 1.4,
+              "indexMs": null,
+              "features": 26
+            },
+            {
+              "updatedMs": 0.7,
+              "indexMs": null,
+              "features": 24
+            },
+            {
+              "updatedMs": 0.7,
+              "indexMs": null,
+              "features": 19
+            },
+            {
+              "updatedMs": 0.8,
+              "indexMs": null,
+              "features": 15
+            },
+            {
+              "updatedMs": 1.5,
+              "indexMs": null,
+              "features": 19
+            },
+            {
+              "updatedMs": 0.7,
+              "indexMs": null,
+              "features": 24
+            },
+            {
+              "updatedMs": 1.5,
+              "indexMs": null,
+              "features": 26
+            },
+            {
+              "updatedMs": 2.4,
+              "indexMs": null,
+              "features": 27
+            }
+          ]
+        },
+        "update": {
+          "indexMs": 53.8,
+          "builds": 5,
+          "frames": 304,
+          "frameIntervalMs": 16.7,
+          "maxGapMs": 34.5,
+          "blockedMs": 0,
+          "droppedFrames": 1,
+          "steps": [
+            {
+              "updatedMs": 95.5,
+              "indexMs": 95.5,
+              "features": 27
+            },
+            {
+              "updatedMs": 53.6,
+              "indexMs": 53.6,
+              "features": 27
+            },
+            {
+              "updatedMs": 53.8,
+              "indexMs": 53.8,
+              "features": 27
+            },
+            {
+              "updatedMs": 53.7,
+              "indexMs": 53.7,
+              "features": 27
+            },
+            {
+              "updatedMs": 54.5,
+              "indexMs": 54.5,
+              "features": 27
+            }
+          ]
+        }
+      }
+    },
+    {
+      "run": 3,
+      "lib": "rnc",
+      "count": 100000,
+      "attempt": 1,
+      "memory": {},
+      "result": {
+        "library": "react-native-clusterer",
+        "version": "5.0.2",
+        "count": 100000,
+        "platform": "ios",
+        "osVersion": "26.5",
+        "dimensions": {
+          "width": 402,
+          "height": 874
+        },
+        "frameIntervalMs": 16.7,
+        "engine": {
+          "jsMs": 234.1,
+          "totalMs": 234.1,
+          "builds": [
+            {
+              "jsMs": 241.4,
+              "totalMs": 241.4
+            },
+            {
+              "jsMs": 234.1,
+              "totalMs": 234.1
+            },
+            {
+              "jsMs": 228.6,
+              "totalMs": 228.6
+            }
+          ]
+        },
+        "mount": {
+          "firstClustersMs": 473.8,
+          "settledMs": 922.7,
+          "features": 6,
+          "builds": 4,
+          "frames": 20,
+          "frameIntervalMs": 16.7,
+          "maxGapMs": 922.8,
+          "blockedMs": 872.8,
+          "droppedFrames": 55
+        },
+        "rerender": {
+          "renderMs": 238,
+          "builds": 10,
+          "frames": 196,
+          "frameIntervalMs": 16.7,
+          "maxGapMs": 273.5,
+          "blockedMs": 1904.1,
+          "droppedFrames": 138,
+          "steps": [
+            {
+              "updatedMs": 230.7,
+              "indexMs": null,
+              "features": 6
+            },
+            {
+              "updatedMs": 234.6,
+              "indexMs": null,
+              "features": 6
+            },
+            {
+              "updatedMs": 240.3,
+              "indexMs": null,
+              "features": 6
+            },
+            {
+              "updatedMs": 228.4,
+              "indexMs": null,
+              "features": 6
+            },
+            {
+              "updatedMs": 243.7,
+              "indexMs": null,
+              "features": 6
+            },
+            {
+              "updatedMs": 236.3,
+              "indexMs": null,
+              "features": 6
+            },
+            {
+              "updatedMs": 221.2,
+              "indexMs": null,
+              "features": 6
+            },
+            {
+              "updatedMs": 238,
+              "indexMs": null,
+              "features": 6
+            },
+            {
+              "updatedMs": 256.7,
+              "indexMs": null,
+              "features": 6
+            },
+            {
+              "updatedMs": 273.4,
+              "indexMs": null,
+              "features": 6
+            }
+          ]
+        },
+        "pan": {
+          "updatedMs": 493.5,
+          "builds": 20,
+          "frames": 197,
+          "frameIntervalMs": 16.7,
+          "maxGapMs": 535.5,
+          "blockedMs": 4390.4,
+          "droppedFrames": 288,
+          "steps": [
+            {
+              "updatedMs": 525,
+              "indexMs": null,
+              "features": 24
+            },
+            {
+              "updatedMs": 437.9,
+              "indexMs": null,
+              "features": 23
+            },
+            {
+              "updatedMs": 459.8,
+              "indexMs": null,
+              "features": 23
+            },
+            {
+              "updatedMs": 490.3,
+              "indexMs": null,
+              "features": 23
+            },
+            {
+              "updatedMs": 455.1,
+              "indexMs": null,
+              "features": 19
+            },
+            {
+              "updatedMs": 511.3,
+              "indexMs": null,
+              "features": 15
+            },
+            {
+              "updatedMs": 535.4,
+              "indexMs": null,
+              "features": 19
+            },
+            {
+              "updatedMs": 505,
+              "indexMs": null,
+              "features": 23
+            },
+            {
+              "updatedMs": 476.1,
+              "indexMs": null,
+              "features": 23
+            },
+            {
+              "updatedMs": 493.5,
+              "indexMs": null,
+              "features": 23
+            }
+          ]
+        },
+        "update": {
+          "indexMs": 870.7,
+          "builds": 20,
+          "frames": 97,
+          "frameIntervalMs": 16.7,
+          "maxGapMs": 4925.2,
+          "blockedMs": 9197.3,
+          "droppedFrames": 563,
+          "steps": [
+            {
+              "updatedMs": 1059.2,
+              "indexMs": 782.7,
+              "features": 23
+            },
+            {
+              "updatedMs": 1156.7,
+              "indexMs": 870.7,
+              "features": 23
+            },
+            {
+              "updatedMs": 4923.7,
+              "indexMs": 4621.8,
+              "features": 23
+            },
+            {
+              "updatedMs": 1131.2,
+              "indexMs": 856.1,
+              "features": 23
+            },
+            {
+              "updatedMs": 1161.7,
+              "indexMs": 883.5,
+              "features": 23
+            }
+          ]
+        }
+      }
+    },
+    {
+      "run": 3,
+      "lib": "usc",
+      "count": 100000,
+      "attempt": 1,
+      "memory": {},
+      "result": {
+        "library": "use-supercluster",
+        "version": "1.2.0",
+        "count": 100000,
+        "platform": "ios",
+        "osVersion": "26.5",
+        "dimensions": {
+          "width": 402,
+          "height": 874
+        },
+        "frameIntervalMs": 16.7,
+        "engine": {
+          "jsMs": 2488.4,
+          "totalMs": 2488.4,
+          "builds": [
+            {
+              "jsMs": 2826.6,
+              "totalMs": 2826.6
+            },
+            {
+              "jsMs": 2436.2,
+              "totalMs": 2436.2
+            },
+            {
+              "jsMs": 2488.4,
+              "totalMs": 2488.4
+            }
+          ]
+        },
+        "mount": {
+          "firstClustersMs": 2455.3,
+          "settledMs": 2455.3,
+          "features": 71,
+          "builds": 1,
+          "frames": 20,
+          "frameIntervalMs": 16.7,
+          "maxGapMs": 2455.4,
+          "blockedMs": 2405.4,
+          "droppedFrames": 147
+        },
+        "rerender": {
+          "renderMs": 0.7,
+          "builds": 0,
+          "frames": 309,
+          "frameIntervalMs": 16.7,
+          "maxGapMs": 17.5,
+          "blockedMs": 0,
+          "droppedFrames": 0,
+          "steps": [
+            {
+              "updatedMs": 1,
+              "indexMs": null,
+              "features": 71
+            },
+            {
+              "updatedMs": 0.6,
+              "indexMs": null,
+              "features": 71
+            },
+            {
+              "updatedMs": 0.7,
+              "indexMs": null,
+              "features": 71
+            },
+            {
+              "updatedMs": 0.9,
+              "indexMs": null,
+              "features": 71
+            },
+            {
+              "updatedMs": 0.7,
+              "indexMs": null,
+              "features": 71
+            },
+            {
+              "updatedMs": 0.5,
+              "indexMs": null,
+              "features": 71
+            },
+            {
+              "updatedMs": 0.8,
+              "indexMs": null,
+              "features": 71
+            },
+            {
+              "updatedMs": 1,
+              "indexMs": null,
+              "features": 71
+            },
+            {
+              "updatedMs": 0.6,
+              "indexMs": null,
+              "features": 71
+            },
+            {
+              "updatedMs": 0.7,
+              "indexMs": null,
+              "features": 71
+            }
+          ]
+        },
+        "pan": {
+          "updatedMs": 2379.8,
+          "builds": 10,
+          "frames": 194,
+          "frameIntervalMs": 16.7,
+          "maxGapMs": 3018.8,
+          "blockedMs": 23951.8,
+          "droppedFrames": 1460,
+          "steps": [
+            {
+              "updatedMs": 2328.6,
+              "indexMs": 2328.6,
+              "features": 28
+            },
+            {
+              "updatedMs": 2380.6,
+              "indexMs": 2380.6,
+              "features": 26
+            },
+            {
+              "updatedMs": 2661.4,
+              "indexMs": 2661.4,
+              "features": 25
+            },
+            {
+              "updatedMs": 2926.5,
+              "indexMs": 2926.5,
+              "features": 25
+            },
+            {
+              "updatedMs": 3018.7,
+              "indexMs": 3018.7,
+              "features": 25
+            },
+            {
+              "updatedMs": 2124.2,
+              "indexMs": 2124.2,
+              "features": 18
+            },
+            {
+              "updatedMs": 2155.7,
+              "indexMs": 2155.7,
+              "features": 25
+            },
+            {
+              "updatedMs": 2209.3,
+              "indexMs": 2209.3,
+              "features": 25
+            },
+            {
+              "updatedMs": 2265.6,
+              "indexMs": 2265.6,
+              "features": 25
+            },
+            {
+              "updatedMs": 2379.8,
+              "indexMs": 2379.8,
+              "features": 26
+            }
+          ]
+        },
+        "update": {
+          "indexMs": 2337.8,
+          "builds": 5,
+          "frames": 99,
+          "frameIntervalMs": 16.7,
+          "maxGapMs": 2421.3,
+          "blockedMs": 11451.6,
+          "droppedFrames": 699,
+          "steps": [
+            {
+              "updatedMs": 2337.8,
+              "indexMs": 2337.8,
+              "features": 26
+            },
+            {
+              "updatedMs": 2323.9,
+              "indexMs": 2323.9,
+              "features": 26
+            },
+            {
+              "updatedMs": 2233.4,
+              "indexMs": 2233.4,
+              "features": 26
+            },
+            {
+              "updatedMs": 2370.8,
+              "indexMs": 2370.8,
+              "features": 26
+            },
+            {
+              "updatedMs": 2417.3,
+              "indexMs": 2417.3,
+              "features": 26
+            }
+          ]
+        }
+      }
+    },
+    {
+      "run": 3,
+      "lib": "rnbc",
+      "count": 100000,
+      "attempt": 1,
+      "memory": {},
+      "result": {
+        "library": "react-native-better-clustering",
+        "version": "main",
+        "count": 100000,
+        "platform": "ios",
+        "osVersion": "26.5",
+        "dimensions": {
+          "width": 402,
+          "height": 874
+        },
+        "frameIntervalMs": 16.7,
+        "engine": {
+          "jsMs": 10.3,
+          "totalMs": 139.8,
+          "builds": [
+            {
+              "jsMs": 9.9,
+              "totalMs": 139.8
+            },
+            {
+              "jsMs": 10.3,
+              "totalMs": 139.5
+            },
+            {
+              "jsMs": 15.8,
+              "totalMs": 195.5
+            }
+          ]
+        },
+        "mount": {
+          "firstClustersMs": 184.1,
+          "settledMs": 184.1,
+          "features": 6,
+          "builds": 1,
+          "frames": 30,
+          "frameIntervalMs": 16.7,
+          "maxGapMs": 20.3,
+          "blockedMs": 0,
+          "droppedFrames": 0
+        },
+        "rerender": {
+          "renderMs": 0.8,
+          "builds": 0,
+          "frames": 310,
+          "frameIntervalMs": 16.7,
+          "maxGapMs": 17.7,
+          "blockedMs": 0,
+          "droppedFrames": 0,
+          "steps": [
+            {
+              "updatedMs": 1.1,
+              "indexMs": null,
+              "features": 6
+            },
+            {
+              "updatedMs": 0.8,
+              "indexMs": null,
+              "features": 6
+            },
+            {
+              "updatedMs": 0.7,
+              "indexMs": null,
+              "features": 6
+            },
+            {
+              "updatedMs": 1,
+              "indexMs": null,
+              "features": 6
+            },
+            {
+              "updatedMs": 0.6,
+              "indexMs": null,
+              "features": 6
+            },
+            {
+              "updatedMs": 0.7,
+              "indexMs": null,
+              "features": 6
+            },
+            {
+              "updatedMs": 0.6,
+              "indexMs": null,
+              "features": 6
+            },
+            {
+              "updatedMs": 1,
+              "indexMs": null,
+              "features": 6
+            },
+            {
+              "updatedMs": 0.8,
+              "indexMs": null,
+              "features": 6
+            },
+            {
+              "updatedMs": 0.6,
+              "indexMs": null,
+              "features": 6
+            }
+          ]
+        },
+        "pan": {
+          "updatedMs": 0.7,
+          "builds": 0,
+          "frames": 308,
+          "frameIntervalMs": 16.7,
+          "maxGapMs": 17.5,
+          "blockedMs": 0,
+          "droppedFrames": 0,
+          "steps": [
+            {
+              "updatedMs": 0.9,
+              "indexMs": null,
+              "features": 24
+            },
+            {
+              "updatedMs": 0.7,
+              "indexMs": null,
+              "features": 23
+            },
+            {
+              "updatedMs": 0.4,
+              "indexMs": null,
+              "features": 23
+            },
+            {
+              "updatedMs": 0.5,
+              "indexMs": null,
+              "features": 23
+            },
+            {
+              "updatedMs": 0.9,
+              "indexMs": null,
+              "features": 19
+            },
+            {
+              "updatedMs": 0.9,
+              "indexMs": null,
+              "features": 15
+            },
+            {
+              "updatedMs": 0.5,
+              "indexMs": null,
+              "features": 19
+            },
+            {
+              "updatedMs": 0.5,
+              "indexMs": null,
+              "features": 23
+            },
+            {
+              "updatedMs": 0.8,
+              "indexMs": null,
+              "features": 23
+            },
+            {
+              "updatedMs": 0.5,
+              "indexMs": null,
+              "features": 23
+            }
+          ]
+        },
+        "update": {
+          "indexMs": 132.9,
+          "builds": 5,
+          "frames": 305,
+          "frameIntervalMs": 16.7,
+          "maxGapMs": 32.4,
+          "blockedMs": 0,
+          "droppedFrames": 1,
+          "steps": [
+            {
+              "updatedMs": 142.8,
+              "indexMs": 142.8,
+              "features": 23
+            },
+            {
+              "updatedMs": 155.9,
+              "indexMs": 155.9,
+              "features": 23
+            },
+            {
+              "updatedMs": 132.9,
+              "indexMs": 132.9,
+              "features": 23
+            },
+            {
+              "updatedMs": 121.4,
+              "indexMs": 121.4,
+              "features": 23
+            },
+            {
+              "updatedMs": 130.7,
+              "indexMs": 130.7,
+              "features": 23
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

@@ -85,6 +85,16 @@ export function frameStats(
   }
 }
 
+/** When the last frame that came more than `gapMs` after the one before it ran, or 0. */
+export function lastLongFrameAt(frames: readonly number[], gapMs: number): number {
+  for (let index = frames.length - 1; index > 0; index -= 1) {
+    if (frames[index] - frames[index - 1] > gapMs) {
+      return frames[index]
+    }
+  }
+  return 0
+}
+
 /** The median gap between the frames inside `[start, end]`. */
 export function medianFrameInterval(
   frames: readonly number[],

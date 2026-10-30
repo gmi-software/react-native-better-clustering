@@ -27,6 +27,7 @@
   "overrides": {
     "react-native-reanimated": "4.5.0",
     "react-native-worklets": "0.10.0",
+    "react-native-nitro-modules": "0.35.9",
     "webpack": "5.105.4",
     "webpackbar": "7.0.0",
     "@docusaurus/core": "3.10.2",
