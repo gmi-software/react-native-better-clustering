@@ -18,6 +18,7 @@ import {
   type FrameMonitor,
 } from './frameMonitor'
 import {
+  countHookBuilds,
   HOOK_LIBRARIES,
   hookBuilds,
   type HookLibrary,
@@ -166,6 +167,7 @@ export function HookBenchmarkScreen() {
   const library = HOOK_LIBRARIES[libraryId]
 
   const run = async () => {
+    countHookBuilds()
     const monitor = startFrameMonitor()
     monitorRef.current = monitor
     const frames = monitor.frames

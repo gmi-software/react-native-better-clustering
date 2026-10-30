@@ -62,9 +62,22 @@ function countCalls<T extends object>(prototype: T, method: keyof T) {
   } as T[keyof T]
 }
 
-countCalls(ClustererSupercluster.prototype, 'load')
-countCalls(Supercluster.prototype, 'load')
-countCalls(BetterSupercluster.prototype, 'loadAsync')
+let counting = false
+
+/**
+ * Starts counting into {@linkcode hookBuilds}. Only when the hook benchmark
+ * runs: react-native-map-clustering in the map benchmark loads the same
+ * supercluster.
+ */
+export function countHookBuilds(): void {
+  if (counting) {
+    return
+  }
+  counting = true
+  countCalls(ClustererSupercluster.prototype, 'load')
+  countCalls(Supercluster.prototype, 'load')
+  countCalls(BetterSupercluster.prototype, 'loadAsync')
+}
 
 /** use-supercluster takes a bbox and a zoom: the region's own bbox, and the zoom its width spans. */
 function regionToBoundsAndZoom(region: Region) {
