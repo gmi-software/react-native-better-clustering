@@ -60,7 +60,7 @@ The index is rebuilt only when the points' coordinates, their order, or a
   `features` array. Leaf queries (`getLeaves`, `getChildren`) return the newest
   feature objects, so changed properties show up there without a rebuild.
   Point features already in `features` keep their identity until the region
-  changes.
+  changes, and then come back as the newest objects.
 - When the content does change, the hook keeps returning the previous clusters
   while the new index builds, then swaps to the new engine and destroys the old
   one. A `supercluster` reference you hold goes stale after that swap; use the
