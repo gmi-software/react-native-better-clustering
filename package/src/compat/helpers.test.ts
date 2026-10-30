@@ -556,6 +556,34 @@ describe('flattenChildren', () => {
       expect(second[0]).not.toBe(first[0])
     })
 
+    it('tells a prop set to undefined from another prop', () => {
+      const withProps = (props: Record<string, unknown>) =>
+        amongMany(React.createElement(Marker, { key: 'a', ...props }))
+      const coordinate = { latitude: 52.0, longitude: 21.0 }
+      const cache = createChildrenCache()
+      flattenChildren([withProps({ coordinate, image: undefined })], cache)
+      const [titled] = flattenChildren(
+        [withProps({ coordinate, title: 'Office' })],
+        cache
+      )
+      expect(
+        (titled as React.ReactElement<{ title: string }>).props.title
+      ).toBe('Office')
+
+      flattenChildren(
+        [withProps({ coordinate: { ...coordinate, altitude: undefined } })],
+        cache
+      )
+      const moved = { ...coordinate, heading: 90 }
+      const [headed] = flattenChildren(
+        [withProps({ coordinate: moved })],
+        cache
+      )
+      expect(
+        (headed as React.ReactElement<{ coordinate: unknown }>).props.coordinate
+      ).toBe(moved)
+    })
+
     it('notices an element replaced in place in a kept array', () => {
       const cache = createChildrenCache()
       const kept = many()

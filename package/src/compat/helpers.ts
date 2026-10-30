@@ -147,6 +147,20 @@ const MIN_COMPARED = 64
 /** React 19 passes `ref` as a prop; earlier versions keep it on the element. */
 const REF_IN_PROPS = Number.parseInt(React.version, 10) >= 19
 
+const hasOwnProperty = Object.prototype.hasOwnProperty
+
+/**
+ * Whether `x[name]` is `undefined` and `y` has no `name` at all, which reading
+ * `y[name]` cannot tell from an `undefined` value.
+ */
+function missingUndefined(
+  x: Record<string, unknown>,
+  y: Record<string, unknown>,
+  name: string
+): boolean {
+  return x[name] === undefined && !hasOwnProperty.call(y, name)
+}
+
 /**
  * Whether `a` and `b` are plain objects with the same own values, such as two
  * `coordinate={{ latitude, longitude }}` literals. Elements never are.
@@ -170,10 +184,11 @@ function sameValues(a: unknown, b: unknown): boolean {
   let count = 0
   for (const name in x) {
     count++
-    if (x[name] !== y[name]) {
+    if (x[name] !== y[name] || missingUndefined(x, y, name)) {
       return false
     }
   }
+  // Every key of `x` is one of `y`, so as many keys are the same keys.
   for (const _name in y) {
     count--
   }
@@ -200,10 +215,16 @@ function sameElement(a: React.ReactElement, b: React.ReactElement): boolean {
   let count = 0
   for (const name in x) {
     count++
-    if (x[name] !== y[name] && !sameValues(x[name], y[name])) {
+    const value = x[name]
+    if (
+      value === y[name]
+        ? missingUndefined(x, y, name)
+        : !sameValues(value, y[name])
+    ) {
       return false
     }
   }
+  // Every key of `x` is one of `y`, so as many keys are the same keys.
   for (const _name in y) {
     count--
   }
