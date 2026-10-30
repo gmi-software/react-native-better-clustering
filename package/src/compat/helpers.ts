@@ -100,24 +100,33 @@ export function markerElementOf(
  */
 const MAX_FLATTENED_ONE_BY_ONE = 64
 
+/** A child array as {@linkcode flattenChildren} last flattened it. */
+interface FlattenedArray {
+  /** The children it held. */
+  source: React.ReactNode[]
+  /** What `Children.toArray` made of them. */
+  nodes: React.ReactNode[]
+  /**
+   * Whether every child was an element, so `nodes[i]` is the clone of
+   * `source[i]`: `Children.toArray` drops `null` and flattens nested arrays.
+   */
+  oneToOne: boolean
+}
+
 /**
- * The nested child arrays {@linkcode flattenChildren} flattened for one map,
- * kept between renders. Create it with {@linkcode createChildrenCache}.
+ * The child arrays {@linkcode flattenChildren} flattened for one map at its
+ * last render, kept between renders. Create it with
+ * {@linkcode createChildrenCache}.
  */
-export type ChildrenCache = WeakMap<
-  readonly React.ReactNode[],
-  {
-    /** Where the array was among the top-level children. */
-    position: number
-    /** The children it held then. */
-    source: React.ReactNode[]
-    /** What `Children.toArray` made of them there. */
-    nodes: React.ReactNode[]
-  }
->
+export interface ChildrenCache {
+  /** Each nested array, by its position among the top-level children. */
+  nested: Array<FlattenedArray | undefined>
+  /** All of the children, when they were one array flattened at once. */
+  whole: FlattenedArray | undefined
+}
 
 export function createChildrenCache(): ChildrenCache {
-  return new WeakMap()
+  return { nested: [], whole: undefined }
 }
 
 /** `child` at `position` of an otherwise empty array. */
@@ -127,19 +136,154 @@ function childAt(position: number, child: React.ReactNode): React.ReactNode[] {
   return holder
 }
 
-function sameChildren(
-  previous: readonly React.ReactNode[],
-  next: readonly React.ReactNode[]
-): boolean {
-  if (previous.length !== next.length) {
+/**
+ * Children an array needs before {@linkcode reflatten} compares the elements
+ * that changed: `Children.toArray` flattens a shorter one about as fast. It is
+ * also how far into an array it clones before it leaves one in which more than
+ * half have changed to `Children.toArray`.
+ */
+const MIN_COMPARED = 64
+
+/** React 19 passes `ref` as a prop; earlier versions keep it on the element. */
+const REF_IN_PROPS = Number.parseInt(React.version, 10) >= 19
+
+/**
+ * Whether `a` and `b` are plain objects with the same own values, such as two
+ * `coordinate={{ latitude, longitude }}` literals. Elements never are.
+ */
+function sameValues(a: unknown, b: unknown): boolean {
+  if (
+    typeof a !== 'object' ||
+    typeof b !== 'object' ||
+    a === null ||
+    b === null ||
+    Object.getPrototypeOf(a) !== Object.prototype ||
+    Object.getPrototypeOf(b) !== Object.prototype
+  ) {
     return false
   }
-  for (let i = 0; i < next.length; i++) {
-    if (previous[i] !== next[i]) {
+  const x = a as Record<string, unknown>
+  const y = b as Record<string, unknown>
+  if (x.$$typeof !== undefined || y.$$typeof !== undefined) {
+    return false
+  }
+  let count = 0
+  for (const name in x) {
+    count++
+    if (x[name] !== y[name]) {
       return false
     }
   }
-  return true
+  for (const _name in y) {
+    count--
+  }
+  return count === 0
+}
+
+/**
+ * Whether two elements render the same: the same type and key, and each prop
+ * the same value or a plain object of the same values. A function, an element
+ * or any other object only matches itself, so a marker given a new callback or
+ * new children never does.
+ */
+function sameElement(a: React.ReactElement, b: React.ReactElement): boolean {
+  if (
+    a.type !== b.type ||
+    a.key !== b.key ||
+    (!REF_IN_PROPS &&
+      (a as { ref?: unknown }).ref !== (b as { ref?: unknown }).ref)
+  ) {
+    return false
+  }
+  const x = a.props as Record<string, unknown>
+  const y = b.props as Record<string, unknown>
+  let count = 0
+  for (const name in x) {
+    count++
+    if (x[name] !== y[name] && !sameValues(x[name], y[name])) {
+      return false
+    }
+  }
+  for (const _name in y) {
+    count--
+  }
+  return count === 0
+}
+
+/**
+ * `next` flattened like `previous` was: an element that renders the same as
+ * the one before it keeps that one's clone, and an element with other props
+ * under the same key is cloned with that clone's key. Null when anything else
+ * changed, which only `Children.toArray` can key, when most elements did, or
+ * when a short array changed at all.
+ */
+function reflatten(
+  previous: FlattenedArray | undefined,
+  next: React.ReactNode[]
+): FlattenedArray | null {
+  if (!previous?.oneToOne || previous.source.length !== next.length) {
+    return null
+  }
+  const source = previous.source
+  const length = next.length
+  let start = 0
+  while (start < length && source[start] === next[start]) {
+    start++
+  }
+  if (start === length) {
+    return previous
+  }
+  if (length < MIN_COMPARED) {
+    return null
+  }
+
+  const clonesBefore = previous.nodes
+  let nodes: React.ReactNode[] | null = null
+  let clones = 0
+  for (let i = start; i < length; i++) {
+    const before = source[i] as React.ReactElement
+    const after = next[i]
+    if (
+      before === after ||
+      (React.isValidElement(after) && sameElement(before, after))
+    ) {
+      if (nodes !== null) {
+        nodes[i] = clonesBefore[i]
+      }
+      continue
+    }
+    // Once most of them have other props, one `Children.toArray` of them all
+    // costs less than cloning each one.
+    if (
+      !React.isValidElement(after) ||
+      before.type !== after.type ||
+      before.key !== after.key ||
+      (++clones * 2 > i + 1 && i >= MIN_COMPARED)
+    ) {
+      return null
+    }
+    nodes ??= clonesBefore.slice(0, i)
+    nodes[i] = React.cloneElement(after, {
+      key: (clonesBefore[i] as React.ReactElement).key,
+    })
+  }
+  return { source: next.slice(), nodes: nodes ?? clonesBefore, oneToOne: true }
+}
+
+/** `holder` flattened with `Children.toArray`, as the children `source` held. */
+function flattenAnew(
+  source: React.ReactNode[],
+  holder: React.ReactNode[]
+): FlattenedArray {
+  let oneToOne = true
+  for (let i = 0; i < source.length && oneToOne; i++) {
+    oneToOne = React.isValidElement(source[i])
+  }
+  return {
+    source: source.slice(),
+    nodes: React.Children.toArray(holder),
+    oneToOne,
+  }
 }
 
 /**
@@ -161,9 +305,11 @@ const flattenedRuns = new WeakMap<
 >()
 
 /**
- * `Children.toArray(children)`, without cloning the elements of a nested
- * array again while it stays at the same position and holds the same
- * children, such as markers created once with `useMemo`.
+ * `Children.toArray(children)`, without cloning an element again while it
+ * renders the same as the element at its place at the last render: kept, such
+ * as markers created once with `useMemo`, or created again with props of the
+ * same values. An element with other props under the same key is cloned on
+ * its own; a child array that changes length or keys is flattened again.
  *
  * Each top-level child is flattened on its own, at its position in an
  * otherwise empty array, so React gives every element the key it would get
@@ -173,10 +319,20 @@ export function flattenChildren(
   children: React.ReactNode,
   cache: ChildrenCache
 ): React.ReactNode[] {
-  if (!Array.isArray(children) || children.length > MAX_FLATTENED_ONE_BY_ONE) {
+  if (!Array.isArray(children)) {
+    cache.nested = []
+    cache.whole = undefined
     return React.Children.toArray(children)
   }
+  if (children.length > MAX_FLATTENED_ONE_BY_ONE) {
+    const whole =
+      reflatten(cache.whole, children) ?? flattenAnew(children, children)
+    cache.nested = []
+    cache.whole = whole
+    return whole.nodes
+  }
 
+  const nested: Array<FlattenedArray | undefined> = []
   const parts: React.ReactNode[][] = []
   for (let position = 0; position < children.length; position++) {
     const child = children[position] as React.ReactNode
@@ -184,19 +340,14 @@ export function flattenChildren(
       parts.push(React.Children.toArray(childAt(position, child)))
       continue
     }
-    const cached = cache.get(child)
-    if (
-      cached != null &&
-      cached.position === position &&
-      sameChildren(cached.source, child)
-    ) {
-      parts.push(cached.nodes)
-      continue
-    }
-    const nodes = React.Children.toArray(childAt(position, child))
-    cache.set(child, { position, source: child.slice(), nodes })
-    parts.push(nodes)
+    const flattened =
+      reflatten(cache.nested[position], child) ??
+      flattenAnew(child, childAt(position, child))
+    nested[position] = flattened
+    parts.push(flattened.nodes)
   }
+  cache.nested = nested
+  cache.whole = undefined
   const flattened = concatRuns(parts)
   flattenedRuns.set(flattened, parts)
   return flattened

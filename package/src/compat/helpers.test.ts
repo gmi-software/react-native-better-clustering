@@ -316,6 +316,260 @@ describe('flattenChildren', () => {
     const grown = flattenChildren([null, kept], cache)
     expect(shape(grown)).toEqual(shape(React.Children.toArray([null, kept])))
   })
+
+  describe('of elements created again', () => {
+    const many = (latitude = 52.0) =>
+      Array.from({ length: 100 }, (_, index) => marker(`m${index}`, latitude))
+    /** `element` first among markers long enough to be compared one by one. */
+    const amongMany = (element: React.ReactElement) => [
+      element,
+      ...many().slice(1),
+    ]
+
+    it('reuses the clones of elements with props of the same values', () => {
+      const cache = createChildrenCache()
+      const first = flattenChildren([many(), null], cache)
+      const second = flattenChildren([many(), null], cache)
+
+      second.forEach((node, index) => expect(node).toBe(first[index]))
+    })
+
+    it('reuses them for children that are one long array too', () => {
+      const cache = createChildrenCache()
+      const first = flattenChildren(many(), cache)
+      const second = flattenChildren(many(), cache)
+
+      expect(second).toBe(first)
+    })
+
+    it('hands the same points to the index, so it compares nothing', () => {
+      const childrenCache = createChildrenCache()
+      const featureCache = createMarkerFeatureCache()
+      const first = splitMarkerChildren(
+        flattenChildren([many(), null], childrenCache),
+        featureCache
+      )
+      const second = splitMarkerChildren(
+        flattenChildren([many(), null], childrenCache),
+        featureCache
+      )
+
+      expect(second.markerFeatures).toBe(first.markerFeatures)
+    })
+
+    it('clones only an element with other props, under the key it had', () => {
+      const cache = createChildrenCache()
+      const first = flattenChildren([many(), null], cache)
+      const children = many()
+      children[7] = marker('m7', 53.0)
+      const second = flattenChildren([children, null], cache)
+
+      expect(shape(second)).toEqual(shape(React.Children.toArray([children])))
+      second.forEach((node, index) =>
+        index === 7
+          ? expect(node).not.toBe(first[index])
+          : expect(node).toBe(first[index])
+      )
+    })
+
+    it('makes a point only for the element with other props', () => {
+      const childrenCache = createChildrenCache()
+      const featureCache = createMarkerFeatureCache()
+      const first = splitMarkerChildren(
+        flattenChildren(many(), childrenCache),
+        featureCache
+      ).markerFeatures
+      const children = many()
+      children[7] = marker('m7', 53.0)
+      const second = splitMarkerChildren(
+        flattenChildren(children, childrenCache),
+        featureCache
+      ).markerFeatures
+
+      second.forEach((feature, index) =>
+        index === 7
+          ? expect(feature.geometry.coordinates[1]).toBe(53.0)
+          : expect(feature).toBe(first[index]!)
+      )
+    })
+
+    it('never reuses an element given a new callback or new children', () => {
+      const withProps = (props: Record<string, unknown>) =>
+        amongMany(
+          React.createElement(Marker, {
+            key: 'a',
+            coordinate: { latitude: 52.0, longitude: 21.0 },
+            ...props,
+          })
+        )
+      const cache = createChildrenCache()
+      flattenChildren([withProps({ onPress: () => 1 })], cache)
+      const onPress = () => 2
+      const [pressed] = flattenChildren([withProps({ onPress })], cache)
+      expect(
+        (pressed as React.ReactElement<{ onPress: unknown }>).props.onPress
+      ).toBe(onPress)
+
+      const child = React.createElement(Marker, { title: 'b' })
+      const [withChild] = flattenChildren(
+        [withProps({ children: child })],
+        cache
+      )
+      expect(
+        (withChild as React.ReactElement<{ children: unknown }>).props.children
+      ).toBe(child)
+    })
+
+    it('compares plain objects one level deep, and nothing else', () => {
+      const withStyle = (style: unknown) =>
+        amongMany(
+          React.createElement(Marker, {
+            key: 'a',
+            coordinate: { latitude: 52.0, longitude: 21.0 },
+            style,
+          })
+        )
+      const cache = createChildrenCache()
+      const [first] = flattenChildren([withStyle({ opacity: 1 })], cache)
+      const [same] = flattenChildren([withStyle({ opacity: 1 })], cache)
+      expect(same).toBe(first)
+
+      const [nested] = flattenChildren(
+        [withStyle({ transform: [{ rotate: '45deg' }] })],
+        cache
+      )
+      const [nestedAgain] = flattenChildren(
+        [withStyle({ transform: [{ rotate: '45deg' }] })],
+        cache
+      )
+      expect(nestedAgain).not.toBe(nested)
+
+      const [list] = flattenChildren([withStyle([1])], cache)
+      const [listAgain] = flattenChildren([withStyle([1])], cache)
+      expect(listAgain).not.toBe(list)
+    })
+
+    it('reuses the rest of an array that starts with markers that moved', () => {
+      const withMoving = (latitude: number) => [
+        ...Array.from({ length: 20 }, (_, index) =>
+          marker(`v${index}`, latitude)
+        ),
+        ...many(),
+      ]
+      const cache = createChildrenCache()
+      const first = flattenChildren([withMoving(52.0), null], cache)
+      const second = flattenChildren([withMoving(53.0), null], cache)
+
+      expect(shape(second)).toEqual(
+        shape(React.Children.toArray([withMoving(53.0), null]))
+      )
+      second.forEach((node, index) =>
+        index < 20
+          ? expect(node).not.toBe(first[index])
+          : expect(node).toBe(first[index])
+      )
+    })
+
+    it('flattens anew when most elements have other props', () => {
+      const cache = createChildrenCache()
+      const first = flattenChildren([many(52.0), null], cache)
+      const moved = many(53.0)
+      const second = flattenChildren([moved, null], cache)
+
+      expect(shape(second)).toEqual(
+        shape(React.Children.toArray([moved, null]))
+      )
+      second.forEach((node, index) => {
+        expect(node).not.toBe(first[index])
+        // `Children.toArray` keeps the props object; a clone of one would not.
+        expect((node as React.ReactElement).props).toBe(moved[index]!.props)
+      })
+    })
+
+    it('flattens anew when keys, order or length change', () => {
+      const cache = createChildrenCache()
+      flattenChildren([many(), null], cache)
+
+      const renamed = many()
+      renamed[3] = marker('other')
+      const reordered = many().reverse()
+      const shorter = many().slice(1)
+      for (const children of [renamed, reordered, shorter, many()]) {
+        expect(shape(flattenChildren([children, null], cache))).toEqual(
+          shape(React.Children.toArray([children, null]))
+        )
+      }
+    })
+
+    it('flattens anew an array that also holds other children', () => {
+      const cache = createChildrenCache()
+      const withNull = () => [null, [marker('a'), marker('b')], marker('c')]
+      const first = flattenChildren([withNull()], cache)
+      const second = flattenChildren([withNull()], cache)
+
+      expect(shape(second)).toEqual(shape(React.Children.toArray([withNull()])))
+      expect(second[0]).not.toBe(first[0])
+
+      // As many clones as children, but not one per child.
+      const inner = [marker('a'), marker('b')]
+      const shifted = (latitude: number) => [
+        null,
+        marker('x', latitude),
+        inner,
+        ...many().slice(2),
+      ]
+      flattenChildren([shifted(52.0)], cache)
+      expect(shape(flattenChildren([shifted(53.0)], cache))).toEqual(
+        shape(React.Children.toArray([shifted(53.0)]))
+      )
+    })
+
+    it('never reuses an element given another prop', () => {
+      const cache = createChildrenCache()
+      const [first] = flattenChildren([amongMany(marker('a'))], cache)
+      const [titled] = flattenChildren(
+        [
+          amongMany(
+            React.createElement(Marker, {
+              key: 'a',
+              coordinate: { latitude: 52.0, longitude: 21.0 },
+              title: 'Office',
+            })
+          ),
+        ],
+        cache
+      )
+
+      expect(titled).not.toBe(first)
+      expect(
+        (titled as React.ReactElement<{ title: string }>).props.title
+      ).toBe('Office')
+    })
+
+    it('flattens a short array anew once anything in it changes', () => {
+      const cache = createChildrenCache()
+      const short = () => [marker('a'), marker('b')]
+      const first = flattenChildren([short()], cache)
+      const second = flattenChildren([short()], cache)
+
+      expect(shape(second)).toEqual(shape(React.Children.toArray([short()])))
+      expect(second[0]).not.toBe(first[0])
+    })
+
+    it('notices an element replaced in place in a kept array', () => {
+      const cache = createChildrenCache()
+      const kept = many()
+      const first = flattenChildren([kept, null], cache)
+      kept[5] = marker('m5', 53.0)
+      const second = flattenChildren([kept, null], cache)
+
+      expect(second[5]).not.toBe(first[5])
+      expect(
+        (second[5] as React.ReactElement<{ coordinate: { latitude: number } }>)
+          .props.coordinate.latitude
+      ).toBe(53.0)
+    })
+  })
 })
 
 describe('bboxToFitCoordinates', () => {
