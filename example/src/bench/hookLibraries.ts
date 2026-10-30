@@ -1,5 +1,8 @@
 import { Supercluster as BetterSupercluster } from 'react-native-better-clustering/engine'
-import { useClusterer as useBetterClusterer } from 'react-native-better-clustering/hooks'
+import {
+  useClusterer as useBetterClusterer,
+  type MapDimensions,
+} from 'react-native-better-clustering/hooks'
 import type { PointFeature } from 'react-native-better-clustering/geojson'
 import ClustererSupercluster, {
   useClusterer as useClustererClusterer,
@@ -24,11 +27,6 @@ export const HOOK_OPTIONS = {
   extent: 512,
 }
 
-export interface MapDimensions {
-  width: number
-  height: number
-}
-
 export type HookLibraryId = 'rnc' | 'usc' | 'rnbc'
 
 export interface HookLibrary {
@@ -36,8 +34,8 @@ export interface HookLibrary {
   name: string
   version: string
   /**
-   * The library's hook, called the way its README calls it. `index` is the
-   * object it returns for queries, so a new one means a new index.
+   * The library's hook, called as an app calls it. `index` is the object it
+   * returns for queries, so a new one means a new index.
    */
   useClusters(
     data: PointFeature[],

@@ -2,6 +2,7 @@ import { memo, useEffect, useRef, useState } from 'react'
 import { Dimensions, Platform, ScrollView, StyleSheet, Text } from 'react-native'
 import type { Region } from 'react-native-maps'
 import type { PointFeature } from 'react-native-better-clustering/geojson'
+import type { MapDimensions } from 'react-native-better-clustering/hooks'
 import { ControlPanel, ControlRow, StatusText } from '../components/Controls'
 import {
   generatePoints,
@@ -23,7 +24,6 @@ import {
   hookBuilds,
   type HookLibrary,
   type HookLibraryId,
-  type MapDimensions,
 } from './hookLibraries'
 
 const COUNTS = [10_000, 50_000, 100_000]
@@ -258,7 +258,7 @@ export function HookBenchmarkScreen() {
         }
         await settle()
         return {
-          updatedMs: round(Math.max(0, probe.committedAt - start)),
+          updatedMs: round(probe.committedAt - start),
           indexMs:
             probe.indexChangedAt > start
               ? round(probe.indexChangedAt - start)
@@ -316,11 +316,8 @@ export function HookBenchmarkScreen() {
           await step({ data: [moved, ...rest] }, UPDATE_INTERVAL_MS, true)
         )
       }
-      const indexMs = updates
-        .map((entry) => entry.indexMs)
-        .filter((value) => value != null)
       results.update = {
-        indexMs: indexMs.length === UPDATES ? median(indexMs) : null,
+        indexMs: median(updates.map((entry) => entry.indexMs!)),
         builds: hookBuilds.count,
         ...statsSince(updateStart),
         steps: updates,
