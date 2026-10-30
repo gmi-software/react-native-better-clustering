@@ -36,10 +36,12 @@ Both libraries get the same props: `initialRegion` over Poland, `mapRef`, `onReg
 | Memory | iOS: the app's `phys_footprint` (`footprint`); Android: total PSS (`dumpsys meminfo`). Reported as the growth from **ready** |
 | Age of the map | Over the live phase, the mean time since the update the map shows was due (before the map shows any, since the first was due). The one number that weighs both how often and how late the map catches up |
 | Updates shown | Of the live phase's 100 updates, how many a vehicle rendered. An update that a newer one overtook before the map showed it is not shown |
-| Lag | From when a live update was due to when a vehicle first rendered it. For a point, both libraries render the marker element they hold for it, so that is when the map showed the update. A timer that fired late counts in it. Only shown updates count, so a library that shows few has few lags: read it with the age of the map |
+| Lag | From when a live update was due to when a vehicle first rendered it. For a point, both libraries render the marker element they hold for it, so that is when the update reached the map (see below). A timer that fired late counts in it. Only shown updates count, so a library that shows few has few lags: read it with the age of the map |
 | Last update shown after | The lag of the 100th update: how long the map takes to catch up once the feed stops |
 | Index builds | Index objects the library assigned to `superClusterRef` during the live phase: each is a build |
 | JS heap | Hermes' `js_heapSize` (`HermesInternal.getInstrumentedStats()`) |
+
+Like first markers, the live metrics time an effect: the one that runs after React commits a vehicle at an update to `react-native-maps`. The native map draws the marker later, and no `react-native-maps` event says when. So the map shows an update later than they say, and they compare libraries timed the same way, not what a screen shows.
 
 ## Running it
 

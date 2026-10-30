@@ -64,8 +64,9 @@ export const liveShown = new Map<number, number>()
 /**
  * A vehicle of the live phase, at its position in update `update`. For a
  * point, both libraries render the marker element they were handed with it,
- * so a vehicle renders the update its library's index holds; the first
- * render of an update is when the map showed it.
+ * so a vehicle renders the update its library's index holds. The effect after
+ * the first commit of an update is when it reached the map: the native map
+ * draws it later, and no react-native-maps event says when.
  */
 export function BenchVehicle({
   update,
