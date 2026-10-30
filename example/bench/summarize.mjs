@@ -25,6 +25,12 @@ const median = (values) => {
 }
 const mb = (bytes) => (bytes == null ? null : bytes / 1e6)
 const memoryOf = (sample) => sample?.footprintBytes ?? sample?.pssBytes ?? null
+/** MB the app grew from sample `from` to sample `to`; null if either is missing. */
+const growthMb = (from, to) => {
+  const start = memoryOf(from)
+  const end = memoryOf(to)
+  return start == null || end == null ? null : mb(end - start)
+}
 
 /** One run's metrics, flat. */
 function metrics({ memory, result }) {
@@ -35,7 +41,7 @@ function metrics({ memory, result }) {
     mountMaxGapMs: mount?.maxGapMs,
     mountBlockedMs: mount?.blockedMs,
     mountDroppedFrames: mount?.droppedFrames,
-    mountMemoryMb: mb(memoryOf(memory.mounted) - memoryOf(memory.baseline)),
+    mountMemoryMb: growthMb(memory.baseline, memory.mounted),
     mountJsHeapMb: mb(mount?.jsHeap?.heapBytes - baseline?.jsHeap?.heapBytes),
     rerenderBlockedMs: rerender?.blockedMs,
     rerenderMaxGapMs: rerender?.maxGapMs,
@@ -55,8 +61,9 @@ function metrics({ memory, result }) {
     pressMaxGapMs: press?.maxGapMs,
     pressBlockedMs: press?.blockedMs,
     // After the press: reports from before the live phase sampled it at `done`.
-    endMemoryMb: mb(
-      memoryOf(memory.pressed ?? memory.done) - memoryOf(memory.baseline)
+    endMemoryMb: growthMb(
+      memory.baseline,
+      'pressed' in memory ? memory.pressed : memory.done
     ),
     liveUpdatesShown: live?.updatesShown,
     liveStalenessMs: live?.stalenessMs,
@@ -67,10 +74,7 @@ function metrics({ memory, result }) {
     liveBlockedMs: live?.blockedMs,
     liveMaxGapMs: live?.maxGapMs,
     liveDroppedFrames: live?.droppedFrames,
-    liveMemoryMb:
-      live == null
-        ? null
-        : mb(memoryOf(memory.done) - memoryOf(memory.baseline)),
+    liveMemoryMb: live == null ? null : growthMb(memory.baseline, memory.done),
   }
 }
 
