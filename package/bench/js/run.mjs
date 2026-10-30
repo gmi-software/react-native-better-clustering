@@ -223,6 +223,29 @@ function operationsFor(lib, size) {
     }
   }
 
+  // A re-render as MapView sees it when the markers are created again with
+  // props of the same values, as a `.map()` in render does. The caches live as
+  // long as the map would.
+  const rerender = () => {
+    const childrenCache = lib.createChildrenCache()
+    const featureCache = lib.createMarkerFeatureCache()
+    return () => {
+      const again = coordinates.map((coordinate, i) =>
+        React.createElement(Marker, {
+          key: `m${i}`,
+          coordinate: {
+            latitude: coordinate.latitude,
+            longitude: coordinate.longitude,
+          },
+          title: `Marker ${i}`,
+        })
+      )
+      const flattened = lib.flattenChildren(again, childrenCache)
+      return lib.splitMarkerChildren(flattened, featureCache).markerFeatures
+        .length
+    }
+  }
+
   // A cluster snapshot as useClusterer sees it on two renders: the same
   // features, and features of which every tenth has moved.
   const index = new lib.Supercluster({ radius: 40, maxZoom: 20 }).load(features)
@@ -249,6 +272,7 @@ function operationsFor(lib, size) {
     },
     'live_update': liveUpdate(undefined),
     'live_update_unclustered': liveUpdate(false),
+    'rerender_same_props': rerender(),
     'partition_points': () => lib.partitionValidPoints(features).valid.length,
     'pack_points': () => lib.packPoints(coordinates).buffer.byteLength,
     'pack_points_values': () =>
