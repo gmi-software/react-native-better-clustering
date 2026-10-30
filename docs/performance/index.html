@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="generator" content="Docusaurus v3.10.2">
 <title data-rh="true">Performance model | React Native Better Clustering</title><meta data-rh="true" name="viewport" content="width=device-width,initial-scale=1"><meta data-rh="true" name="twitter:card" content="summary_large_image"><meta data-rh="true" property="og:url" content="https://gmi-software.github.io/react-native-better-clustering/docs/performance"><meta data-rh="true" property="og:locale" content="en"><meta data-rh="true" name="docusaurus_locale" content="en"><meta data-rh="true" name="docsearch:language" content="en"><meta data-rh="true" name="docusaurus_version" content="current"><meta data-rh="true" name="docusaurus_tag" content="docs-default-current"><meta data-rh="true" name="docsearch:version" content="current"><meta data-rh="true" name="docsearch:docusaurus_tag" content="docs-default-current"><meta data-rh="true" property="og:title" content="Performance model | React Native Better Clustering"><meta data-rh="true" name="description" content="The index builds asynchronously, queries are synchronous, and rendering is the"><meta data-rh="true" property="og:description" content="The index builds asynchronously, queries are synchronous, and rendering is the"><link data-rh="true" rel="icon" href="/react-native-better-clustering/img/favicon.svg"><link data-rh="true" rel="canonical" href="https://gmi-software.github.io/react-native-better-clustering/docs/performance"><link data-rh="true" rel="alternate" href="https://gmi-software.github.io/react-native-better-clustering/docs/performance" hreflang="en"><link data-rh="true" rel="alternate" href="https://gmi-software.github.io/react-native-better-clustering/docs/performance" hreflang="x-default"><script data-rh="true" type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Performance model","item":"https://gmi-software.github.io/react-native-better-clustering/docs/performance"}]}</script><link rel="stylesheet" href="/react-native-better-clustering/assets/css/styles.5d98aaef.css">
-<script src="/react-native-better-clustering/assets/js/runtime~main.7bd7b0b6.js" defer="defer"></script>
+<script src="/react-native-better-clustering/assets/js/runtime~main.4e80790b.js" defer="defer"></script>
 <script src="/react-native-better-clustering/assets/js/main.be0b3d47.js" defer="defer"></script>
 </head>
 <body>
@@ -43,8 +43,15 @@ Hermes, rendering included, running this library and react-native-map-clustering
 4.0.0 through the same script. Its
 <a href="https://github.com/gmi-software/react-native-better-clustering/blob/main/example/bench/results/ios-simulator-2026-10-14/README.md" target="_blank" rel="noopener noreferrer" class="">first run</a>,
 on the iOS Simulator, reports the time to the first markers, JS freezes, memory,
-zoom and cluster presses for 10k, 50k and 100k markers. A simulator runs on the
-Mac&#x27;s CPU, faster than a phone: compare the libraries, not the absolute times.</p>
+zoom and cluster presses for 10k, 50k and 100k markers. Since
+29 October 2026, on the
+<a href="https://github.com/gmi-software/react-native-better-clustering/blob/main/example/bench/results/ios-simulator-2026-10-29/README.md" target="_blank" rel="noopener noreferrer" class="">iOS Simulator</a>
+and an
+<a href="https://github.com/gmi-software/react-native-better-clustering/blob/main/example/bench/results/android-emulator-2026-10-29/README.md" target="_blank" rel="noopener noreferrer" class="">Android emulator</a>,
+it also moves 20 vehicles over the markers 10 times a second, and reports how
+many updates reach the map, how late and how old the map is, and how long JS
+is blocked meanwhile. A simulator runs on the Mac&#x27;s CPU, faster than a phone:
+compare the libraries, not the absolute times.</p>
 <h2 class="anchor anchorTargetStickyNavbar_QDus" id="roadmap">Roadmap<a href="#roadmap" class="hash-link" aria-label="Direct link to Roadmap" title="Direct link to Roadmap" translate="no">​</a></h2>
 <p>Today this library moves clustering compute to C++. Visible markers are still
 rendered through <code>react-native-maps</code> <code>&lt;Marker&gt;</code> components, which is the ceiling
