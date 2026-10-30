@@ -12,6 +12,7 @@
 #include <cstdint>
 #include <cstring>
 #include <algorithm>
+#include <bit>
 #include <cmath>
 #include <limits>
 #include <optional>
@@ -24,6 +25,10 @@ namespace margelo::nitro::nitromapcluster {
 // each other exactly — same pivot `(left+right)/2`, same alternating axis —
 // which is what makes range/within correct. Each item carries its coordinates,
 // so a query reads the array in order instead of jumping through an index.
+//
+// A copy can be patched instead of rebuilt (see remove() and place()): its
+// splits stay, items leave it as +infinity, which no query returns, and new
+// items take a free slot in the leaf their coordinates fall in, or around it.
 class KDTree {
 public:
   struct Item {
@@ -49,10 +54,133 @@ public:
     rangeRecurse(0, static_cast<int32_t>(_items.size()) - 1, 0, minX, minY, maxX, maxY, result);
   }
 
+  /**
+   * The items whose squared distance from (x, y), as computed here, is at most
+   * radius². Subtrees are pruned with room for rounding, so which items are
+   * returned does not depend on how the tree is split: any tree over the same
+   * items returns the same ones, in its own order.
+   */
   void within(double x, double y, double radius, std::vector<int32_t>& result) const {
     result.clear();
     if (_items.empty()) return;
-    withinRecurse(0, static_cast<int32_t>(_items.size()) - 1, 0, x, y, radius * radius, radius, result);
+    withinRecurse(0, static_cast<int32_t>(_items.size()) - 1, 0, x, y, radius * radius, pruneReach(x, y, radius),
+                  result);
+  }
+
+  /**
+   * within(x, y, radius), returning a lower bound on the squared distance from
+   * (x, y) to every item other than `self`: the nearest such item the query
+   * visits, or the nearest subtree it prunes, rounding included. The query and
+   * its result are within()'s. Only meaningful when the result is `self` alone.
+   */
+  double withinBound(double x, double y, double radius, int32_t self, std::vector<int32_t>& result) const {
+    result.clear();
+    double bound2 = std::numeric_limits<double>::infinity();
+    if (!_items.empty()) {
+      withinBoundRecurse(0, static_cast<int32_t>(_items.size()) - 1, 0, x, y, radius * radius,
+                         pruneReach(x, y, radius), self, result, bound2);
+    }
+    return bound2;
+  }
+
+  /** Calls `visit(index)` for each item within(x, y, radius) would return, in the same order. */
+  template <typename Visit>
+  void forEachWithin(double x, double y, double radius, Visit&& visit) const {
+    if (_items.empty()) return;
+    forEachWithinRecurse(0, static_cast<int32_t>(_items.size()) - 1, 0, x, y, radius * radius,
+                         pruneReach(x, y, radius), visit);
+  }
+
+  size_t size() const { return _items.size(); }
+
+  /** The item at `position` in the tree's order. */
+  const Item& item(size_t position) const { return _items[position]; }
+
+  /**
+   * Takes the item at `position` out: no query returns it any more. A leaf's
+   * slot is freed for place(). A range's middle item is its split, so it
+   * keeps its coordinate on the split axis, and its slot stays taken.
+   */
+  void remove(size_t position) {
+    const double gone = std::numeric_limits<double>::infinity();
+    const int32_t target = static_cast<int32_t>(position);
+    int32_t left = 0;
+    int32_t right = static_cast<int32_t>(_items.size()) - 1;
+    int32_t axis = 0;
+    while (right - left > _nodeSize) {
+      const int32_t mid = (left + right) >> 1;
+      if (target == mid) {
+        (axis == 0 ? _items[mid].y : _items[mid].x) = gone;
+        return;
+      }
+      if (target < mid) {
+        right = mid - 1;
+      } else {
+        left = mid + 1;
+      }
+      axis ^= 1;
+    }
+    _items[position].x = gone;
+    _items[position].y = gone;
+  }
+
+  /**
+   * Puts `item` where queries find it: in a free slot of the leaf its
+   * coordinates fall in, or when that leaf has none, in the smallest range
+   * around it that has one, which is then sorted again. Calls
+   * `moved(position, index)` for each item that lands somewhere new, `item`
+   * included. False, leaving the tree as it was, when the tree has no free
+   * slot.
+   */
+  template <typename Moved>
+  bool place(const Item& item, Moved&& moved) {
+    // The ranges from the root down to the leaf, deepest last.
+    struct Range {
+      int32_t left;
+      int32_t right;
+      int32_t axis;
+    };
+    Range path[64];
+    int32_t depth = 0;
+    int32_t left = 0;
+    int32_t right = static_cast<int32_t>(_items.size()) - 1;
+    int32_t axis = 0;
+    while (right - left > _nodeSize) {
+      path[depth++] = {left, right, axis};
+      const int32_t mid = (left + right) >> 1;
+      // Left of a split lie the items at or below its coordinate.
+      if ((axis == 0 ? item.x <= _items[mid].x : item.y <= _items[mid].y)) {
+        right = mid - 1;
+      } else {
+        left = mid + 1;
+      }
+      axis ^= 1;
+    }
+    path[depth++] = {left, right, axis};
+
+    for (int32_t i = left; i <= right; i++) {
+      if (isRemoved(_items[i])) {
+        _items[i] = item;
+        moved(i, item.index);
+        return true;
+      }
+    }
+    // Every item of a range satisfies the splits above it, `item` included,
+    // so the range can be sorted again on its own; removed items, middle
+    // ones included, are free slots for that.
+    for (int32_t d = depth - 2; d >= 0; d--) {
+      const Range& range = path[d];
+      for (int32_t i = range.left; i <= range.right; i++) {
+        if (!isRemoved(_items[i])) continue;
+        _items[i] = item;
+        sortKD(range.left, range.right, range.axis);
+        for (int32_t j = range.left; j <= range.right; j++) {
+          if (!isRemoved(_items[j])) moved(j, _items[j].index);
+        }
+        return true;
+      }
+    }
+    return false;
   }
 
   size_t memoryBytes() const {
@@ -91,6 +219,11 @@ private:
 
   std::vector<Item> _items;
   int32_t _nodeSize = 64;
+
+  // Whether remove() took the item out: a coordinate is +infinity.
+  static bool isRemoved(const Item& item) {
+    return item.x == std::numeric_limits<double>::infinity() || item.y == std::numeric_limits<double>::infinity();
+  }
 
   void sortKD(int32_t left, int32_t right, int32_t axis) {
     if (right - left <= _nodeSize) return;
@@ -143,8 +276,10 @@ private:
     }
   }
 
+  // `reach` is the radius widened by pruneReach(): a subtree is pruned only
+  // when no item in it can pass the `r2` test.
   void withinRecurse(int32_t left, int32_t right, int32_t axis,
-                     double x, double y, double r2, double radius,
+                     double x, double y, double r2, double reach,
                      std::vector<int32_t>& result) const {
     if (right - left <= _nodeSize) {
       for (int32_t i = left; i <= right; i++) {
@@ -170,12 +305,100 @@ private:
     const double coord = axis == 0 ? item.x : item.y;
     const double q = axis == 0 ? x : y;
 
-    if (q - radius <= coord) {
-      withinRecurse(left, mid - 1, axis ^ 1, x, y, r2, radius, result);
+    if (q - reach <= coord) {
+      withinRecurse(left, mid - 1, axis ^ 1, x, y, r2, reach, result);
     }
-    if (q + radius >= coord) {
-      withinRecurse(mid + 1, right, axis ^ 1, x, y, r2, radius, result);
+    if (q + reach >= coord) {
+      withinRecurse(mid + 1, right, axis ^ 1, x, y, r2, reach, result);
     }
+  }
+
+  // withinRecurse, also lowering `bound2` to each item it reads other than
+  // `self` and to each subtree it prunes.
+  void withinBoundRecurse(int32_t left, int32_t right, int32_t axis, double x, double y, double r2, double reach,
+                          int32_t self, std::vector<int32_t>& result, double& bound2) const {
+    // With a second hit the node has a neighbour, so no bound is wanted.
+    if (result.size() > 1) {
+      withinRecurse(left, right, axis, x, y, r2, reach, result);
+      return;
+    }
+    if (right - left <= _nodeSize) {
+      for (int32_t i = left; i <= right; i++) {
+        const Item& item = _items[i];
+        const double dx = item.x - x;
+        const double dy = item.y - y;
+        const double d2 = dx * dx + dy * dy;
+        if (d2 <= r2) result.push_back(item.index);
+        if (item.index != self && d2 < bound2) bound2 = d2;
+      }
+      return;
+    }
+
+    const int32_t mid = (left + right) >> 1;
+    const Item& item = _items[mid];
+    const double dx = item.x - x;
+    const double dy = item.y - y;
+    const double d2 = dx * dx + dy * dy;
+
+    if (d2 <= r2) result.push_back(item.index);
+    if (item.index != self && d2 < bound2) bound2 = d2;
+
+    const double coord = axis == 0 ? item.x : item.y;
+    const double q = axis == 0 ? x : y;
+
+    if (q - reach <= coord) {
+      withinBoundRecurse(left, mid - 1, axis ^ 1, x, y, r2, reach, self, result, bound2);
+    } else {
+      bound2 = std::min(bound2, prunedGap2(q - coord, q, coord));
+    }
+    if (q + reach >= coord) {
+      withinBoundRecurse(mid + 1, right, axis ^ 1, x, y, r2, reach, self, result, bound2);
+    } else {
+      bound2 = std::min(bound2, prunedGap2(coord - q, q, coord));
+    }
+  }
+
+  template <typename Visit>
+  void forEachWithinRecurse(int32_t left, int32_t right, int32_t axis, double x, double y, double r2, double reach,
+                            Visit& visit) const {
+    if (right - left <= _nodeSize) {
+      for (int32_t i = left; i <= right; i++) {
+        const Item& item = _items[i];
+        const double dx = item.x - x;
+        const double dy = item.y - y;
+        if (dx * dx + dy * dy <= r2) visit(item.index);
+      }
+      return;
+    }
+
+    const int32_t mid = (left + right) >> 1;
+    const Item& item = _items[mid];
+    const double dx = item.x - x;
+    const double dy = item.y - y;
+    if (dx * dx + dy * dy <= r2) visit(item.index);
+
+    const double coord = axis == 0 ? item.x : item.y;
+    const double q = axis == 0 ? x : y;
+    if (q - reach <= coord) forEachWithinRecurse(left, mid - 1, axis ^ 1, x, y, r2, reach, visit);
+    if (q + reach >= coord) forEachWithinRecurse(mid + 1, right, axis ^ 1, x, y, r2, reach, visit);
+  }
+
+  // The radius a within query prunes with. An item of a pruned subtree lies
+  // more than this from (x, y) along the axis, so even with the rounding of
+  // that difference, of its square and of the sum, its squared distance
+  // exceeds radius² as rounded: a few ulps of the radius and of the
+  // coordinates.
+  static double pruneReach(double x, double y, double radius) {
+    return radius + (radius + std::fabs(x) + std::fabs(y)) * 4 * std::numeric_limits<double>::epsilon();
+  }
+
+  // The squared distance every item of a pruned subtree is at least: its
+  // items lie `gap` or more away along the axis, less what rounding can take
+  // off a computed difference of `q` and `coord`.
+  static double prunedGap2(double gap, double q, double coord) {
+    const double slack = (std::fabs(q) + std::fabs(coord)) * 4 * std::numeric_limits<double>::epsilon();
+    const double g = gap - slack;
+    return g > 0 ? g * g : 0.0;
   }
 };
 
@@ -296,11 +519,58 @@ public:
     std::vector<int32_t> next;
     std::vector<int32_t> neighbors;
 
+    // At high zooms nearly every node is alone within the level's radius, yet
+    // each would still be queried at every level. `certificate[i]` is a lower
+    // bound on the squared distance from node i to every other node of the
+    // level being clustered (0 when unknown): while it exceeds the radius
+    // squared, the query would find only node i, so the node skips it. A lonely
+    // node's query certifies it with the nearest item it reads or subtree it
+    // prunes, however far that is, so a sparse node skips its queries for as
+    // many levels as its neighbours allow. Each cluster a level forms lowers the
+    // certificates of the nodes it may have come closer to (see
+    // certifyNewClusters and lowerCertificates), and nodes that leave only make
+    // the others conservative. The trees, the order of the nodes and every
+    // query that does run are unchanged, so the index is the same.
+    bool certifying = _skipLonelyQueries;
+    // Empty until a node is first certified, so dense data never allocates it.
+    std::vector<float> certificate;
+    float largestCertificate = 0.0f;
+
+    // A level that changes few nodes patches a copy of the tree above it
+    // rather than building one: its nodes absorbed into clusters leave their
+    // slots, and its clusters take free slots (see KDTree::place). The slots
+    // left free make queries scan a little more, so a level that has lost a
+    // share of the nodes of the last level built afresh, `baseSize`, gets a
+    // fresh tree again. A query returns the same nodes from a patched tree as
+    // from a fresh one (see KDTree::within), in another order, so the
+    // clustering over a patched tree folds each cluster's nodes in node
+    // order: the index then does not depend on which tree a level got.
+    // getClusters still returns a patched level's nodes in its tree's order.
+    // With minPoints above 2 the walk order of a level depends on the order
+    // its queries return nodes, so every level gets a fresh tree.
+    const bool patchable = _options.minPoints <= 2;
+    size_t baseSize = pointCount;
+    // Whether the tree over `current` is one a level patches, by the rule
+    // above, even when a cluster found no free slot or the tests switched
+    // patching off.
+    bool patched = false;
+    // Where each node of the last patched tree sits in it; `slotsValid` is
+    // false while it does not describe the tree over `current`.
+    std::vector<int32_t> slotOf;
+    bool slotsValid = false;
+
     for (int32_t z = _options.maxZoom; z >= _options.minZoom; z--) {
       const double r = clusterRadiusAtZoom(_options.radius, static_cast<double>(z));
+      const double r2 = r * r;
       const size_t slot = static_cast<size_t>(z - _options.minZoom);
       // The tree over `current`: the one getClusters() queries at z + 1.
       const KDTree& tree = z == _options.maxZoom ? inputTree : _trees[_treeByZoom[slot + 1]];
+
+      // Certificates only serve the levels below this one.
+      const bool probing = certifying && z > _options.minZoom;
+      const size_t firstNewNode = _nodes.size();
+      size_t visited = 0;
+      size_t lonely = 0;
 
       next.clear();
       next.reserve(current.size());
@@ -311,10 +581,34 @@ public:
       for (const int32_t index : current) {
         if (processedAt[index] <= z) continue;
         processedAt[index] = z;
+        visited++;
+
+        if (certifying && !certificate.empty() && r2 < certificate[index]) {
+          // The query would find only this node, which survives unclustered,
+          // as it does below.
+          next.push_back(index);
+          lonely++;
+          continue;
+        }
 
         const double originX = _nodes[index].x;
         const double originY = _nodes[index].y;
-        tree.within(originX, originY, r, neighbors);
+        if (probing && certifying) {
+          const double bound2 = tree.withinBound(originX, originY, r, index, neighbors);
+          if (neighbors.size() == 1) {
+            if (certificate.empty()) {
+              // Room for some clusters too; certifying stops rather than
+              // reallocate when they outgrow it.
+              certificate.reserve(std::max(_nodes.size(), pointCount + pointCount / 8));
+              certificate.assign(_nodes.size(), 0.0f);
+            }
+            certificate[index] = certifiedBound(bound2);
+            largestCertificate = std::max(largestCertificate, certificate[index]);
+          }
+        } else {
+          tree.within(originX, originY, r, neighbors);
+        }
+        if (neighbors.size() == 1) lonely++;
 
         const int32_t numPointsOrigin = _nodes[index].count;
         int32_t numPoints = numPointsOrigin;
@@ -323,6 +617,9 @@ public:
         }
 
         if (numPoints > numPointsOrigin && numPoints >= _options.minPoints) {
+          if (patched) {
+            std::sort(neighbors.begin(), neighbors.end());
+          }
           double wx = originX * numPointsOrigin;
           double wy = originY * numPointsOrigin;
 
@@ -364,6 +661,13 @@ public:
           next.push_back(static_cast<int32_t>(_nodes.size()));
           _childOffsets.push_back(static_cast<int32_t>(_childNodes.size()));
           processedAt.push_back(z);
+          if (certifying && !certificate.empty()) {
+            if (certificate.size() == certificate.capacity()) {
+              certifying = false;
+            } else {
+              certificate.push_back(0.0f);
+            }
+          }
           _nodes.push_back(std::move(cluster));
         } else {
           // The origin survives unclustered at this level.
@@ -384,7 +688,8 @@ public:
       // A level that merged nothing holds the same nodes in the same order as
       // the one above it, so it gets the same tree; sparse data skips most of
       // the high zooms this way. Otherwise the level gets a tree of its own,
-      // which getClusters() range-queries and the next level clusters over.
+      // patched or fresh (see above), which getClusters() range-queries and
+      // the next level clusters over.
       if (next == current) {
         if (z == _options.maxZoom) {
           _trees.push_back(std::move(inputTree));
@@ -393,8 +698,46 @@ public:
           _treeByZoom[slot] = _treeByZoom[slot + 1];
         }
       } else {
-        _trees.push_back(buildTree(next));
+        patched = patchable && (baseSize - next.size()) * kSlotsPerFreeSlot <= baseSize;
+        bool fresh = true;
+        if (patched && _reuseTrees) {
+          KDTree tree = z == _options.maxZoom ? std::move(inputTree) : _trees[_treeByZoom[slot + 1]];
+          if (!slotsValid) {
+            // Each cluster formed adds a free slot at least, so patching
+            // stops before more than baseSize / kSlotsPerFreeSlot of them.
+            slotOf.reserve(_nodes.size() + baseSize / kSlotsPerFreeSlot + 1);
+            slotOf.resize(_nodes.size());
+            for (size_t i = 0; i < tree.size(); i++) {
+              slotOf[tree.item(i).index] = static_cast<int32_t>(i);
+            }
+          }
+          if (patchTree(tree, firstNewNode, slotOf)) {
+            _trees.push_back(std::move(tree));
+            fresh = false;
+          }
+        }
+        if (fresh) {
+          _trees.push_back(buildTree(next));
+        }
+        slotsValid = !fresh;
+        if (!patched) {
+          baseSize = next.size();
+        }
         _treeByZoom[slot] = static_cast<int32_t>(_trees.size() - 1);
+      }
+
+      // Once most nodes have neighbours, certifying costs more than it saves.
+      if (static_cast<double>(lonely) < kMinLonelyShare * static_cast<double>(visited)) {
+        certifying = false;
+      }
+      if (probing && certifying && !certificate.empty() && firstNewNode < _nodes.size()) {
+        if ((_nodes.size() - firstNewNode) * kClustersPerNodeQuery <= next.size()) {
+          // No farther than any certificate reaches, which dense data keeps short.
+          const double radius = std::min(r * kCertificateReach, std::sqrt(static_cast<double>(largestCertificate)));
+          certifyNewClusters(_trees[_treeByZoom[slot]], next, firstNewNode, radius, r, certificate);
+        } else {
+          lowerCertificates(next, firstNewNode, r, certificate);
+        }
       }
       std::swap(current, next);
     }
@@ -603,11 +946,28 @@ public:
   bool isBuilt() const { return _built; }
   const ClusterEngineConfig& options() const { return _options; }
 
+  /**
+   * Whether build() skips the neighbour query of a node that provably has no
+   * other node within the level's radius. On by default; the index is the same
+   * either way, which the tests check by turning it off.
+   */
+  void setSkipLonelyQueries(bool skip) { _skipLonelyQueries = skip; }
+
+  /**
+   * Whether build() patches the tree of a level that changes few nodes from
+   * the tree above it rather than building one. On by default. Off, such a
+   * level gets a fresh tree instead, and everything but the order of
+   * getClusters() results is the same, which the tests check.
+   */
+  void setReuseTrees(bool reuse) { _reuseTrees = reuse; }
+
   /** A copy with the same options and points and no index, ready to `build()`. */
   ClusterEngineCore withoutIndex() const {
     ClusterEngineCore copy;
     copy._options = _options;
     copy._points = _points;
+    copy._skipLonelyQueries = _skipLonelyQueries;
+    copy._reuseTrees = _reuseTrees;
     return copy;
   }
 
@@ -725,6 +1085,112 @@ private:
       maxPointId = std::max(maxPointId, point.id);
     }
     return maxPointId + 1;
+  }
+
+  // How far around each new cluster certifyNewClusters() updates certificates
+  // exactly, at most, in radii of the level that formed it.
+  static constexpr double kCertificateReach = 32.0;
+  // Below this share of lonely nodes in a level, build() stops certifying:
+  // the cluster updates would cost more than the queries they save.
+  static constexpr double kMinLonelyShare = 0.9;
+  // A level that forms more than one cluster per this many nodes lowers every
+  // certificate at once instead of querying around each cluster.
+  static constexpr size_t kClustersPerNodeQuery = 64;
+  // build() patches the tree of a level while its free slots stay at most one
+  // per this many slots.
+  static constexpr size_t kSlotsPerFreeSlot = 16;
+
+  // `d2` less a margin, as a float no larger than that: a lower bound on a
+  // squared distance that the same distance computed elsewhere (operands
+  // swapped, or fused differently) cannot undercut.
+  static float certifiedBound(double d2) {
+    const double bound = d2 * (1.0 - 1e-9);
+    if (!(bound < static_cast<double>(std::numeric_limits<float>::max()))) {
+      return std::numeric_limits<float>::max();
+    }
+    float result = static_cast<float>(bound);
+    if (static_cast<double>(result) > bound) {
+      // The float below, as std::nextafter would give it, without the call:
+      // `result` is positive and finite here.
+      result = std::bit_cast<float>(std::bit_cast<uint32_t>(result) - 1);
+    }
+    return result;
+  }
+
+  // After a level that formed the clusters from `firstNewNode` on, with radius
+  // `r`, updates the certificates of `nodes`, the nodes of that level, and
+  // certifies those clusters, by querying `tree`, the tree that holds them
+  // all, `radius` around each cluster. A node within that of a cluster gets
+  // the distance to it. A node farther than that from every cluster keeps its
+  // certificate up to `radius`, and beyond that what lowerCertificates() would
+  // leave it: the distance less `r`. Any `radius` is safe; a larger one keeps
+  // more of the certificates and queries more nodes.
+  void certifyNewClusters(const KDTree& tree, const std::vector<int32_t>& nodes, size_t firstNewNode, double radius,
+                          double r, std::vector<float>& certificate) const {
+    // What a node farther than `radius` from every new cluster is certified for.
+    const float beyondRadius = certifiedBound(radius * radius);
+    const double margin = r * (1.0 + 1e-6) + static_cast<double>(_options.extent) * 16 *
+                                                  std::numeric_limits<double>::epsilon();
+    for (const int32_t index : nodes) {
+      if (static_cast<size_t>(index) >= firstNewNode || certificate[index] <= beyondRadius) continue;
+      const double distance = std::sqrt(static_cast<double>(certificate[index])) - margin;
+      certificate[index] = std::max(beyondRadius, distance > 0 ? certifiedBound(distance * distance) : 0.0f);
+    }
+    // Room for rounding, as in prunedGap2().
+    const double reach = radius * (1.0 + 1e-6) +
+                         static_cast<double>(_options.extent) * 16 * std::numeric_limits<double>::epsilon();
+    for (size_t cluster = firstNewNode; cluster < _nodes.size(); cluster++) {
+      const ClusterNode& node = _nodes[cluster];
+      float nearest = beyondRadius;
+      tree.forEachWithin(node.x, node.y, reach, [&](int32_t nb) {
+        if (static_cast<size_t>(nb) == cluster) return;
+        const double dx = _nodes[nb].x - node.x;
+        const double dy = _nodes[nb].y - node.y;
+        const float bound = certifiedBound(dx * dx + dy * dy);
+        certificate[nb] = std::min(certificate[nb], bound);
+        nearest = std::min(nearest, bound);
+      });
+      certificate[cluster] = nearest;
+    }
+  }
+
+  // After a level that formed the clusters from `firstNewNode` on, with radius
+  // `r`: every cluster lies within `r` of the node it grew from, which was at
+  // least a certificate's distance from each node in `nodes`, so that distance
+  // less `r` still bounds them. The new clusters start uncertified.
+  void lowerCertificates(const std::vector<int32_t>& nodes, size_t firstNewNode, double r,
+                         std::vector<float>& certificate) const {
+    const double margin = r * (1.0 + 1e-6) + static_cast<double>(_options.extent) * 16 *
+                                                  std::numeric_limits<double>::epsilon();
+    for (const int32_t index : nodes) {
+      if (static_cast<size_t>(index) >= firstNewNode) {
+        certificate[index] = 0.0f;
+        continue;
+      }
+      const double distance = std::sqrt(static_cast<double>(certificate[index])) - margin;
+      certificate[index] = distance > 0 ? certifiedBound(distance * distance) : 0.0f;
+    }
+  }
+
+  // Patches `tree`, the tree over the nodes of the level above, into the tree
+  // of the level that formed the clusters from `firstNewNode` on: their
+  // children leave it and they take free slots, all recorded in `slotOf`, which
+  // must say where each node of `tree` sits. Each cluster frees two slots or
+  // more, so there is always one to take; were there none, this returns false
+  // with `tree` half patched.
+  bool patchTree(KDTree& tree, size_t firstNewNode, std::vector<int32_t>& slotOf) const {
+    const size_t firstChild = static_cast<size_t>(_childOffsets[firstNewNode - _points.size()]);
+    for (size_t c = firstChild; c < _childNodes.size(); c++) {
+      tree.remove(static_cast<size_t>(slotOf[_childNodes[c]]));
+    }
+    slotOf.resize(_nodes.size());
+    for (size_t cluster = firstNewNode; cluster < _nodes.size(); cluster++) {
+      if (!tree.place({_nodes[cluster].x, _nodes[cluster].y, static_cast<int32_t>(cluster)},
+                      [&](int32_t position, int32_t index) { slotOf[index] = position; })) {
+        return false;
+      }
+    }
+    return true;
   }
 
   KDTree buildTree(const std::vector<int32_t>& indices) const {
@@ -868,6 +1334,8 @@ private:
   std::vector<std::pair<int32_t, int32_t>> _sparsePointIds;
   int32_t _firstClusterId = 0;
   bool _built = false;
+  bool _skipLonelyQueries = true;
+  bool _reuseTrees = true;
 };
 
 } // namespace margelo::nitro::nitromapcluster
