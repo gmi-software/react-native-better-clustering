@@ -52,12 +52,15 @@ export interface HookLibrary {
 /** Index builds the libraries started, counted at the method each hook calls. */
 export const hookBuilds = { count: 0 }
 
-function countCalls<T extends object>(prototype: T, method: keyof T) {
-  const original = prototype[method] as (...args: unknown[]) => unknown
-  prototype[method] = function (this: unknown, ...args: unknown[]) {
+function countCalls<K extends PropertyKey>(
+  prototype: Record<K, (...args: never[]) => unknown>,
+  method: K
+) {
+  const original = prototype[method]
+  prototype[method] = function (this: unknown, ...args: never[]) {
     hookBuilds.count += 1
     return original.apply(this, args)
-  } as T[keyof T]
+  }
 }
 
 let counting = false
@@ -75,6 +78,14 @@ export function countHookBuilds(): void {
   countCalls(ClustererSupercluster.prototype, 'load')
   countCalls(Supercluster.prototype, 'load')
   countCalls(BetterSupercluster.prototype, 'loadAsync')
+}
+
+/** Times a build that runs on the JS thread from start to finish. */
+function timeSyncBuild(build: () => unknown) {
+  const start = performance.now()
+  build()
+  const ms = performance.now() - start
+  return Promise.resolve({ jsMs: ms, totalMs: ms })
 }
 
 /** use-supercluster takes a bbox and a zoom: the region's own bbox, and the zoom its width spans. */
@@ -104,12 +115,8 @@ export const HOOK_LIBRARIES: Record<HookLibraryId, HookLibrary> = {
       )
       return { features, index }
     },
-    async buildOnce(data) {
-      const start = performance.now()
-      new ClustererSupercluster(HOOK_OPTIONS).load(data)
-      const ms = performance.now() - start
-      return { jsMs: ms, totalMs: ms }
-    },
+    buildOnce: (data) =>
+      timeSyncBuild(() => new ClustererSupercluster(HOOK_OPTIONS).load(data)),
   },
   usc: {
     id: 'usc',
@@ -125,12 +132,8 @@ export const HOOK_LIBRARIES: Record<HookLibraryId, HookLibrary> = {
       })
       return { features: clusters, index: supercluster }
     },
-    async buildOnce(data) {
-      const start = performance.now()
-      new Supercluster(HOOK_OPTIONS).load(data)
-      const ms = performance.now() - start
-      return { jsMs: ms, totalMs: ms }
-    },
+    buildOnce: (data) =>
+      timeSyncBuild(() => new Supercluster(HOOK_OPTIONS).load(data)),
   },
   rnbc: {
     id: 'rnbc',

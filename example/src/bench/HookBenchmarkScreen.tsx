@@ -3,16 +3,22 @@ import { Dimensions, Platform, ScrollView, StyleSheet, Text } from 'react-native
 import type { Region } from 'react-native-maps'
 import type { PointFeature } from 'react-native-better-clustering/geojson'
 import type { MapDimensions } from 'react-native-better-clustering/hooks'
-import { ControlPanel, ControlRow, StatusText } from '../components/Controls'
+import {
+  Chip,
+  ControlPanel,
+  ControlRow,
+  StatusText,
+} from '../components/Controls'
 import {
   generatePoints,
+  KRAKOW_REGION,
   POLAND_BOUNDS,
   POLAND_REGION,
   regionAtZoom,
 } from '../data'
-import { Chip } from './BenchmarkScreen'
 import {
   frameStats,
+  lastLongFrameAt,
   medianFrameInterval,
   round,
   startFrameMonitor,
@@ -25,6 +31,7 @@ import {
   type HookLibrary,
   type HookLibraryId,
 } from './hookLibraries'
+import { sleep, waitUntil } from './wait'
 
 const COUNTS = [10_000, 50_000, 100_000]
 /** The seed `LargeDatasetScreen` and the map benchmark use: the same points across Poland. */
@@ -45,7 +52,11 @@ const { width, height } = Dimensions.get('window')
 const DIMENSIONS: MapDimensions = { width, height }
 
 /** Into Kraków at zoom 8, then a third of the screen at a time east and back. */
-const KRAKOW_AT_8 = regionAtZoom(50.0647, 19.945, 8)
+const KRAKOW_AT_8 = regionAtZoom(
+  KRAKOW_REGION.latitude,
+  KRAKOW_REGION.longitude,
+  8
+)
 const PAN_REGIONS: Region[] = [0, 1, 2, 3, 4, 5, 4, 3, 2, 1].map((thirds) => ({
   ...KRAKOW_AT_8,
   longitude:
@@ -69,21 +80,8 @@ const probe = {
   firstClustersAt: null as number | null,
   /** When the hook last returned a different index object. */
   indexChangedAt: 0,
-  features: [] as readonly unknown[],
+  featureCount: 0,
   index: null as unknown,
-}
-
-const sleep = (ms: number) =>
-  new Promise<void>((resolve) => setTimeout(resolve, ms))
-
-async function waitUntil(condition: () => boolean, timeoutMs: number) {
-  const deadline = performance.now() + timeoutMs
-  while (!condition()) {
-    if (performance.now() > deadline) {
-      throw new Error('timed out')
-    }
-    await sleep(25)
-  }
 }
 
 function median(values: number[]): number {
@@ -126,7 +124,7 @@ const HookProbe = memo(function HookProbe({
     if (probe.firstClustersAt == null && features.length > 0) {
       probe.firstClustersAt = now
     }
-    probe.features = features
+    probe.featureCount = features.length
     probe.index = index
   })
   return (
@@ -176,21 +174,45 @@ export function HookBenchmarkScreen() {
       frameStats(frames, start, performance.now(), frameIntervalMs)
     // Nothing committed and no frame later than 100 ms for `QUIET_MS`.
     const settle = () =>
-      waitUntil(() => {
-        let lastLongFrame = 0
-        for (let index = frames.length - 1; index > 0; index -= 1) {
-          if (frames[index] - frames[index - 1] > 100) {
-            lastLongFrame = frames[index]
-            break
-          }
+      waitUntil(
+        () =>
+          performance.now() -
+            Math.max(probe.committedAt, lastLongFrameAt(frames, 100)) >=
+          QUIET_MS,
+        TIMEOUT_MS
+      )
+    // One phase of prop changes, each step from the change to the last
+    // commit it caused. A data change waits for its own new index, so a slow
+    // build is not credited to the next step.
+    const measureSteps = async (
+      name: Phase,
+      changes: Iterable<Partial<Mounted>>,
+      intervalMs: number,
+      newIndex = false
+    ) => {
+      setPhase(name)
+      hookBuilds.count = 0
+      const phaseStart = performance.now()
+      const steps = []
+      for (const change of changes) {
+        const start = performance.now()
+        setMounted((current) => current && { ...current, ...change })
+        await sleep(intervalMs)
+        if (newIndex) {
+          await waitUntil(() => probe.indexChangedAt > start, TIMEOUT_MS)
         }
-        return (
-          performance.now() - Math.max(probe.committedAt, lastLongFrame) >=
-          QUIET_MS
-        )
-      }, TIMEOUT_MS)
-    const update = (change: Partial<Mounted>) =>
-      setMounted((current) => (current == null ? null : { ...current, ...change }))
+        await settle()
+        steps.push({
+          updatedMs: round(probe.committedAt - start),
+          indexMs:
+            probe.indexChangedAt > start
+              ? round(probe.indexChangedAt - start)
+              : null,
+          features: probe.featureCount,
+        })
+      }
+      return { builds: hookBuilds.count, ...statsSince(phaseStart), steps }
+    }
 
     const results: Record<string, unknown> = {
       library: library.name,
@@ -237,90 +259,58 @@ export function HookBenchmarkScreen() {
       results.mount = {
         firstClustersMs: round(probe.firstClustersAt! - mountStart),
         settledMs: round(probe.committedAt - mountStart),
-        features: probe.features.length,
+        features: probe.featureCount,
         builds: hookBuilds.count,
         ...statsSince(mountStart),
       }
 
-      // Each step: from the update to the last commit it caused. A data
-      // change waits for its own new index, so a slow build is not credited
-      // to the next step.
-      const step = async (
-        change: Partial<Mounted>,
-        intervalMs: number,
-        newIndex = false
-      ) => {
-        const start = performance.now()
-        update(change)
-        await sleep(intervalMs)
-        if (newIndex) {
-          await waitUntil(() => probe.indexChangedAt > start, TIMEOUT_MS)
-        }
-        await settle()
-        return {
-          updatedMs: round(probe.committedAt - start),
-          indexMs:
-            probe.indexChangedAt > start
-              ? round(probe.indexChangedAt - start)
-              : null,
-          features: probe.features.length,
-        }
-      }
-
       // Re-renders with the same props, as a parent's state change causes.
-      setPhase('rerendering')
-      hookBuilds.count = 0
-      const rerenderStart = performance.now()
-      const rerenders = []
-      for (let tick = 1; tick <= RERENDERS; tick += 1) {
-        rerenders.push(await step({ tick }, STEP_INTERVAL_MS))
-      }
+      const rerender = await measureSteps(
+        'rerendering',
+        Array.from({ length: RERENDERS }, (_, index) => ({ tick: index + 1 })),
+        STEP_INTERVAL_MS
+      )
       results.rerender = {
-        renderMs: median(rerenders.map((entry) => entry.updatedMs)),
-        builds: hookBuilds.count,
-        ...statsSince(rerenderStart),
-        steps: rerenders,
+        renderMs: median(rerender.steps.map((entry) => entry.updatedMs)),
+        ...rerender,
       }
 
       // Region changes, as onRegionChangeComplete sends them.
-      setPhase('panning')
-      hookBuilds.count = 0
-      const panStart = performance.now()
-      const pans = []
-      for (const region of PAN_REGIONS) {
-        pans.push(await step({ region }, STEP_INTERVAL_MS))
-      }
+      const pan = await measureSteps(
+        'panning',
+        PAN_REGIONS.map((region) => ({ region })),
+        STEP_INTERVAL_MS
+      )
       results.pan = {
-        updatedMs: median(pans.map((entry) => entry.updatedMs)),
-        builds: hookBuilds.count,
-        ...statsSince(panStart),
-        steps: pans,
+        updatedMs: median(pan.steps.map((entry) => entry.updatedMs)),
+        ...pan,
       }
 
       // Data changes: one point moves, in a new array, as a feed delivers it.
-      setPhase('updating')
-      hookBuilds.count = 0
-      const updateStart = performance.now()
-      const updates = []
-      const [first, ...rest] = features
-      const [longitude, latitude] = first.geometry.coordinates
-      for (let index = 1; index <= UPDATES; index += 1) {
-        const moved: PointFeature = {
-          ...first,
-          geometry: {
-            type: 'Point',
-            coordinates: [longitude + index * 0.01, latitude],
-          },
+      // A generator, so each array is made just before its step.
+      function* pointMoves(): Generator<Partial<Mounted>> {
+        const [first, ...rest] = features
+        const [longitude, latitude] = first.geometry.coordinates
+        for (let index = 1; index <= UPDATES; index += 1) {
+          const moved: PointFeature = {
+            ...first,
+            geometry: {
+              type: 'Point',
+              coordinates: [longitude + index * 0.01, latitude],
+            },
+          }
+          yield { data: [moved, ...rest] }
         }
-        updates.push(
-          await step({ data: [moved, ...rest] }, UPDATE_INTERVAL_MS, true)
-        )
       }
+      const update = await measureSteps(
+        'updating',
+        pointMoves(),
+        UPDATE_INTERVAL_MS,
+        true
+      )
       results.update = {
-        indexMs: median(updates.map((entry) => entry.indexMs!)),
-        builds: hookBuilds.count,
-        ...statsSince(updateStart),
-        steps: updates,
+        indexMs: median(update.steps.map((entry) => entry.indexMs!)),
+        ...update,
       }
 
       setPhase('done')

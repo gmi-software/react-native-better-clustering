@@ -10,8 +10,8 @@ The example app's **Benchmark** scenario runs react-native-better-clustering and
 | `../src/bench/libraries.ts` | The two libraries, behind the props their `MapView`s share |
 | `flow.yaml`, `mark.js`, `result.js` | One run in Maestro |
 | `run.mjs` | Runs every library, size and repetition, and writes one report |
-| `summarize.mjs` | Medians per library, version and size, as Markdown and JSON |
-| `../src/bench/HookBenchmarkScreen.tsx`, `../src/bench/hookLibraries.ts`, `hook-flow.yaml`, `summarize-hooks.mjs` | The hook benchmark, below |
+| `summarize.mjs` | Medians per library, version and size, as Markdown and JSON, for either benchmark |
+| `../src/bench/HookBenchmarkScreen.tsx`, `../src/bench/hookLibraries.ts`, `hook-flow.yaml` | The hook benchmark, below |
 
 ## What one run does
 
@@ -101,7 +101,7 @@ From `example/`, with a Release build installed:
 
 ```bash
 node bench/run.mjs --platform ios --device <simulator udid> --flow hook-flow.yaml --libs rnc,usc,rnbc --runs 3 --out bench/results/ios-hooks.json
-node bench/summarize-hooks.mjs bench/results/ios-hooks.json
+node bench/summarize.mjs bench/results/ios-hooks.json
 ```
 
 The host samples no memory in this flow. Run it on a quiet machine: a busy one stalls the simulator for seconds at a time, in any phase.

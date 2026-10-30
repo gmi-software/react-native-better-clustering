@@ -1,6 +1,8 @@
 #!/usr/bin/env node
 // Summarizes reports from run.mjs: the median of every metric per library,
-// version and marker count, as a Markdown table and as JSON.
+// version and marker count, as Markdown tables and as JSON. A report's `flow`
+// picks the metrics: the map benchmark's (flow.yaml) or the hook benchmark's
+// (hook-flow.yaml).
 //
 //   node bench/summarize.mjs results/ios-main.json results/ios-1.0.0.json [--json out.json]
 import { readFileSync, writeFileSync } from 'node:fs'
@@ -32,8 +34,8 @@ const growthMb = (from, to) => {
   return start == null || end == null ? null : mb(end - start)
 }
 
-/** One run's metrics, flat. */
-function metrics({ memory, result }) {
+/** One map benchmark run's metrics, flat. */
+function mapMetrics({ memory, result }) {
   const { mount, rerender, zoom, press, live, baseline } = result
   const steps = zoom?.steps ?? []
   return {
@@ -78,39 +80,34 @@ function metrics({ memory, result }) {
   }
 }
 
-const groups = new Map()
-const devices = new Set()
-for (const file of files) {
-  const report = JSON.parse(readFileSync(file, 'utf8'))
-  devices.add(JSON.stringify(report.device))
-  for (const run of report.runs) {
-    if (run.result?.error != null) {
-      continue
-    }
-    const key = `${run.result.library}@${run.result.version}|${run.count}`
-    const group = groups.get(key) ?? {
-      library: run.result.library,
-      version: run.result.version,
-      count: run.count,
-      runs: [],
-    }
-    group.runs.push(metrics(run))
-    groups.set(key, group)
+/** One hook benchmark run's metrics, flat. */
+function hookMetrics({ result }) {
+  const { engine, mount, rerender, pan, update } = result
+  return {
+    buildJsMs: engine?.jsMs,
+    buildTotalMs: engine?.totalMs,
+    firstClustersMs: mount?.firstClustersMs,
+    mountMaxGapMs: mount?.maxGapMs,
+    mountBlockedMs: mount?.blockedMs,
+    mountBuilds: mount?.builds,
+    mountFeatures: mount?.features,
+    rerenderMs: rerender?.renderMs,
+    rerenderBuilds: rerender?.builds,
+    rerenderBlockedMs: rerender?.blockedMs,
+    rerenderMaxGapMs: rerender?.maxGapMs,
+    panUpdatedMs: pan?.updatedMs,
+    panBuilds: pan?.builds,
+    panBlockedMs: pan?.blockedMs,
+    panMaxGapMs: pan?.maxGapMs,
+    panFeatures: pan?.steps?.[0]?.features,
+    updateIndexMs: update?.indexMs,
+    updateBuilds: update?.builds,
+    updateBlockedMs: update?.blockedMs,
+    updateMaxGapMs: update?.maxGapMs,
   }
 }
 
-const summary = [...groups.values()]
-  .sort((a, b) => a.count - b.count || a.library.localeCompare(b.library))
-  .map(({ library, version, count, runs }) => {
-    const medians = {}
-    for (const name of Object.keys(runs[0])) {
-      const value = median(runs.map((run) => run[name]))
-      medians[name] = value == null ? null : Math.round(value * 10) / 10
-    }
-    return { library, version, count, runs: runs.length, ...medians }
-  })
-
-const columns = [
+const mapColumns = [
   ['count', 'Markers'],
   ['library', 'Library'],
   ['version', 'Version'],
@@ -143,6 +140,100 @@ const liveColumns = [
   ['liveDroppedFrames', 'Dropped JS frames, live'],
   ['liveMemoryMb', 'Memory after live (+MB)'],
 ]
+const keyColumns = [
+  ['count', 'Points'],
+  ['library', 'Library'],
+  ['version', 'Version'],
+  ['runs', 'Runs'],
+]
+const buildColumns = [
+  ...keyColumns,
+  ['buildJsMs', 'Index build, JS blocked (ms)'],
+  ['buildTotalMs', 'Index build, until queryable (ms)'],
+  ['firstClustersMs', 'Mount to first clusters (ms)'],
+  ['mountMaxGapMs', 'Longest JS freeze, mount (ms)'],
+  ['mountBuilds', 'Index builds, mount'],
+]
+const afterMountColumns = [
+  ...keyColumns,
+  ['rerenderMs', 'Per re-render (ms)'],
+  ['rerenderBuilds', 'Index builds, 10 re-renders'],
+  ['rerenderBlockedMs', 'JS blocked, 10 re-renders (ms)'],
+  ['panUpdatedMs', 'Per pan, until new clusters (ms)'],
+  ['panBuilds', 'Index builds, 10 pans'],
+  ['panBlockedMs', 'JS blocked, 10 pans (ms)'],
+  ['updateIndexMs', 'Per data change, until new index (ms)'],
+  ['updateBuilds', 'Index builds, 5 data changes'],
+  ['updateBlockedMs', 'JS blocked, 5 data changes (ms)'],
+  ['updateMaxGapMs', 'Longest JS freeze, data changes (ms)'],
+]
+/** What each flow `run.mjs` drives reports: its metrics and tables. */
+const SUITES = {
+  'flow.yaml': {
+    metrics: mapMetrics,
+    tables: [
+      { columns: mapColumns },
+      {
+        title: 'Live updates',
+        columns: liveColumns,
+        include: (row) => row.liveUpdatesShown != null,
+      },
+    ],
+  },
+  'hook-flow.yaml': {
+    metrics: hookMetrics,
+    tables: [
+      { columns: buildColumns },
+      { title: 'After the mount', columns: afterMountColumns },
+    ],
+  },
+}
+
+const groups = new Map()
+const devices = new Set()
+for (const file of files) {
+  const report = JSON.parse(readFileSync(file, 'utf8'))
+  // Reports from before run.mjs recorded the flow ran flow.yaml.
+  const flow = report.flow ?? 'flow.yaml'
+  const suite = SUITES[flow]
+  if (suite == null) {
+    throw new Error(`${file}: no summary for flow ${flow}`)
+  }
+  devices.add(JSON.stringify(report.device))
+  for (const run of report.runs) {
+    if (run.result?.error != null) {
+      continue
+    }
+    const key = `${flow}|${run.result.library}@${run.result.version}|${run.count}`
+    const group = groups.get(key) ?? {
+      flow,
+      library: run.result.library,
+      version: run.result.version,
+      count: run.count,
+      runs: [],
+    }
+    group.runs.push(suite.metrics(run))
+    groups.set(key, group)
+  }
+}
+
+const summaries = new Map()
+for (const { flow, library, version, count, runs } of groups.values()) {
+  const medians = {}
+  for (const name of Object.keys(runs[0])) {
+    const value = median(runs.map((run) => run[name]))
+    medians[name] = value == null ? null : Math.round(value * 10) / 10
+  }
+  const rows = summaries.get(flow) ?? []
+  rows.push({ library, version, count, runs: runs.length, ...medians })
+  summaries.set(flow, rows)
+}
+const summary = []
+for (const rows of summaries.values()) {
+  rows.sort((a, b) => a.count - b.count || a.library.localeCompare(b.library))
+  summary.push(...rows)
+}
+
 const table = (tableColumns, rows) => [
   `| ${tableColumns.map(([, title]) => title).join(' | ')} |`,
   `| ${tableColumns.map(() => '---').join(' | ')} |`,
@@ -152,11 +243,17 @@ const table = (tableColumns, rows) => [
   ),
 ]
 console.log(`Devices: ${[...devices].join(', ')}\n`)
-console.log(table(columns, summary).join('\n'))
-const liveRows = summary.filter((row) => row.liveUpdatesShown != null)
-if (liveRows.length > 0) {
-  console.log(`\nLive updates:\n`)
-  console.log(table(liveColumns, liveRows).join('\n'))
+for (const [flow, rows] of summaries) {
+  for (const { title, columns, include = () => true } of SUITES[flow].tables) {
+    const tableRows = rows.filter(include)
+    if (tableRows.length === 0) {
+      continue
+    }
+    if (title != null) {
+      console.log(`\n${title}:\n`)
+    }
+    console.log(table(columns, tableRows).join('\n'))
+  }
 }
 if (jsonOut != null) {
   writeFileSync(

@@ -7,7 +7,7 @@ The first run of the hook benchmark (see `example/bench/README.md`): three libra
 - Runs: 3 rounds, interleaving the libraries and sizes. All 27 runs passed. Other projects shared the Mac: its load average stayed between 10 and 31 (median 14). An earlier session, at a median of 64, stalled the simulator for seconds at a time and was discarded.
 - `ios-hooks.json` is the raw data.
 
-Medians of the 3 runs (`node bench/summarize-hooks.mjs bench/results/ios-simulator-2026-10-30/ios-hooks.json`):
+Medians of the 3 runs (`node bench/summarize.mjs bench/results/ios-simulator-2026-10-30/ios-hooks.json`):
 
 | Points | Library | Version | Runs | Index build, JS blocked (ms) | Index build, until queryable (ms) | Mount to first clusters (ms) | Longest JS freeze, mount (ms) | Index builds, mount |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
