@@ -115,6 +115,36 @@ describe('useClusterer content keying (#12)', () => {
     expect(leaves.map((leaf) => leaf.properties.title)).toEqual(['new', 'new'])
   })
 
+  it('returns the latest point objects from the next region change after a prop-only change', async () => {
+    const panned = { ...REGION, longitude: REGION.longitude + 0.001 }
+    const { result, rerender } = renderHook(
+      ({ data, region }) => useClusterer(data, MAP_DIMENSIONS, region),
+      { initialProps: { data: points('old'), region: REGION } }
+    )
+    await flush()
+    const lone = () =>
+      result.current[0].find(
+        (feature) => !isClusterFeature(feature) && feature.properties.id === 'c'
+      )!
+
+    const renamed = points('new')
+    rerender({ data: renamed, region: REGION })
+    await flush()
+    rerender({ data: renamed, region: panned })
+    await flush()
+
+    expect(fakeClusterEngineStats.created).toBe(1)
+    expect(lone()).toBe(renamed[2]!)
+    expect(lone().properties.title).toBe('new')
+
+    // Without a newer `data`, a region change keeps every identity again.
+    const clusters = result.current[0]
+    rerender({ data: renamed, region: REGION })
+    await flush()
+
+    expect(result.current[0]).toBe(clusters)
+  })
+
   it('keeps serving the previous clusters until a changed dataset has loaded', async () => {
     const { result, rerender } = renderClusterer(points())
     await flush()

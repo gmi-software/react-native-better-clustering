@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 
+import { isClusterFeature } from '../geojson'
 import type { AnyProps, ClusterFeature, PointFeature } from '../geojson/types'
 import type { MapRegion } from '../types'
 import { DEFAULT_SUPERCLUSTER_OPTIONS } from '../engine/defaults'
@@ -66,6 +67,30 @@ function toError(error: unknown): Error {
 }
 
 /**
+ * `stabilized`, position-aligned with `raw`, with every point taken from
+ * `raw`. A query returns a point's newest object, where the reused one may
+ * carry properties a props-only change has since replaced; clusters keep
+ * their reused identity. Copies only when a point differs, so an equivalent
+ * query still returns `stabilized` itself.
+ */
+function withQueriedPoints<P extends AnyProps>(
+  stabilized: Features<P>,
+  raw: Features<P>
+): Features<P> {
+  let result = stabilized
+  for (let i = 0; i < raw.length; i++) {
+    const feature = raw[i]!
+    if (result[i] !== feature && !isClusterFeature(feature)) {
+      if (result === stabilized) {
+        result = stabilized.slice()
+      }
+      result[i] = feature
+    }
+  }
+  return result
+}
+
+/**
  * Internal engine behind `useClusterer` and the compat `MapView`.
  *
  * - Rebuilds the native index when the index content of `data` changes (see
@@ -76,9 +101,10 @@ function toError(error: unknown): Error {
  * - Runs one build at a time. A build that newer data overtakes still replaces
  *   the active engine once it loads, and then the newest array builds, so data
  *   that changes faster than a build loads still moves the index forward.
- * - Reuses feature identities across equivalent queries of the same engine,
+ * - Reuses cluster identities across equivalent queries of the same engine,
  *   never across engines, so a rendered cluster's `getExpansionRegion` always
- *   resolves on a live engine.
+ *   resolves on a live engine. Points come from each query, which returns the
+ *   same object until a props-only change swaps in the newest ones.
  * - Reports a failed build to `options.onError`, or throws it during render
  *   when there is none. Builds that newer data overtook, or that settle after
  *   unmount, stay silent.
@@ -259,7 +285,10 @@ export function useClusterIndex<P extends AnyProps = AnyProps>(
     }
   }, [active])
 
-  // Same index content, newer feature objects: serve them from leaf queries.
+  // Same index content, newer feature objects: serve them from leaf queries,
+  // and from the next region query. Never re-query by setting state here: a
+  // component that builds `data` inline would get a new array each render,
+  // and so render forever.
   useEffect(() => {
     if (
       active != null &&
@@ -306,8 +335,11 @@ export function useClusterIndex<P extends AnyProps = AnyProps>(
   if (raw !== stable.raw) {
     clusters =
       supercluster != null && stable.supercluster === supercluster
-        ? stabilizeClusterFeatures(stable.clusters, raw, (feature) =>
-            supercluster.getFeatureId(feature)
+        ? withQueriedPoints(
+            stabilizeClusterFeatures(stable.clusters, raw, (feature) =>
+              supercluster.getFeatureId(feature)
+            ),
+            raw
           )
         : raw
     setStable({ raw, supercluster, clusters })
