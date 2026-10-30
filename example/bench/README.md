@@ -16,6 +16,8 @@ The example app's **Benchmark** scenario runs react-native-better-clustering and
 
 Both libraries get the same props: `initialRegion` over Poland, `mapRef`, `onRegionChangeComplete`, a `renderCluster` that draws the same bubble (`BenchCluster`), a `superClusterRef` that counts index builds, and the markers as inline `BenchMarker` children, the way apps write them. Every other prop is the library's default. The markers are the seeded points of the `large-*` scenarios.
 
+The map is hidden from accessibility (`accessibilityElementsHidden`, `importantForAccessibility="no-hide-descendants"`). Maestro polls the screen's accessibility tree while it waits for a phase, and on iOS each snapshot walked every marker on the map: in runs before 30 October, it took a fifth to half of the UI thread, more with more markers on screen.
+
 1. **ready**: the points exist, the map is not mounted. The host samples memory.
 2. **mount**: the map mounts with every marker, until no marker or bubble mounts or unmounts and no JS frame is late for 1 s. The host samples memory.
 3. **re-render**: the screen re-renders the map with the same markers 10 times, every 500 ms, like a clock or a selection in a parent would. The host samples memory.

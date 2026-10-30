@@ -594,15 +594,24 @@ export function BenchmarkScreen() {
     <>
       <View style={styles.mapArea}>
         {mapMounted && points != null ? (
-          <BenchMap
-            buildCounterRef={buildCounterRef}
-            library={library}
-            liveUpdate={liveUpdate}
-            onMap={onMap}
-            onRegionChangeComplete={onRegionChangeComplete}
-            points={points}
-            tick={tick}
-          />
+          // Hidden from accessibility: Maestro polls the screen's
+          // accessibility tree while it waits for a phase, and a snapshot that
+          // walks every marker on the map loads the UI thread under test.
+          <View
+            accessibilityElementsHidden
+            importantForAccessibility="no-hide-descendants"
+            style={styles.map}
+          >
+            <BenchMap
+              buildCounterRef={buildCounterRef}
+              library={library}
+              liveUpdate={liveUpdate}
+              onMap={onMap}
+              onRegionChangeComplete={onRegionChangeComplete}
+              points={points}
+              tick={tick}
+            />
+          </View>
         ) : null}
         <View
           style={[styles.overlay, recording && styles.overlayLarge]}
