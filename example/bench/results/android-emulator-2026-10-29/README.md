@@ -1,10 +1,11 @@
 # Android emulator, 29 October 2026
 
-The live phase on Android: the same two builds as the [iOS Simulator run of the same day](../ios-simulator-2026-10-29/README.md). They are react-native-map-clustering 4.0.0 and react-native-better-clustering at `main@a3ff7a6`, and this library with #126's JS (31afbc7) and the engine branch `perf/skip-bound-reach` (d8725fc), neither merged when this ran.
+The live phase on Android, with the same code as the [iOS Simulator run of 30 October](../ios-simulator-2026-10-30/README.md). It runs react-native-map-clustering 4.0.0 and react-native-better-clustering at `main@a3ff7a6`, and this library with #126's JS (31afbc7) and the engine branch `perf/skip-bound-reach` (d8725fc), neither merged when this ran.
 
 - Device: Android emulator, AVD `Clustering_API35` (`sdk_gphone64_arm64`, Android 15, arm64-v8a), on an Apple M5 Pro Mac. Google Maps used a real API key, which is not in the repository.
 - Builds: the example app in Release (Hermes), `-PreactNativeArchitectures=arm64-v8a`, with the benchmark from branch `chore/bench-live-phase`. The second build has `EXPO_PUBLIC_BENCH_RNBC_VERSION="main + #126 + engine"`.
 - Runs: 3 rounds. Each round ran every size for react-native-map-clustering, `main` and `main + #126 + engine`, so the two builds of this library saw the same host. Every run started on a freshly cold-booted emulator. In a first attempt without reboots, the emulator slowed down within three runs: a run took 7–9 minutes instead of 2, and its live phase showed 14 updates instead of 80. The host's 1-minute load average before a run had a median of 4.8, from 3.4 to 31.8. All 27 runs passed.
+- This run predates hiding the map from accessibility (see `example/bench/README.md`), so Maestro's polling walked the map's accessibility tree meanwhile. On iOS, hiding it changed no live-phase result beyond the spread between runs; on Android its cost was not measured.
 - `android-main.json` (react-native-map-clustering and `main`) and `android-branches.json` are the raw data, one report per build, merged from one run per call.
 
 Medians of the 3 runs (`node bench/summarize.mjs bench/results/android-emulator-2026-10-29/*.json`):
@@ -55,6 +56,7 @@ The age of the map in each run of the live phase, in ms, since a median of 3 hid
   - **10,000:** `main + #126 + engine` keeps the map 137–140 ms old in all three runs, against 150–254 ms for `main`.
   - **100,000:** `main + #126 + engine` keeps it 326 and 336 ms old in two runs and 1.7 s in a slow one. `main` keeps it 717 ms, 773 ms and 3.1 s old.
   - **50,000:** the runs overlap (198–510 ms against 339–901 ms), so three runs can't separate the builds. The iOS Simulator, whose runs varied far less, can: 177 against 348 ms.
+- **Updates shown.** As on iOS, the benchmark sees an update only on a vehicle's own marker, not in a cluster bubble, so no library can show all 100: in some updates every vehicle sits in a bubble.
 - **react-native-map-clustering** blocks JS for 8–20 s of the live phase and shows 1–39 of the 100 updates. Its map is on average 0.2–0.5 s old at 10,000, 0.9–1.8 s at 50,000 and 1.7–5.7 s at 100,000. In its 100,000-marker runs, the 10 re-renders alone block JS for 30–93 s.
 - **Memory** is the app's total PSS (`dumpsys meminfo`), which is not comparable with iOS's `phys_footprint`.
 - An emulator runs on the Mac's CPU through virtualization, and its graphics through the host GPU, so neither its absolute times nor its run-to-run spread are a phone's. Compare the libraries and builds within this run.
