@@ -46,12 +46,22 @@ alias of the same component.
 ```
 
 `MapView` reads its marker children again whenever they change. It reuses what
-it made from a marker element while three things stay the same: its props
-object, its `key`, and its position among the children. When only some markers
-change, create the elements of the others once (for example with `useMemo`): a
-`.map()` in render gives every marker new props, so each one is read again. Put
-such a group before any list that changes length, since a list that grows or
-shrinks ahead of it moves its markers to new positions.
+it made from a marker element while its `key` and its position among the
+children stay the same, and its props keep their values: each prop the same
+value, or a plain object of the same values, such as a new
+`coordinate={{ latitude, longitude }}` literal. So a `.map()` in render that
+creates the same markers again costs a comparison of each one, not a read. It
+compares arrays of 64 markers or more; a shorter one is read again, which costs
+about as much. A plain object is compared one level deep. A nested object, an
+array, a function or an element only matches itself, so a marker given a new
+one, such as an inline `onPress` or a `<Callout>` child, is read again. When
+only some markers change, create the elements of the others once (for example
+with `useMemo`). Put such a group before any list that changes length, since a
+list that grows or shrinks ahead of it moves its markers to new positions.
+
+Never change a prop object in place and pass it again, such as a `coordinate`
+whose `latitude` you set: `MapView` sees the same object, keeps the point it
+made from it, and the marker stays where it was. Pass a new object instead.
 
 ## Clustering props
 
