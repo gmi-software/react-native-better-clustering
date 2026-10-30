@@ -151,6 +151,7 @@ const buildColumns = [
   ['buildJsMs', 'Index build, JS blocked (ms)'],
   ['buildTotalMs', 'Index build, until queryable (ms)'],
   ['firstClustersMs', 'Mount to first clusters (ms)'],
+  ['mountFeatures', 'Features, mount'],
   ['mountMaxGapMs', 'Longest JS freeze, mount (ms)'],
   ['mountBuilds', 'Index builds, mount'],
 ]
@@ -160,6 +161,7 @@ const afterMountColumns = [
   ['rerenderBuilds', 'Index builds, 10 re-renders'],
   ['rerenderBlockedMs', 'JS blocked, 10 re-renders (ms)'],
   ['panUpdatedMs', 'Per pan, until new clusters (ms)'],
+  ['panFeatures', 'Features, first pan'],
   ['panBuilds', 'Index builds, 10 pans'],
   ['panBlockedMs', 'JS blocked, 10 pans (ms)'],
   ['updateIndexMs', 'Per data change, until new index (ms)'],
@@ -225,7 +227,7 @@ for (const { flow, library, version, count, runs } of groups.values()) {
     medians[name] = value == null ? null : Math.round(value * 10) / 10
   }
   const rows = summaries.get(flow) ?? []
-  rows.push({ library, version, count, runs: runs.length, ...medians })
+  rows.push({ flow, library, version, count, runs: runs.length, ...medians })
   summaries.set(flow, rows)
 }
 const summary = []
