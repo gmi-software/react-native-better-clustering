@@ -25,17 +25,23 @@ const median = (values) => {
 }
 const mb = (bytes) => (bytes == null ? null : bytes / 1e6)
 const memoryOf = (sample) => sample?.footprintBytes ?? sample?.pssBytes ?? null
+/** MB the app grew from sample `from` to sample `to`; null if either is missing. */
+const growthMb = (from, to) => {
+  const start = memoryOf(from)
+  const end = memoryOf(to)
+  return start == null || end == null ? null : mb(end - start)
+}
 
 /** One run's metrics, flat. */
 function metrics({ memory, result }) {
-  const { mount, rerender, zoom, press, baseline } = result
+  const { mount, rerender, zoom, press, live, baseline } = result
   const steps = zoom?.steps ?? []
   return {
     firstMarkersMs: mount?.firstMarkersMs,
     mountMaxGapMs: mount?.maxGapMs,
     mountBlockedMs: mount?.blockedMs,
     mountDroppedFrames: mount?.droppedFrames,
-    mountMemoryMb: mb(memoryOf(memory.mounted) - memoryOf(memory.baseline)),
+    mountMemoryMb: growthMb(memory.baseline, memory.mounted),
     mountJsHeapMb: mb(mount?.jsHeap?.heapBytes - baseline?.jsHeap?.heapBytes),
     rerenderBlockedMs: rerender?.blockedMs,
     rerenderMaxGapMs: rerender?.maxGapMs,
@@ -54,7 +60,21 @@ function metrics({ memory, result }) {
     pressRegionMs: press?.regionMs,
     pressMaxGapMs: press?.maxGapMs,
     pressBlockedMs: press?.blockedMs,
-    endMemoryMb: mb(memoryOf(memory.done) - memoryOf(memory.baseline)),
+    // After the press: reports from before the live phase sampled it at `done`.
+    endMemoryMb: growthMb(
+      memory.baseline,
+      'pressed' in memory ? memory.pressed : memory.done
+    ),
+    liveUpdatesShown: live?.updatesShown,
+    liveStalenessMs: live?.stalenessMs,
+    liveLagMedianMs: live?.lagMedianMs,
+    liveLagMaxMs: live?.lagMaxMs,
+    liveLastUpdateMs: live?.lastUpdateMs,
+    liveBuilds: live?.builds,
+    liveBlockedMs: live?.blockedMs,
+    liveMaxGapMs: live?.maxGapMs,
+    liveDroppedFrames: live?.droppedFrames,
+    liveMemoryMb: live == null ? null : growthMb(memory.baseline, memory.done),
   }
 }
 
@@ -107,16 +127,37 @@ const columns = [
   ['pressRegionMs', 'Press to camera settled (ms)'],
   ['pressMaxGapMs', 'Longest JS freeze, press (ms)'],
 ]
-const lines = [
-  `| ${columns.map(([, title]) => title).join(' | ')} |`,
-  `| ${columns.map(() => '---').join(' | ')} |`,
-  ...summary.map(
+const liveColumns = [
+  ['count', 'Markers'],
+  ['library', 'Library'],
+  ['version', 'Version'],
+  ['runs', 'Runs'],
+  ['liveStalenessMs', 'Age of the map, mean (ms)'],
+  ['liveUpdatesShown', 'Updates shown (of 100)'],
+  ['liveLagMedianMs', 'Lag, median (ms)'],
+  ['liveLagMaxMs', 'Lag, max (ms)'],
+  ['liveLastUpdateMs', 'Last update shown after (ms)'],
+  ['liveBuilds', 'Index builds'],
+  ['liveBlockedMs', 'JS blocked, live (ms)'],
+  ['liveMaxGapMs', 'Longest JS freeze, live (ms)'],
+  ['liveDroppedFrames', 'Dropped JS frames, live'],
+  ['liveMemoryMb', 'Memory after live (+MB)'],
+]
+const table = (tableColumns, rows) => [
+  `| ${tableColumns.map(([, title]) => title).join(' | ')} |`,
+  `| ${tableColumns.map(() => '---').join(' | ')} |`,
+  ...rows.map(
     (row) =>
-      `| ${columns.map(([key]) => (row[key] ?? '–').toLocaleString?.('en-US') ?? row[key]).join(' | ')} |`
+      `| ${tableColumns.map(([key]) => (row[key] ?? '–').toLocaleString?.('en-US') ?? row[key]).join(' | ')} |`
   ),
 ]
 console.log(`Devices: ${[...devices].join(', ')}\n`)
-console.log(lines.join('\n'))
+console.log(table(columns, summary).join('\n'))
+const liveRows = summary.filter((row) => row.liveUpdatesShown != null)
+if (liveRows.length > 0) {
+  console.log(`\nLive updates:\n`)
+  console.log(table(liveColumns, liveRows).join('\n'))
+}
 if (jsonOut != null) {
   writeFileSync(
     jsonOut,

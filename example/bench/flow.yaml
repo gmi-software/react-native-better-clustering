@@ -57,6 +57,26 @@ name: Benchmark ${LIB} ${COUNT}
 - tapOn:
     id: bench-next
 
+# After the cluster press, before the live phase. A run that failed earlier
+# goes straight on to report its error.
+- extendedWaitUntil:
+    visible:
+      id: bench-phase
+      text: 'Phase: (pressed|failed)'
+    timeout: 300000
+- runFlow:
+    when:
+      visible:
+        id: bench-phase
+        text: 'Phase: pressed'
+    commands:
+      - runScript:
+          file: mark.js
+          env:
+            PHASE: pressed
+      - tapOn:
+          id: bench-next
+
 - extendedWaitUntil:
     visible:
       id: bench-phase
