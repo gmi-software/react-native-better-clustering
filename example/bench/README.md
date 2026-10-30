@@ -36,8 +36,8 @@ The map is hidden from accessibility (`accessibilityElementsHidden`, `importantF
 | Remounts | `BenchMarker` and `BenchCluster` mounts in a phase |
 | Fewest on map | The fewest markers and bubbles mounted at once in a phase: 0 means the map went blank |
 | Memory | iOS: the app's `phys_footprint` (`footprint`); Android: total PSS (`dumpsys meminfo`). Reported as the growth from **ready** |
-| Age of the map | Over the live phase, the mean time since the update the map shows was due (before the map shows any, since the first was due). The one number that weighs both how often and how late the map catches up |
-| Updates shown | Of the live phase's 100 updates, how many a vehicle rendered. An update that a newer one overtook before the map showed it is not shown |
+| Age of the map | Over the live phase, the mean time since the update the map shows was due (before the map shows any, since the first was due). The one number that weighs both how often and how late the map catches up. While every vehicle sits in a cluster bubble, it counts the map as showing the last update a vehicle showed (see updates shown), so it overstates the age |
+| Updates shown | Of the live phase's 100 updates, how many a vehicle rendered. The benchmark sees an update only on a vehicle's own marker, not in a cluster bubble, so an update in which every vehicle sat in a bubble is not shown: on an iPhone 17 Pro, that leaves at most 83, 74 and 74 of them at 10,000, 50,000 and 100,000 markers. Nor is an update that a newer one overtook before the map showed it |
 | Lag | From when a live update was due to when a vehicle first rendered it. For a point, both libraries render the marker element they hold for it, so that is when the update reached the map (see below). A timer that fired late counts in it. Only shown updates count, so a library that shows few has few lags: read it with the age of the map |
 | Last update shown after | The lag of the 100th update: how long the map takes to catch up once the feed stops |
 | Index builds | Index objects the library assigned to `superClusterRef` during the live phase: each is a build |
