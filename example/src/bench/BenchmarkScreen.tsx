@@ -644,7 +644,7 @@ export function BenchmarkScreen() {
   )
 }
 
-function Chip({
+export function Chip({
   label,
   selected,
   onPress,

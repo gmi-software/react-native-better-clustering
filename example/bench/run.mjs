@@ -6,8 +6,9 @@
 //   node bench/run.mjs --platform android --device emulator-5554 --out results/android-main.json
 //
 // Options: --app-id (default com.nitromapcluster.example), --libs rnmc,rnbc,
-// --counts 10000,50000,100000, --runs 5. A Release build of the app must be
-// installed on the device. See README.md.
+// --counts 10000,50000,100000, --runs 5, --flow flow.yaml (hook-flow.yaml runs
+// the hook benchmark instead). A Release build of the app must be installed on
+// the device. See README.md.
 import { execFileSync, spawn } from 'node:child_process'
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { createServer } from 'node:http'
@@ -23,6 +24,7 @@ function parseArgs(argv) {
     libs: 'rnmc,rnbc',
     counts: '10000,50000,100000',
     runs: '5',
+    flow: 'flow.yaml',
   }
   for (let index = 0; index < argv.length; index += 2) {
     const key = argv[index].replace(/^--/, '')
@@ -181,6 +183,7 @@ const report = {
   generatedAt: new Date().toISOString(),
   platform: args.platform,
   appId: args.appId,
+  flow: args.flow,
   device: deviceInfo(),
   runs: [],
 }
@@ -201,7 +204,7 @@ for (let run = 1; run <= args.runs; run += 1) {
             '--device',
             args.device,
             'test',
-            join(here, 'flow.yaml'),
+            join(here, args.flow),
             '-e',
             `APP_ID=${args.appId}`,
             '-e',
