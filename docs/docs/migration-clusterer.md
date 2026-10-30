@@ -74,9 +74,14 @@ dependency, though `/hooks`, `/engine` and `/geojson` don't import it. See
   }
 ```
 
-`markers` is the same array of GeoJSON point features as before. Keep it in
-`useMemo` or state: a new array with the same coordinates no longer rebuilds
-the index, but the hook still compares every point with the previous array.
+`markers` is the same array of GeoJSON point features as before, and the `key`
+above needs a unique `properties.id` on each. Keep it in `useMemo` or state: a
+new array with the same coordinates no longer rebuilds the index, but the hook
+still compares every point with the previous array. When only other
+properties change, a point on screen keeps its previous feature object, old
+properties included, until the region changes, where react-native-clusterer
+returns new objects on every query. Read a property that changes from
+`markers` by `properties.id`.
 
 `Clusterer` takes the same props (`data`, `region`, `mapDimensions`,
 `options`, `renderItem`), plus `onError`.

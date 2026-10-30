@@ -51,7 +51,7 @@ function Map({ places }) {
 | `points` | `data`, the first argument: the same GeoJSON point features |
 | `bounds` and `zoom` | `region` and `mapDimensions`: the map's region and its size in points. The hook computes the bbox and the zoom (see [below](#zoom-and-bbox)) |
 | `options` | `options`, the fourth argument. `radius`, `minZoom`, `maxZoom`, `minPoints`, `extent` and `nodeSize` mean the same, but `minZoom` defaults to `1` and `maxZoom` to `20` here, where supercluster uses `0` and `16`: pass both to keep yours. `map` and `reduce` become [`clusterProperties`](#map-and-reduce); `log` and `generateId` are not supported |
-| `disableRefresh` | No equivalent: keep passing the previous array |
+| `disableRefresh` | No equivalent. Keep passing the previous `data` to cluster the previous points in each new region, or the previous `data`, `region` and `mapDimensions` to keep the previous clusters |
 | Returns `{ clusters, supercluster }` | Returns `[clusters, supercluster]` |
 | `supercluster` is `undefined` until the first effect has run | `supercluster` is always an instance; check `supercluster.isLoaded` before querying it |
 
@@ -104,7 +104,10 @@ carry over; `getTile` has no equivalent.
 
 Keep `points` in `useMemo` or state. A new array with the same coordinates
 keeps the index, but the hook still compares every point with the previous
-array.
+array. When only other properties change, a point on screen keeps its previous
+feature object, old properties included, until the region changes, where
+use-supercluster rebuilds and returns new objects. Read a property that
+changes from `points` by a stable `id`.
 
 ## Zoom and bbox
 
@@ -118,9 +121,10 @@ react-native-clusterer does:
   counting tiles of `viewportTileSize` points (default: `extent`, `512`).
 
 With the default, that zoom is usually two levels below
-`Math.log2(360 / longitudeDelta)`, the zoom of the example above, so each
-cluster covers about four times the area it did. `viewportTileSize:
-128`, as above, brings it to within one level of it on a phone in portrait.
+`Math.log2(360 / longitudeDelta)`, the zoom of the example above, so `radius`
+reaches about four times as far on the map, and each cluster covers about 16
+times the area it did. `viewportTileSize: 128`, as above, brings it to within
+one level of it on a phone in portrait.
 Compare the two on your map and adjust `radius` if needed. See
 [Viewport tile size](./api/types.md#viewport-tile-size).
 

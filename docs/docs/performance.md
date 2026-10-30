@@ -87,8 +87,8 @@ on the iOS Simulator, medians of 3:
   build blocks the JS thread. Here only checking and packing the points does.
 - **Re-renders and pans.** react-native-clusterer 5.0.2 builds a full index on
   every render of the component that calls its hook, so one for each re-render
-  and two for each pan. use-supercluster builds one for each pan, because it
-  never matches the options it is given with supercluster's (see
+  and two for each pan. use-supercluster builds one for each pan unless its
+  options spell out every supercluster option, which the benchmark's don't (see
   [Migrating from use-supercluster](./migration-supercluster.md#what-runs-on-which-thread)).
   Here a pan only queries the index. Times below a frame (16.7 ms) are mostly
   the wait for React to commit.
