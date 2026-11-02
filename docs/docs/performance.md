@@ -15,7 +15,7 @@ ceiling. Where each step runs decides what a large dataset costs.
 |------|---------------|------|
 | Turning `<Marker>` children into points, and comparing them with the previous points | JS thread | Each render with new children |
 | Packing the points into a buffer and copying them into the engine (`setPoints`) | JS thread; the copy is a synchronous native call | When markers are added, removed, moved or reordered |
-| Building the index | A background thread | After each copy |
+| Building the index | A background thread | After each copy; when a few markers moved and `minPoints` is 2 or less, only around them (see [live updates](./api/engine.md#live-updates)) |
 | Finding the clusters in the region (`getClusters`) | JS thread, a synchronous native call | Each region update; while the map moves, at most every `clusterUpdateIntervalMs`; after a cluster press, once the camera settles |
 | Reading a cluster's markers (`getLeaves`) | JS thread, a synchronous native call | On a cluster press with `onClusterPress`, and for spiderfy |
 | Mounting and drawing markers and cluster bubbles | `react-native-maps`, on the UI thread | Whenever the visible markers and clusters change |

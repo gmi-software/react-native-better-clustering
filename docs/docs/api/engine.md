@@ -73,7 +73,9 @@ Call methods in this order:
 
 1. **`setOptions`**: radius, zoom range, reducers, tile extent, etc.
 2. **`setPoints`**: binary buffer from `packPoints()` (`/utils` export; must match options).
-3. **`build()`** or **`buildAsync()`**: build the spatial index.
+3. **`build()`** or **`buildAsync()`**: build the spatial index, or
+   **`buildAsyncFrom(previous)`** to build it from another engine's after a
+   few points moved (see [Live updates](#live-updates)).
 4. **Query**: `getClusters`, `getChildren`, `getLeaves`, `getClusterBounds`,
    `getClusterExpansionZoom`.
 5. **`dispose()`**: free the native index when you are done (see
@@ -181,6 +183,55 @@ await pending
 engine.isBuilt // false: build again for nextBuffer
 ```
 
+## Live updates
+
+When a few points move among many, such as vehicles over a fixed set of
+places, `buildAsyncFrom(previous)` builds the new index from the index of
+`previous`, the engine built for the last update: only the clustering around
+the points that moved, changed their aggregated values, were added or were
+removed is done again. The points that stay must keep their order, as a list
+of markers does when some move, some join at any position and some leave;
+their ids may change, as `packPoints()` numbers points by position. With
+20 of 50,000 points moving, it takes about a twentieth of the time of a build in the
+[core benchmark](https://github.com/gmi-software/react-native-better-clustering/tree/main/package/bench)
+(its `update` operation).
+
+The index is the one `buildAsync()` builds from the same points: the same
+clusters, ids, children, aggregates and expansion zooms. Only the order in which
+`getClusters` returns a zoom's features can differ.
+
+It builds from scratch instead, with the same result, when `previous`:
+
+- is not built;
+- has other options;
+- clusters with `minPoints` above 2;
+- has more than about 1 point in 64 changed, added or removed since (points
+  that stay but are reordered count as changed);
+- or would cost more to reuse than a build, as when many points lie within one
+  cluster radius of each other. Updates from it then build from scratch for a
+  while before trying again.
+
+`buildAsyncFrom` reads `previous`'s index when you call it, so you can keep
+querying `previous` while the new index builds, and dispose of it right after
+the call. Before the call, `previous` must not be disposed: Nitro rejects a
+disposed engine as an argument with an error in debug builds, and release builds
+do not check it, so the result is undefined there.
+
+```tsx
+const next = createClusterEngine()
+next.setOptions(options) // the same options as `current`
+next.setPoints(packPoints(movedPoints).buffer)
+const pending = next.buildAsyncFrom(current)
+// `current` keeps answering queries until `next` is ready.
+await pending
+NitroModules.updateMemorySize(next) // see Native memory
+current.dispose()
+current = next
+```
+
+`useClusterer` and `MapView` build each new index this way, from the one that
+serves queries meanwhile.
+
 ## Native memory
 
 The index lives in native memory, which grows with the number of points (the
@@ -223,6 +274,7 @@ results:
 | `getChildren`, `getLeaves`, `getClusterBounds`, `getClusterExpansionZoom` | `clusterId` is not a 32-bit integer (`NaN`, `Infinity`, `1.5`) | throws |
 | `getLeaves` | fractional `limit` or `offset`, or `NaN` `offset` | throws |
 | any method or property | after `dispose()` | throws |
+| `buildAsyncFrom` | `previous` was disposed | throws in debug builds; undefined in release builds |
 
 Invalid buffers, invalid numbers and missing `build()` throw with messages
 prefixed `ClusterEngine:`. Use `packPoints()` for buffers and check `isBuilt`

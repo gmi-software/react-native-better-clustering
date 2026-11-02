@@ -2,6 +2,7 @@
 // Compile: c++ -std=c++20 -I. -g -O1 -fsanitize=thread -pthread ThreadSafeClusterEngine.test.cpp -o thread_test && ./thread_test
 
 #include "ThreadSafeClusterEngine.hpp"
+#include <algorithm>
 #include <atomic>
 #include <cassert>
 #include <chrono>
@@ -99,6 +100,47 @@ static void testBuildPublishesTheSameIndexAsTheCore() {
     assert(actual[i].x == expected[i].x);
     assert(actual[i].y == expected[i].y);
   }
+}
+
+// A build from another engine's snapshot publishes the index a build makes,
+// as does one from a snapshot it cannot reuse, while a newer setPoints still
+// drops it as stale.
+static void testBuildFromABasePublishesTheSameIndex() {
+  ThreadSafeClusterEngine previous;
+  previous.setOptions(makeConfig());
+  load(previous, packGrid(2000, 52.0, 21.0));
+  previous.build();
+
+  auto moved = packGrid(2000, 52.0, 21.0);
+  const double lat = 52.004;
+  std::memcpy(moved.data() + 4 + 7 * 20 + 4, &lat, 8);
+  ClusterEngineCore direct;
+  direct.setOptions(makeConfig());
+  direct.setPointsFromBuffer(moved.data(), moved.size());
+  direct.build();
+  std::vector<int32_t> expected;
+  for (const auto& node : direct.getClusters(kWorld)) expected.push_back(node.count);
+  std::sort(expected.begin(), expected.end());
+
+  for (const auto& base : {previous.snapshot(), ThreadSafeClusterEngine().snapshot()}) {
+    ThreadSafeClusterEngine engine;
+    engine.setOptions(makeConfig());
+    load(engine, moved);
+    std::thread worker([&engine, input = engine.snapshot(), base]() { engine.build(input, base); });
+    worker.join();
+    std::vector<int32_t> actual;
+    for (const auto& node : engine.snapshot()->getClusters(kWorld)) actual.push_back(node.count);
+    std::sort(actual.begin(), actual.end());
+    assert(actual == expected);
+  }
+
+  ThreadSafeClusterEngine engine;
+  engine.setOptions(makeConfig());
+  load(engine, moved);
+  const auto input = engine.snapshot();
+  load(engine, packGrid(10, 0.0, 0.0));
+  engine.build(input, previous.snapshot());
+  assert(!engine.snapshot()->isBuilt());
 }
 
 static void testSetPointsDuringABuildDropsTheStaleIndex() {
@@ -320,6 +362,7 @@ static void testDestructionDuringABuild() {
 
 int main() {
   testBuildPublishesTheSameIndexAsTheCore();
+  testBuildFromABasePublishesTheSameIndex();
   testSetPointsDuringABuildDropsTheStaleIndex();
   testSetOptionsDuringABuildDropsTheStaleIndex();
   testOverlappingBuildsPublishOnce();

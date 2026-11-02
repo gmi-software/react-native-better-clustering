@@ -489,6 +489,41 @@ Options parseOptions(int argc, char** argv) {
   return options;
 }
 
+// A live update, as buildAsyncFrom() runs it: 20 points spread over the data
+// move by about a metre, and the index is built from `engine`'s. Its result
+// says whether the update reused that index (1) or built afresh (0). A
+// template, so the harness still compiles against an engine without
+// buildFrom(): it then measures no update.
+template <typename Engine>
+void measureUpdate(std::vector<OpResult>& ops, const Options& options, const ClusterEngineConfig& config,
+                   const bench::Dataset& dataset, const Engine& engine) {
+  if constexpr (requires(Engine& next, const Engine& base) { next.buildFrom(base); }) {
+    bench::Dataset movedDataset = dataset;
+    const size_t movedCount = std::min<size_t>(20, movedDataset.lats.size());
+    for (size_t k = 0; k < movedCount; k++) {
+      const size_t i = k * movedDataset.lats.size() / movedCount;
+      movedDataset.lats[i] += 1e-5;
+      movedDataset.lngs[i] += 1e-5;
+    }
+    const std::vector<uint8_t> movedBuffer = packPointsV1(movedDataset);
+    std::vector<std::unique_ptr<Engine>> updated;
+    ops.push_back(measure(
+        "update", options,
+        [&]() -> int64_t {
+          auto next = std::make_unique<Engine>();
+          next->setOptions(config);
+          next->setPointsFromBuffer(movedBuffer.data(), movedBuffer.size());
+          const bool reused = next->buildFrom(engine);
+          if (!reused)
+            next->build();
+          updated.push_back(std::move(next));
+          return reused ? 1 : 0;
+        },
+        [&]() { updated.clear(); },
+        /*singleIteration=*/true));
+  }
+}
+
 } // namespace
 
 int main(int argc, char** argv) {
@@ -560,6 +595,8 @@ int main(int argc, char** argv) {
       total += static_cast<int64_t>(engine.getClusters(viewport).size());
     return total;
   }));
+
+  measureUpdate(ops, options, config, dataset, engine);
 
   printJson(options, dataset, config, memorySize, rssBytes, ops);
   return 0;

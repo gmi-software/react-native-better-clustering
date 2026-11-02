@@ -68,6 +68,28 @@ export interface ClusterEngine extends HybridObject<{
   buildAsync(): Promise<void>
 
   /**
+   * {@linkcode ClusterEngine.buildAsync buildAsync}, reusing the index of
+   * `previous`, an engine built with the same options: only the clustering
+   * around the points that moved, changed their aggregated values, were added
+   * or were removed is done again. The points that stay must keep their
+   * order; their ids may change. The index is the one `buildAsync()` builds,
+   * but for the order {@linkcode ClusterEngine.getClusters getClusters}
+   * returns nodes in.
+   *
+   * For live data: a few points that move among many build in a small part of
+   * the time. When `previous` cannot serve (not built, other options,
+   * `minPoints` above 2, or more than about 1 point in 64 changed, added or
+   * removed), or reusing it would cost more than a build, this builds from
+   * scratch. It reads `previous`'s index at the time of the call, so
+   * `previous` can be disposed right after.
+   *
+   * `previous` must not be disposed: Nitro rejects a disposed engine as an
+   * argument with an error in debug builds, and release builds do not check
+   * it, so the result is undefined there.
+   */
+  buildAsyncFrom(previous: ClusterEngine): Promise<void>
+
+  /**
    * Return clusters visible in the viewport at the given zoom. Above
    * `maxZoom`, every point in the viewport is returned on its own, as in
    * supercluster. See {@linkcode Viewport} for how the zoom and bounds across

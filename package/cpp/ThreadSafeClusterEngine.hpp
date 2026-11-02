@@ -49,8 +49,18 @@ public:
    * the result is then stale and is dropped. Safe to call on any thread.
    */
   void build(const Snapshot& input) {
+    build(input, nullptr);
+  }
+
+  /**
+   * build(input), reusing the index of `base` where it can (see
+   * ClusterEngineCore::buildFrom). A null or unbuilt `base` builds afresh.
+   */
+  void build(const Snapshot& input, const Snapshot& base) {
     auto built = std::make_shared<ClusterEngineCore>(input->withoutIndex());
-    built->build();
+    if (base == nullptr || !built->buildFrom(*base)) {
+      built->build();
+    }
     std::lock_guard lock(_mutex);
     // `input` keeps its core alive, so no newer core can reuse its address.
     if (_current == input) {
