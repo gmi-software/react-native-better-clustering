@@ -704,6 +704,12 @@ const CompatMapView = forwardRef(function CompatMapView(
           // Only a ready map reports the flight's region changes, so only this
           // branch is sure to get the `onRegionChangeComplete` that ends it.
           isFlyingToClusterRef.current = map != null
+          // A sync still due from a move before the press would land during
+          // the flight. Its move had not settled, so the settle that ends the
+          // flight syncs the region instead.
+          if (map != null) {
+            cancelThrottledRegionSync(regionThrottleStateRef.current)
+          }
           map?.fitToCoordinates(bboxToFitCoordinates(bounds), { edgePadding })
         } else {
           map?.animateToRegion(cluster.properties.getExpansionRegion(), 300)

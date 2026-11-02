@@ -205,6 +205,34 @@ describe('MapView camera flight to a pressed cluster', () => {
     expect(renderedMarkerIds(container)).toEqual(['g0', 'g1', 'g2', 'g3', 'g4'])
   })
 
+  it('drops a sync still due from a move before the press', async () => {
+    const { container } = render(<Map />)
+    await flush()
+
+    jest.useFakeTimers()
+    try {
+      // The first move syncs at once and keeps the cluster; the second comes
+      // within clusterUpdateIntervalMs, so its sync is due later.
+      moveCamera(regionAt(GROUP[2]!, CITY_ZOOM), true)
+      moveCamera(PASSING, true)
+      expect(clusterLabels(container)).toEqual(['5'])
+      const clusterQueries = fakeClusterEngineStats.getClusters
+
+      press(theCluster(container))
+      act(() => {
+        jest.advanceTimersByTime(200)
+      })
+
+      expect(clusterLabels(container)).toEqual(['5'])
+      expect(fakeClusterEngineStats.getClusters).toBe(clusterQueries)
+    } finally {
+      jest.useRealTimers()
+    }
+
+    await settleRegion(SETTLED)
+    expect(clusterLabels(container)).toEqual([])
+  })
+
   it('updates the clusters again once the user takes over the camera', async () => {
     const { container } = render(<Map />)
     await flush()
@@ -224,6 +252,23 @@ describe('MapView camera flight to a pressed cluster', () => {
 
     press(theCluster(container))
     await settleRegion(regionAt(CENTER, CITY_ZOOM))
+    expect(clusterLabels(container)).toEqual(['5'])
+
+    moveCamera(SETTLED, false)
+    await flush()
+
+    expect(clusterLabels(container)).toEqual([])
+  })
+
+  it('updates the clusters after a settle without gesture details, as on Apple Maps', async () => {
+    const { container } = render(<Map clusterUpdateIntervalMs={1} />)
+    await flush()
+
+    press(theCluster(container))
+    act(() => {
+      mapState.props?.onRegionChangeComplete?.(regionAt(CENTER, CITY_ZOOM), {})
+    })
+    await flush()
     expect(clusterLabels(container)).toEqual(['5'])
 
     moveCamera(SETTLED, false)
