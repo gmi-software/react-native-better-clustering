@@ -31,6 +31,33 @@ export function ActionButton({
   )
 }
 
+/** A selectable option, as in a segmented control. */
+export function Chip({
+  label,
+  selected,
+  onPress,
+  testID,
+}: {
+  label: string
+  selected: boolean
+  onPress: () => void
+  testID: string
+}) {
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityState={{ selected }}
+      onPress={onPress}
+      style={[styles.chip, selected && styles.chipSelected]}
+      testID={testID}
+    >
+      <Text style={[styles.chipLabel, selected && styles.chipLabelSelected]}>
+        {label}
+      </Text>
+    </Pressable>
+  )
+}
+
 export function Toggle({
   label,
   value,
@@ -92,6 +119,24 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 14,
     fontWeight: '600',
+  },
+  chip: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 16,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: '#9CA3AF',
+  },
+  chipSelected: {
+    borderColor: '#0F52FF',
+    backgroundColor: '#0F52FF',
+  },
+  chipLabel: {
+    color: '#111827',
+    fontSize: 14,
+  },
+  chipLabelSelected: {
+    color: '#FFFFFF',
   },
   toggle: {
     flexDirection: 'row',

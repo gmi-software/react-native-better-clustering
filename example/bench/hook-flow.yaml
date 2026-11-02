@@ -1,0 +1,31 @@
+# One hook benchmark run: library ${LIB}, ${COUNT} points, on a fresh launch.
+# run.mjs passes APP_ID, LIB, COUNT and HOST (its collector):
+#   node bench/run.mjs --flow hook-flow.yaml --libs rnc,usc,rnbc ...
+appId: ${APP_ID}
+name: Hook benchmark ${LIB} ${COUNT}
+---
+# run.mjs stops the app first, so each run starts a fresh process. Maestro's
+# own stopApp hangs when the app is not running.
+- launchApp:
+    stopApp: false
+- scrollUntilVisible:
+    element:
+      id: scenario-hook-benchmark
+    direction: DOWN
+- tapOn:
+    id: scenario-hook-benchmark
+- tapOn:
+    id: bench-lib-${LIB}
+- tapOn:
+    id: bench-count-${COUNT}
+- tapOn:
+    id: bench-start
+
+- extendedWaitUntil:
+    visible:
+      id: bench-phase
+      text: 'Phase: (done|failed)'
+    timeout: 600000
+- copyTextFrom:
+    id: bench-result
+- runScript: result.js

@@ -6,6 +6,8 @@ const sidebars: SidebarsConfig = {
     'quick-start',
     'setup/installation',
     'migration',
+    'migration-clusterer',
+    'migration-supercluster',
     {
       type: 'category',
       label: 'API Reference',

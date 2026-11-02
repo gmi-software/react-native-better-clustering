@@ -40,22 +40,17 @@ differences, and for `onRegionChangeComplete` when you come from 3.x.
 
 ## Migrate from react-native-clusterer
 
-For custom map stacks, use advanced subpaths:
+`useClusterer`, `Clusterer` and `Supercluster` take the same arguments, from
+the `/hooks`, `/clusterer` and `/engine` subpaths. Pass `minZoom: 0` and
+`maxZoom: 16` to keep react-native-clusterer's zoom range. See
+[Migrating from react-native-clusterer](./migration-clusterer.md) for the
+differences and what runs on which thread.
 
-| react-native-clusterer | This package |
-|------------------------|--------------|
-| `useClusterer` | `/hooks` |
-| `Supercluster` | `/engine` |
-| `isClusterFeature` | `/geojson` |
+## Migrate from use-supercluster
 
-The default zoom range differs: `minZoom` is `1` and `maxZoom` is `20` here,
-where react-native-clusterer uses supercluster's `0` and `16`. Pass both to
-keep the clusters you had.
-
-**Extra:** `clusterProperties` aggregates a numeric point property into each
-cluster with `sum`, `min` or `max` (see
-[`SuperclusterOptions`](./api/types.md#superclusteroptions)). supercluster's
-`map` and `reduce` functions are not supported.
+Render your markers as children of the main `MapView`, or pass your points,
+region and map size to `useClusterer`. See
+[Migrating from use-supercluster](./migration-supercluster.md).
 
 ## supercluster parity
 

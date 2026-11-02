@@ -10,7 +10,8 @@ The example app's **Benchmark** scenario runs react-native-better-clustering and
 | `../src/bench/libraries.ts` | The two libraries, behind the props their `MapView`s share |
 | `flow.yaml`, `mark.js`, `result.js` | One run in Maestro |
 | `run.mjs` | Runs every library, size and repetition, and writes one report |
-| `summarize.mjs` | Medians per library, version and size, as Markdown and JSON |
+| `summarize.mjs` | Medians per library, version and size, as Markdown and JSON, for either benchmark |
+| `../src/bench/HookBenchmarkScreen.tsx`, `../src/bench/hookLibraries.ts`, `hook-flow.yaml` | The hook benchmark, below |
 
 ## What one run does
 
@@ -74,3 +75,33 @@ Revert the three files afterwards.
 ## Reading the results
 
 These are numbers for one device and one dataset, not for an app. A simulator runs on the Mac's CPU, which is faster than a phone's, so absolute times are lower than on a phone; compare libraries measured in the same session. In `MapView`, 1.0.0's radius and tile-size errors cancel out (#9), so all three versions cluster the markers into the same bubbles; react-native-map-clustering queries a viewport four times the screen's area, so it renders more of them off screen.
+
+## The hook benchmark
+
+The example app's **Hook benchmark** scenario runs the hook of three libraries through the same script, with no map: this library's `useClusterer`, react-native-clusterer 5.0.2's `useClusterer` and use-supercluster 1.2.0 (on supercluster 8.0.1). It measures what clustering costs the JS thread, not rendering. Every library gets the same GeoJSON points (the seeded points above, across Poland), the same full-screen map size and the same options, react-native-clusterer's defaults: `radius` 40, `minZoom` 0, `maxZoom` 16, `minPoints` 2, `extent` 512. use-supercluster takes a bbox and a zoom instead of a region: it gets the region's own bbox and `Math.log2(360 / longitudeDelta)`.
+
+1. **building**: one index build outside React, then 3 timed ones, each the way the hook starts it: react-native-clusterer's `load`, supercluster's `load`, this library's `loadAsync`.
+2. **mounting**: the hook mounts with every point and the region over Poland, until nothing commits and no JS frame is late for 300 ms.
+3. **rerendering**: the hook re-renders 10 times, every 500 ms, with the same props, as a parent's state change causes.
+4. **panning**: the region jumps to Kraków at zoom 8, then moves a third of the screen at a time, east and back: 10 region changes, every 500 ms.
+5. **updating**: one point moves, 5 times, every second, each time in a new `data` array.
+
+| Metric | How |
+| --- | --- |
+| Index build, JS blocked | The part of a build that runs on the JS thread: the whole `load` for react-native-clusterer and supercluster; until `loadAsync` returns its promise here |
+| Index build, until queryable | Until the index answers queries: until `loadAsync` resolves here |
+| Mount to first clusters | From the update that hands the hook its points to the first commit with clusters |
+| Per re-render, per pan | From the update to the last commit it caused, median of the steps. Below a frame (16.7 ms), it is mostly the wait for React to commit, not work |
+| Per data change, until new index | From the update to the commit where the hook returns a new index object, median of the steps |
+| Index builds | Calls of the method each hook builds with, counted in the app |
+| Longest JS freeze, JS blocked | As above, over each phase |
+| Features | How many points and clusters the hook returned: a check that the libraries cluster alike |
+
+From `example/`, with a Release build installed:
+
+```bash
+node bench/run.mjs --platform ios --device <simulator udid> --flow hook-flow.yaml --libs rnc,usc,rnbc --runs 3 --out bench/results/ios-hooks.json
+node bench/summarize.mjs bench/results/ios-hooks.json
+```
+
+The host samples no memory in this flow. Run it on a quiet machine: a busy one stalls the simulator for seconds at a time, in any phase.

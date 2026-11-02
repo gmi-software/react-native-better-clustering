@@ -60,6 +60,46 @@ many updates reach the map, how late and how old the map is, and how long JS
 is blocked meanwhile. A simulator runs on the Mac's CPU, faster than a phone:
 compare the libraries, not the absolute times.
 
+### The hook benchmark
+
+The [hook benchmark](https://github.com/gmi-software/react-native-better-clustering/tree/main/example/bench#the-hook-benchmark)
+runs `useClusterer`, react-native-clusterer 5.0.2's `useClusterer` and
+use-supercluster 1.2.0 (on supercluster 8.0.1) in the same Release build, with
+the same points and options and no map: what clustering costs the JS thread,
+not rendering. Its
+[first run](https://github.com/gmi-software/react-native-better-clustering/blob/main/example/bench/results/ios-simulator-2026-10-30/README.md),
+on the iOS Simulator, medians of 3:
+
+| Points | Library | Index build, on the JS thread | Index build, until it answers queries | Each re-render, same props | Each pan | Each data change, until the new index |
+|--------|---------|------|------|------|------|------|
+| 10,000 | react-native-clusterer 5.0.2 | 19 ms | 19 ms | 21 ms | 43 ms | 63 ms |
+| | use-supercluster 1.2.0 | 229 ms | 229 ms | 0.7 ms | 223 ms | 226 ms |
+| | **This library** | **1.2 ms** | **9.5 ms** | **0.7 ms** | **0.7 ms** | **14 ms** |
+| 50,000 | react-native-clusterer 5.0.2 | 104 ms | 104 ms | 111 ms | 216 ms | 321 ms |
+| | use-supercluster 1.2.0 | 1,126 ms | 1,126 ms | 0.7 ms | 1,205 ms | 1,202 ms |
+| | **This library** | **5 ms** | **50 ms** | **0.6 ms** | **0.8 ms** | **59 ms** |
+| 100,000 | react-native-clusterer 5.0.2 | 234 ms | 234 ms | 238 ms | 455 ms | 674 ms |
+| | use-supercluster 1.2.0 | 2,340 ms | 2,340 ms | 0.7 ms | 2,380 ms | 2,338 ms |
+| | **This library** | **11 ms** | **125 ms** | **0.7 ms** | **0.7 ms** | **152 ms** |
+
+- **Building.** react-native-clusterer reads the points and builds its index
+  in one synchronous JSI call, and supercluster builds in JavaScript: the whole
+  build blocks the JS thread. Here only checking and packing the points does.
+- **Re-renders and pans.** react-native-clusterer 5.0.2 builds a full index on
+  every render of the component that calls its hook, so one for each re-render
+  and two for each pan. use-supercluster builds one for each pan unless its
+  options spell out every supercluster option, which the benchmark's don't (see
+  [Migrating from use-supercluster](./migration-supercluster.md#what-runs-on-which-thread)).
+  Here a pan only queries the index. Times below a frame (16.7 ms) are mostly
+  the wait for React to commit.
+- **Where this library is behind.** Its hook has no clusters on the first
+  render: they arrive with the first build, 15 ms after the mount at 10,000
+  points and 165 ms at 100,000. react-native-clusterer has them on the first
+  render, by building during it. While a new index builds, the hook keeps
+  returning the clusters of the previous points: 152 ms at 100,000 here.
+- **Feature counts.** With the same options, `useClusterer` and
+  react-native-clusterer returned the same number of features at every step.
+
 ## Roadmap
 
 Today this library moves clustering compute to C++. Visible markers are still

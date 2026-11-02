@@ -42,6 +42,8 @@ The same app, the same markers, the same cluster bubble, both libraries with the
 
 Measured on the iOS Simulator (iPhone 17 Pro, Apple M5 Pro) against the 1.1.0 release candidate, which runs faster than a phone: compare the libraries, not the absolute times. The [full results](./example/bench/results/ios-simulator-2026-10-14/README.md) include memory, zoom and cluster presses. They also show where this library is slower: after a cluster press, the camera settles about 0.45 s later.
 
+**Coming from react-native-clusterer or use-supercluster?** At 100,000 points, `useClusterer` blocks the JS thread for 11 ms per index build, against 234 ms for react-native-clusterer 5.0.2 and 2.3 s for use-supercluster 1.2.0, and builds no index on a pan, where both rebuild theirs ([hook benchmark](./example/bench/results/ios-simulator-2026-10-30/README.md); migrating from [react-native-clusterer](https://gmi-software.github.io/react-native-better-clustering/docs/migration-clusterer) and [use-supercluster](https://gmi-software.github.io/react-native-better-clustering/docs/migration-supercluster)).
+
 ## Migration
 
 ```diff

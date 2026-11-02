@@ -49,16 +49,20 @@
         "react": "19.2.3",
         "react-native": "0.85.3",
         "react-native-better-clustering": "workspace:*",
+        "react-native-clusterer": "5.0.2",
         "react-native-map-clustering": "4.0.0",
         "react-native-maps": "^1.26.0",
         "react-native-nitro-modules": "0.35.9",
         "react-native-reanimated": "^4.5.0",
         "react-native-safe-area-context": "~5.7.0",
         "react-native-worklets": "^0.10.0",
+        "supercluster": "8.0.1",
+        "use-supercluster": "1.2.0",
       },
       "devDependencies": {
         "@babel/core": "^7.25.0",
         "@types/react": "^19.2.15",
+        "@types/supercluster": "7.1.3",
         "babel-preset-expo": "~56.0.15",
         "typescript": "^6.0.3",
       },
@@ -110,6 +114,7 @@
     "@docusaurus/utils": "3.10.2",
     "@docusaurus/utils-common": "3.10.2",
     "@docusaurus/utils-validation": "3.10.2",
+    "react-native-nitro-modules": "0.35.9",
     "react-native-reanimated": "4.5.0",
     "react-native-worklets": "0.10.0",
     "webpack": "5.105.4",
@@ -782,9 +787,9 @@
 
     "@leichtgewicht/ip-codec": ["@leichtgewicht/ip-codec@2.0.5", "", {}, "sha512-Vo+PSpZG2/fmgmiNzYK9qWRh8h/CHrwD0mo1h1DzL4yzHNSfWYujGTYsWGreD000gcgmZ7K4Ys6Tx9TxtsKdDw=="],
 
-    "@mapbox/geo-viewport": ["@mapbox/geo-viewport@0.4.1", "", { "dependencies": { "@mapbox/sphericalmercator": "~1.1.0" } }, "sha512-5g6eM3EOSl7+0p0VY+vHWEYjUlNzof936VKHTi/NuJVABjbYe8D2NAVJ0qt5C9Np4glUlhKFepgAgQ0OEybrjQ=="],
+    "@mapbox/geo-viewport": ["@mapbox/geo-viewport@0.5.0", "", { "dependencies": { "@mapbox/sphericalmercator": "^1.2.0" } }, "sha512-h0b10JU+lSxw8/TLXGdzcVTPxMN9Ikv0os8sCo0OAHXUiSDkQs5fx4WWLJeQTnC++qaGFl6/Ssr+H5N6NIvE5g=="],
 
-    "@mapbox/sphericalmercator": ["@mapbox/sphericalmercator@1.1.0", "", { "bin": { "xyz": "bin/xyz.js", "bbox": "bin/bbox.js", "to4326": "bin/to4326.js", "to900913": "bin/to900913.js" } }, "sha512-pEsfZyG4OMThlfFQbCte4gegvHUjxXCjz0KZ4Xk8NdOYTQBLflj6U8PL05RPAiuRAMAQNUUKJuL6qYZ5Y4kAWA=="],
+    "@mapbox/sphericalmercator": ["@mapbox/sphericalmercator@1.2.0", "", { "bin": { "xyz": "bin/xyz.js", "bbox": "bin/bbox.js", "to4326": "bin/to4326.js", "to900913": "bin/to900913.js" } }, "sha512-ZTOuuwGuMOJN+HEmG/68bSEw15HHaMWmQ5gdTsWdWsjDe56K1kGvLOK6bOSC8gWgIvEO0w6un/2Gvv1q5hJSkQ=="],
 
     "@mdx-js/mdx": ["@mdx-js/mdx@3.1.1", "", { "dependencies": { "@types/estree": "^1.0.0", "@types/estree-jsx": "^1.0.0", "@types/hast": "^3.0.0", "@types/mdx": "^2.0.0", "acorn": "^8.0.0", "collapse-white-space": "^2.0.0", "devlop": "^1.0.0", "estree-util-is-identifier-name": "^3.0.0", "estree-util-scope": "^1.0.0", "estree-walker": "^3.0.0", "hast-util-to-jsx-runtime": "^2.0.0", "markdown-extensions": "^2.0.0", "recma-build-jsx": "^1.0.0", "recma-jsx": "^1.0.0", "recma-stringify": "^1.0.0", "rehype-recma": "^1.0.0", "remark-mdx": "^3.0.0", "remark-parse": "^11.0.0", "remark-rehype": "^11.0.0", "source-map": "^0.7.0", "unified": "^11.0.0", "unist-util-position-from-estree": "^2.0.0", "unist-util-stringify-position": "^4.0.0", "unist-util-visit": "^5.0.0", "vfile": "^6.0.0" } }, "sha512-f6ZO2ifpwAQIpzGWaBQT2TXxPv6z3RBzQKpVftEWN78Vl/YweF1uwussDx8ECAXVtr3Rs89fKyG9YlzUs9DyGQ=="],
 
@@ -2880,6 +2885,8 @@
 
     "react-native-builder-bob": ["react-native-builder-bob@0.44.1", "", { "dependencies": { "@babel/core": "^7.29.7", "@babel/plugin-transform-flow-strip-types": "^7.29.7", "@babel/plugin-transform-strict-mode": "^7.29.7", "@babel/preset-env": "^7.29.7", "@babel/preset-react": "^7.29.7", "@babel/preset-typescript": "^7.29.7", "@jridgewell/sourcemap-codec": "^1.6.0", "arktype": "^2.2.9", "babel-plugin-syntax-hermes-parser": "^0.37.0", "browserslist": "^4.29.4", "cross-spawn": "^7.0.6", "dedent": "^1.7.2", "del": "^9.0.1", "escape-string-regexp": "^5.0.0", "fs-extra": "^11.4.1", "glob": "^13.0.6", "json5": "^2.2.3", "kleur": "^4.1.5", "prompts": "^2.4.2", "typescript": "^6.0.3", "which": "^7.0.0", "yargs": "^18.2.0" }, "bin": { "bob": "bin/bob" } }, "sha512-CqRvOdSynP27CQohCwNte6r2B8cZSZiA24Vuq3f5jloq/aQ1dlbARtuO6a7hjb7Ao06gfqlde7NuJ5oAocb6iw=="],
 
+    "react-native-clusterer": ["react-native-clusterer@5.0.2", "", { "dependencies": { "@mapbox/geo-viewport": "^0.5.0" }, "peerDependencies": { "react": "*", "react-native": "*", "react-native-nitro-modules": "^0.31.5" } }, "sha512-/QR6bVpIASJWU53MyUQP6Ub20+ve/tYdStgf2dCQJZ+TxTqh2K6GpWcxUIs+xQWgDsl7A0bPUUTRUZkOETNtRA=="],
+
     "react-native-is-edge-to-edge": ["react-native-is-edge-to-edge@1.3.1", "", { "peerDependencies": { "react": "*", "react-native": "*" } }, "sha512-NIXU/iT5+ORyCc7p0z2nnlkouYKX425vuU1OEm6bMMtWWR9yvb+Xg5AZmImTKoF9abxCPqrKC3rOZsKzUYgYZA=="],
 
     "react-native-map-clustering": ["react-native-map-clustering@4.0.0", "", { "dependencies": { "@mapbox/geo-viewport": "^0.4.1", "supercluster": "^8.0.0" }, "peerDependencies": { "react-native": "*", "react-native-maps": "*" } }, "sha512-+YNh4frhZIHQReURxYGHNy9MJ50GYWpW6psoBEjvTG6vb33eYu00GmO8Pu/9VwMB1YL5lOxZ9+sJClJ8Mz1Bxw=="],
@@ -3287,6 +3294,10 @@
     "url-join": ["url-join@5.0.0", "", {}, "sha512-n2huDr9h9yzd6exQVnH/jU5mr+Pfx08LRXXZhkLLetAMESRj+anQsTAh940iMrIetKAmry9coFuZQ2jY8/p3WA=="],
 
     "url-loader": ["url-loader@4.1.1", "", { "dependencies": { "loader-utils": "^2.0.0", "mime-types": "^2.1.27", "schema-utils": "^3.0.0" }, "peerDependencies": { "file-loader": "*", "webpack": "^4.0.0 || ^5.0.0" }, "optionalPeers": ["file-loader"] }, "sha512-3BTV812+AVHHOJQO8O5MkWgZ5aosP7GnROJwvzLS9hWDj00lZ6Z0wNak423Lp9PBZN05N+Jk/N5Si8jRAlGyWA=="],
+
+    "use-deep-compare-effect": ["use-deep-compare-effect@1.8.1", "", { "dependencies": { "@babel/runtime": "^7.12.5", "dequal": "^2.0.2" }, "peerDependencies": { "react": ">=16.13" } }, "sha512-kbeNVZ9Zkc0RFGpfMN3MNfaKNvcLNyxOAAd9O4CBZ+kCBXXscn9s/4I+8ytUER4RDpEYs5+O6Rs4PqiZ+rHr5Q=="],
+
+    "use-supercluster": ["use-supercluster@1.2.0", "", { "dependencies": { "dequal": "^2.0.3", "use-deep-compare-effect": "^1.8.1" }, "peerDependencies": { "react": ">=16", "supercluster": ">=8" } }, "sha512-yVsFzcsLqoa4w43r+RcYGLEWfhpeUaGu86dVFA+iDSw6eVwFSrzKN6g1GhcLZg7/BdKm2Gp1fRZ+O+AgcbqF+w=="],
 
     "util-deprecate": ["util-deprecate@1.0.2", "", {}, "sha512-EPD5q1uXyFxJpCrLnCc1nHnq3gOa6DZBocAIiI2TaSCA7VCJ1UJDMagCzIkXNsUYfD1daK//LTEQ8xiIbrHtcw=="],
 
@@ -3944,6 +3955,8 @@
 
     "react-native-builder-bob/yargs": ["yargs@18.2.0", "", { "dependencies": { "cliui": "^9.0.1", "escalade": "^3.1.1", "get-caller-file": "^2.0.5", "string-width": "^8.2.1", "y18n": "^5.0.5", "yargs-parser": "^22.0.0" } }, "sha512-9OpKOLeaoNFecEp7P6iYbzze/5CqWoH7N3SMs/6y1XF4nMvFMspEGZzJ6uFi9MmQwXhyzqYoSEKO3tvA3Z/o2w=="],
 
+    "react-native-map-clustering/@mapbox/geo-viewport": ["@mapbox/geo-viewport@0.4.1", "", { "dependencies": { "@mapbox/sphericalmercator": "~1.1.0" } }, "sha512-5g6eM3EOSl7+0p0VY+vHWEYjUlNzof936VKHTi/NuJVABjbYe8D2NAVJ0qt5C9Np4glUlhKFepgAgQ0OEybrjQ=="],
+
     "react-native-reanimated/semver": ["semver@7.8.5", "", { "bin": { "semver": "bin/semver.js" } }, "sha512-Y7/KDsb8LjooZpwaqGyulO6DQlksgCncchHGk+sZIY4SBvUocMBEFH5Ur1fI4dV+Jvl0w6cjvucaIi40puRioA=="],
 
     "react-native-worklets/semver": ["semver@7.8.5", "", { "bin": { "semver": "bin/semver.js" } }, "sha512-Y7/KDsb8LjooZpwaqGyulO6DQlksgCncchHGk+sZIY4SBvUocMBEFH5Ur1fI4dV+Jvl0w6cjvucaIi40puRioA=="],
@@ -4411,6 +4424,8 @@
     "react-native-builder-bob/babel-plugin-syntax-hermes-parser/hermes-parser": ["hermes-parser@0.37.0", "", { "dependencies": { "hermes-estree": "0.37.0" } }, "sha512-8PuWcyaF6VHQHL2dbU+QEIkbtHYQrTX/6+ep4VcBLJ3f/ehevowr5Zj8LQfYXQQGFG2O+df7hIMtt4PkkhfK3Q=="],
 
     "react-native-builder-bob/yargs/string-width": ["string-width@8.2.1", "", { "dependencies": { "get-east-asian-width": "^1.5.0", "strip-ansi": "^7.1.2" } }, "sha512-IIaP0g3iy9Cyy18w3M9YcaDudujEAVHKt3a3QJg1+sr/oX96TbaGUubG0hJyCjCBThFH+tFpcIyoUHUn1ogaLA=="],
+
+    "react-native-map-clustering/@mapbox/geo-viewport/@mapbox/sphericalmercator": ["@mapbox/sphericalmercator@1.1.0", "", { "bin": { "xyz": "bin/xyz.js", "bbox": "bin/bbox.js", "to4326": "bin/to4326.js", "to900913": "bin/to900913.js" } }, "sha512-pEsfZyG4OMThlfFQbCte4gegvHUjxXCjz0KZ4Xk8NdOYTQBLflj6U8PL05RPAiuRAMAQNUUKJuL6qYZ5Y4kAWA=="],
 
     "react-native/yargs/cliui": ["cliui@8.0.1", "", { "dependencies": { "string-width": "^4.2.0", "strip-ansi": "^6.0.1", "wrap-ansi": "^7.0.0" } }, "sha512-BSeNnyus75C4//NQ9gQt1/csTXyo/8Sb+afLAkzAptFuMsod9HFokGNudZpi/oQV73hnVK+sR+5PVRMd+Dr7YQ=="],
 
