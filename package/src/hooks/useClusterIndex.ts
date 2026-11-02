@@ -72,15 +72,19 @@ function toError(error: unknown): Error {
  * carry properties a props-only change has since replaced; clusters keep
  * their reused identity. Copies only when a point differs, so an equivalent
  * query still returns `stabilized` itself.
+ *
+ * @param isCluster - Whether the engine made `feature` a cluster: a point's
+ *   own properties can say `cluster: true`.
  */
 function withQueriedPoints<P extends AnyProps>(
   stabilized: Features<P>,
-  raw: Features<P>
+  raw: Features<P>,
+  isCluster: (feature: PointFeature<P> | ClusterFeature<P>) => boolean
 ): Features<P> {
   let result = stabilized
   for (let i = 0; i < raw.length; i++) {
     const feature = raw[i]!
-    if (result[i] !== feature && !isClusterFeature(feature)) {
+    if (result[i] !== feature && !isCluster(feature)) {
       if (result === stabilized) {
         result = stabilized.slice()
       }
@@ -339,7 +343,11 @@ export function useClusterIndex<P extends AnyProps = AnyProps>(
             stabilizeClusterFeatures(stable.clusters, raw, (feature) =>
               supercluster.getFeatureId(feature)
             ),
-            raw
+            raw,
+            // Every cluster the engine makes has a smallest leaf.
+            (feature) =>
+              isClusterFeature(feature) &&
+              supercluster.getClusterMinLeaf(feature) != null
           )
         : raw
     setStable({ raw, supercluster, clusters })

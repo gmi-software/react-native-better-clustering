@@ -17,10 +17,11 @@ export type { MapDimensions, UseClustererOptions }
  * first build has loaded. It rebuilds only when the coordinates (or the
  * `clusterProperties` inputs) of `data` change; a new array with the same
  * content keeps the index, and leaf queries return the newest feature
- * objects, as do the visible points from the next region change. During a
- * rebuild it keeps returning the previous clusters, then swaps and destroys
- * the previous engine. One build runs at a time: data that changes during a
- * build is built once it has loaded, from the newest array.
+ * objects, as do the visible points from the next region change (not from
+ * one in the same render as the new `data`). During a rebuild it keeps
+ * returning the previous clusters, then swaps and destroys the previous
+ * engine. One build runs at a time: data that changes during a build is built
+ * once it has loaded, from the newest array.
  * The engine is destroyed on unmount.
  *
  * A failed build (for example, the native module is missing from the app

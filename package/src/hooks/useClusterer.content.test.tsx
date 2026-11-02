@@ -145,6 +145,28 @@ describe('useClusterer content keying (#12)', () => {
     expect(result.current[0]).toBe(clusters)
   })
 
+  it('returns the latest object for a point whose own properties say cluster: true', async () => {
+    const flagged = (title: string) =>
+      points(title).map((feature) => ({
+        ...feature,
+        properties: { ...feature.properties, cluster: true },
+      }))
+    const panned = { ...REGION, longitude: REGION.longitude + 0.001 }
+    const { result, rerender } = renderHook(
+      ({ data, region }) => useClusterer(data, MAP_DIMENSIONS, region),
+      { initialProps: { data: flagged('old'), region: REGION } }
+    )
+    await flush()
+
+    const renamed = flagged('new')
+    rerender({ data: renamed, region: REGION })
+    await flush()
+    rerender({ data: renamed, region: panned })
+    await flush()
+
+    expect(result.current[0]).toContain(renamed[2]!)
+  })
+
   it('keeps serving the previous clusters until a changed dataset has loaded', async () => {
     const { result, rerender } = renderClusterer(points())
     await flush()
