@@ -16,7 +16,9 @@
 #include <bit>
 #include <cmath>
 #include <limits>
+#include <numeric>
 #include <optional>
+#include <span>
 #include <utility>
 
 namespace margelo::nitro::nitromapcluster {
@@ -650,20 +652,31 @@ public:
         }
 
         if (numPoints > numPointsOrigin && numPoints >= _options.minPoints) {
-          members.clear();
+          // Gathered, ordered and linked a cluster at a time rather than a
+          // push_back per member: a cluster of all the points has as many
+          // members, and whether push_back is inlined is up to the compiler.
+          if (members.size() < neighbors.size()) members.resize(neighbors.size());
+          size_t memberCount = 0;
+          int32_t lowest = std::numeric_limits<int32_t>::max();
+          int32_t highest = -1;
           for (const int32_t nb : neighbors) {
             if (processedAt[nb] <= z) continue;
             processedAt[nb] = z;
-            members.push_back(nb);
+            members[memberCount++] = nb;
+            lowest = std::min(lowest, nb);
+            highest = std::max(highest, nb);
           }
-          sortForFold(members, foldBits);
+          const std::span<int32_t> folded(members.data(), memberCount);
+          sortForFold(folded, lowest, highest, foldBits);
           ClusterNode cluster =
-            foldCluster(_nodes[index], members, z, [this](int32_t i) -> const ClusterNode& { return _nodes[i]; });
+            foldCluster(_nodes[index], folded, z, [this](int32_t i) -> const ClusterNode& { return _nodes[i]; });
           cluster.id = _firstClusterId + static_cast<int32_t>(_nodes.size() - pointCount);
 
-          linkChild(cluster.id, index);
-          for (const int32_t nb : members) {
-            linkChild(cluster.id, nb);
+          _nodes[index].parentId = cluster.id;
+          _childNodes.push_back(index);
+          _childNodes.insert(_childNodes.end(), folded.begin(), folded.end());
+          for (const int32_t nb : folded) {
+            _nodes[nb].parentId = cluster.id;
           }
 
           next.push_back(static_cast<int32_t>(_nodes.size()));
@@ -873,14 +886,26 @@ public:
     const int32_t root = findNode(clusterId);
     if (root < 0) return result;
 
-    std::vector<int32_t> stack;
-    stack.push_back(root);
+    const bool unlimited = limit <= 0;
+    const int32_t available = std::max(_nodes[root].count - std::max(offset, 0), 0);
+    result.reserve(static_cast<size_t>(unlimited ? available : std::min(limit, available)));
+    if (!_nodes[root].isCluster) {
+      if (offset <= 0) result.push_back(_nodes[root]);
+      return result;
+    }
+
+    std::vector<ChildRange> stack;
+    stack.reserve(kChildStackDepth);
+    stack.push_back(childRange(static_cast<size_t>(root)));
     int32_t skipped = 0;
 
-    const bool unlimited = limit <= 0;
     while (!stack.empty() && (unlimited || static_cast<int32_t>(result.size()) < limit)) {
-      const int32_t index = stack.back();
-      stack.pop_back();
+      ChildRange& range = stack.back();
+      if (range.next == range.end) {
+        stack.pop_back();
+        continue;
+      }
+      const int32_t index = _childNodes[static_cast<size_t>(range.next++)];
       const ClusterNode& node = _nodes[index];
 
       if (!node.isCluster) {
@@ -894,10 +919,7 @@ public:
         // as supercluster does, instead of walking its leaves.
         skipped += node.count;
       } else {
-        const size_t cluster = static_cast<size_t>(index) - _points.size();
-        for (int32_t i = _childOffsets[cluster + 1] - 1; i >= _childOffsets[cluster]; i--) {
-          stack.push_back(_childNodes[i]);
-        }
+        stack.push_back(childRange(static_cast<size_t>(index)));
       }
     }
     return result;
@@ -918,26 +940,35 @@ public:
       -std::numeric_limits<double>::infinity(),
       std::numeric_limits<double>::infinity(),
     };
-    std::vector<int32_t> stack;
-    stack.push_back(root);
+    // Points come first in `_nodes`, in `_points` order, so a leaf's
+    // coordinates are read where they were loaded, as JS has them.
+    const auto extend = [&](size_t index) {
+      const PointData& point = _points[index];
+      bounds.north = std::max(bounds.north, point.latitude);
+      bounds.south = std::min(bounds.south, point.latitude);
+      bounds.east = std::max(bounds.east, point.longitude);
+      bounds.west = std::min(bounds.west, point.longitude);
+    };
+    if (static_cast<size_t>(root) < _points.size()) {
+      extend(static_cast<size_t>(root));
+      return bounds;
+    }
+
+    std::vector<ChildRange> stack;
+    stack.reserve(kChildStackDepth);
+    stack.push_back(childRange(static_cast<size_t>(root)));
 
     while (!stack.empty()) {
-      const size_t index = static_cast<size_t>(stack.back());
-      stack.pop_back();
-
-      // Points come first in `_nodes`, in `_points` order, so a leaf's
-      // coordinates are read where they were loaded, as JS has them.
+      ChildRange& range = stack.back();
+      if (range.next == range.end) {
+        stack.pop_back();
+        continue;
+      }
+      const size_t index = static_cast<size_t>(_childNodes[static_cast<size_t>(range.next++)]);
       if (index < _points.size()) {
-        const PointData& point = _points[index];
-        bounds.north = std::max(bounds.north, point.latitude);
-        bounds.south = std::min(bounds.south, point.latitude);
-        bounds.east = std::max(bounds.east, point.longitude);
-        bounds.west = std::min(bounds.west, point.longitude);
+        extend(index);
       } else {
-        const size_t cluster = index - _points.size();
-        for (int32_t i = _childOffsets[cluster]; i < _childOffsets[cluster + 1]; i++) {
-          stack.push_back(_childNodes[i]);
-        }
+        stack.push_back(childRange(index));
       }
     }
     return bounds;
@@ -1138,6 +1169,23 @@ private:
   // span at most this many indices per member.
   static constexpr size_t kBitmapFoldSize = 256;
   static constexpr size_t kBitmapFoldSpan = 16;
+  // getLeaves() and getClusterBounds() walk down a cluster with one range per
+  // level they descended, so this many covers the zoom range of most maps
+  // without reallocating.
+  static constexpr size_t kChildStackDepth = 32;
+
+  // The children of a cluster that a walk down the index has yet to visit:
+  // `_childNodes[next, end)`. A walk pushes one range per cluster rather than
+  // one index per child, so its cost does not hang on push_back being inlined.
+  struct ChildRange {
+    int32_t next;
+    int32_t end;
+  };
+
+  ChildRange childRange(size_t index) const {
+    const size_t cluster = index - _points.size();
+    return {_childOffsets[cluster], _childOffsets[cluster + 1]};
+  }
 
   // `d2` less a margin, as a float no larger than that: a lower bound on a
   // squared distance that the same distance computed elsewhere (operands
@@ -1272,30 +1320,34 @@ private:
   // Puts the nodes a cluster folds in the order it folds them, the order
   // they were created in: their index in `_nodes`. It does not depend on the
   // tree that found them, so the centroid and the aggregates round the same
-  // whichever tree a level got, or when buildFrom() makes the index. A large
-  // cluster is ordered by a bitmap over the indices it spans rather than
-  // sorted: points that all lie within one radius fold into one at maxZoom.
-  static void sortForFold(std::vector<int32_t>& members, std::vector<uint64_t>& bits) {
+  // whichever tree a level got, or when buildFrom() makes the index.
+  // `lowest` and `highest` bound the indices. Points that all lie within one
+  // radius fold into one cluster at maxZoom, so a large cluster is ordered
+  // without comparing: by counting when its indices are consecutive, as they
+  // are then, else by a bitmap over the indices it spans.
+  static void sortForFold(std::span<int32_t> members, int32_t lowest, int32_t highest, std::vector<uint64_t>& bits) {
     if (members.size() < kBitmapFoldSize) {
       std::sort(members.begin(), members.end());
       return;
     }
-    const auto [low, high] = std::minmax_element(members.begin(), members.end());
-    const int32_t first = *low;
-    const size_t span = static_cast<size_t>(*high - first) + 1;
+    const size_t span = static_cast<size_t>(highest - lowest) + 1;
+    if (span == members.size()) {
+      std::iota(members.begin(), members.end(), lowest);
+      return;
+    }
     if (span / kBitmapFoldSpan > members.size()) {
       std::sort(members.begin(), members.end());
       return;
     }
     bits.assign((span + 63) / 64, 0);
     for (const int32_t member : members) {
-      const size_t offset = static_cast<size_t>(member - first);
+      const size_t offset = static_cast<size_t>(member - lowest);
       bits[offset / 64] |= uint64_t{1} << (offset % 64);
     }
-    members.clear();
+    size_t next = 0;
     for (size_t word = 0; word < bits.size(); word++) {
       for (uint64_t set = bits[word]; set != 0; set &= set - 1) {
-        members.push_back(first + static_cast<int32_t>(word * 64 + static_cast<size_t>(std::countr_zero(set))));
+        members[next++] = lowest + static_cast<int32_t>(word * 64 + static_cast<size_t>(std::countr_zero(set)));
       }
     }
   }
@@ -1303,7 +1355,7 @@ private:
   // The cluster that `origin` forms at `zoom` with `members`, in fold order:
   // all but its id and parent.
   template <typename NodeAt>
-  ClusterNode foldCluster(const ClusterNode& origin, const std::vector<int32_t>& members, int32_t zoom,
+  ClusterNode foldCluster(const ClusterNode& origin, std::span<const int32_t> members, int32_t zoom,
                           const NodeAt& nodeAt) const {
     const size_t np = _options.reducers.size();
     int32_t numPoints = origin.count;
@@ -1339,11 +1391,6 @@ private:
     cluster.x = wx / numPoints;
     cluster.y = wy / numPoints;
     return cluster;
-  }
-
-  void linkChild(int32_t parentId, int32_t childIndex) {
-    _nodes[childIndex].parentId = parentId;
-    _childNodes.push_back(childIndex);
   }
 
   // Appends `node` as it stands at level `zoom`: processed at that zoom, and
