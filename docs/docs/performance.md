@@ -58,7 +58,10 @@ and an
 it also moves 20 vehicles over the markers 10 times a second, and reports how
 many updates reach the map, how late and how old the map is, and how long JS
 is blocked meanwhile. A simulator runs on the Mac's CPU, faster than a phone:
-compare the libraries, not the absolute times.
+compare the libraries, not the absolute times. On
+[a mid-range Android phone](https://github.com/gmi-software/react-native-better-clustering/blob/main/example/bench/results/android-phone-2026-11-02/README.md)
+(Snapdragon 720G), with 50k markers the map stays on average 0.44 s old,
+against 2.8 s with react-native-map-clustering.
 
 ### The hook benchmark
 
