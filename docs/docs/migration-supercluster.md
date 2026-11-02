@@ -102,12 +102,13 @@ carry over; `getTile` has no equivalent.
 + const OPTIONS = { radius: 40, minZoom: 0, maxZoom: 16, viewportTileSize: 128 }
 ```
 
-Keep `points` in `useMemo` or state. A new array with the same coordinates
-keeps the index, but the hook still compares every point with the previous
-array. When only other properties change, a point on screen keeps its previous
-feature object, old properties included, until the region changes, where
-use-supercluster rebuilds and returns new objects. Read a property that
-changes from `points` by a stable `id`.
+Keep `points` in `useMemo` or state. A new array with the same coordinates in
+the same order, and the same [`clusterProperties`](#map-and-reduce) values if
+you use them, keeps the index, but the hook still compares every point with
+the previous array. When only other properties change, a point on screen keeps
+its previous feature object, old properties included, until the region
+changes, where use-supercluster rebuilds and returns new objects. Read a
+property that changes from `points` by a stable `id`.
 
 ## Zoom and bbox
 
