@@ -25,6 +25,9 @@ interface HeldBuild {
 // or fails it: a native build that outlasts the updates around it.
 let heldBuilds: HeldBuild[] | null = null
 
+// The engine each `buildAsyncFrom` built from, in call order.
+const buildsFrom: unknown[] = []
+
 // Only the native boundary is mocked; the real Supercluster runs on top of it.
 // (Module mocks are process-wide in bun, so internal modules are not mocked.)
 mock.module('react-native-nitro-modules', () => ({
@@ -39,6 +42,10 @@ mock.module('react-native-nitro-modules', () => ({
         setPoints: () => {},
         build: () => {
           engine.isBuilt = true
+        },
+        buildAsyncFrom: (previous: unknown) => {
+          buildsFrom.push(previous)
+          return engine.buildAsync()
         },
         buildAsync: () => {
           if (heldBuilds == null) {
@@ -183,7 +190,7 @@ describe('useClusterer live updates', () => {
   })
 
   it('runs one build at a time, then builds the newest data', async () => {
-    const loadAsync = jest.spyOn(Supercluster.prototype, 'loadAsync')
+    const loadAsync = jest.spyOn(Supercluster.prototype, 'loadAsyncFrom')
     const feed = [0, 1, 2, 3].map(feedAt)
     const { result, rerender } = renderFeed(feed[0]!)
     await settleBuild()
@@ -209,6 +216,29 @@ describe('useClusterer live updates', () => {
 
     expect(result.current.isCurrent).toBe(true)
     expect(loadAsync).toHaveBeenCalledTimes(3)
+
+    loadAsync.mockRestore()
+  })
+
+  it('builds each new version from the index that serves queries', async () => {
+    buildsFrom.length = 0
+    const loadAsync = jest.spyOn(Supercluster.prototype, 'loadAsyncFrom')
+    const { result, rerender } = renderFeed(feedAt(0))
+    await settleBuild()
+    const first = result.current.supercluster
+
+    rerender({ data: feedAt(1) })
+    await settleBuild()
+    rerender({ data: feedAt(2) })
+    await settleBuild()
+
+    expect(loadAsync.mock.calls.map((call) => call[1])).toEqual([
+      null,
+      first,
+      expect.any(Supercluster),
+    ])
+    expect(loadAsync.mock.calls[2]![1]).not.toBe(first)
+    expect(buildsFrom).toHaveLength(2)
 
     loadAsync.mockRestore()
   })

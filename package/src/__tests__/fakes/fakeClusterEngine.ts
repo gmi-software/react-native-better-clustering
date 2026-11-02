@@ -29,6 +29,7 @@ export interface FakeClusterEngine {
   setPoints(buffer: ArrayBuffer): void
   build(): void
   buildAsync(): Promise<void>
+  buildAsyncFrom(previous: FakeClusterEngine): Promise<void>
   getClusters(viewport: Viewport): EngineClusterNode[]
   getChildren(clusterId: number): EngineClusterNode[]
   getLeaves(
@@ -47,6 +48,7 @@ export interface FakeClusterEngine {
 export interface FakeClusterEngineStats {
   created: number
   builds: number
+  buildsFromPrevious: number
   getClusters: number
   getLeaves: number
   getChildren: number
@@ -58,6 +60,7 @@ export interface FakeClusterEngineStats {
 export const fakeClusterEngineStats: FakeClusterEngineStats = {
   created: 0,
   builds: 0,
+  buildsFromPrevious: 0,
   getClusters: 0,
   getLeaves: 0,
   getChildren: 0,
@@ -259,6 +262,13 @@ export function createFakeClusterEngine(): FakeClusterEngine {
           setTimeout(run, 0)
         }
       })
+    },
+    buildAsyncFrom() {
+      requireAlive('buildAsyncFrom')
+      fakeClusterEngineStats.buildsFromPrevious++
+      // supercluster builds from scratch: the native engine's index is the
+      // same either way.
+      return engine.buildAsync()
     },
     getClusters(viewport) {
       requireAlive('getClusters')

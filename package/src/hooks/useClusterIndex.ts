@@ -102,6 +102,8 @@ function withQueriedPoints<P extends AnyProps>(
  *   only other properties change, leaves are refreshed without a rebuild.
  * - Double-buffers: the previous engine keeps serving queries until its
  *   replacement has loaded, and is destroyed after the commit that retires it.
+ * - Builds each new version from the active index, so a live update of a few
+ *   points among many redoes only the clustering around them.
  * - Runs one build at a time. A build that newer data overtakes still replaces
  *   the active engine once it loads, and then the newest array builds, so data
  *   that changes faster than a build loads still moves the index forward.
@@ -178,6 +180,11 @@ export function useClusterIndex<P extends AnyProps = AnyProps>(
   const { latest, indexed, version } = current
 
   const [active, setActive] = useState<ActiveIndex<P> | null>(null)
+  // The engine a new build starts from, read when that build starts.
+  const activeRef = useRef(active)
+  useEffect(() => {
+    activeRef.current = active
+  })
 
   // Everything a build depends on. Only `clusterPropertiesKey` is not a
   // number, so keeping it last keeps different inputs apart.
@@ -236,7 +243,9 @@ export function useClusterIndex<P extends AnyProps = AnyProps>(
       viewportTileSize,
     })
 
-    next.loadAsync(indexed).then(
+    // From the active index: when few points moved, only the clustering
+    // around them is done again.
+    next.loadAsyncFrom(indexed, activeRef.current?.supercluster ?? null).then(
       () => {
         buildingRef.current = false
         // Unmounted or hidden: build again if this shows again.

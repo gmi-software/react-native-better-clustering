@@ -23,6 +23,10 @@ const mockEngine = {
     mockEngine.isBuilt = true
     return Promise.resolve()
   }),
+  buildAsyncFrom: jest.fn((_previous: unknown) => {
+    mockEngine.isBuilt = true
+    return Promise.resolve()
+  }),
   isBuilt: false,
   getClusters: jest.fn((): EngineClusterNode[] => []),
   getChildren: jest.fn(() => []),
@@ -760,6 +764,10 @@ describe('Supercluster.loadAsync', () => {
   beforeEach(() => {
     jest.clearAllMocks()
     mockEngine.isBuilt = false
+    mockEngine.buildAsync.mockImplementation(() => {
+      mockEngine.isBuilt = true
+      return Promise.resolve()
+    })
   })
 
   it('builds the native index asynchronously', async () => {
@@ -801,5 +809,33 @@ describe('Supercluster.loadAsync', () => {
     await loadPromise
 
     expect(clusterer.isLoaded).toBe(true)
+  })
+
+  it('builds from the native index of a previous instance', async () => {
+    const previous = new Supercluster()
+    await previous.loadAsync([SAMPLE_POINT])
+    jest.clearAllMocks()
+
+    const next = new Supercluster()
+    await expect(next.loadAsyncFrom([SAMPLE_POINT], previous)).resolves.toBe(
+      next
+    )
+    expect(mockEngine.buildAsyncFrom).toHaveBeenCalledTimes(1)
+    expect(mockEngine.buildAsyncFrom.mock.calls[0]![0]).toBe(mockEngine)
+    expect(mockEngine.buildAsync).not.toHaveBeenCalled()
+    expect(next.isLoaded).toBe(true)
+  })
+
+  it('builds from scratch without a previous instance, or a destroyed one', async () => {
+    const destroyed = new Supercluster()
+    await destroyed.loadAsync([SAMPLE_POINT])
+    destroyed.destroy()
+    jest.clearAllMocks()
+
+    await new Supercluster().loadAsyncFrom([SAMPLE_POINT], null)
+    await new Supercluster().loadAsyncFrom([SAMPLE_POINT], destroyed)
+
+    expect(mockEngine.buildAsync).toHaveBeenCalledTimes(2)
+    expect(mockEngine.buildAsyncFrom).not.toHaveBeenCalled()
   })
 })

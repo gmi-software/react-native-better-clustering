@@ -224,6 +224,9 @@ current.dispose()
 current = next
 ```
 
+`useClusterer` and `MapView` build each new index this way, from the one that
+serves queries meanwhile.
+
 ## Native memory
 
 The index lives in native memory, which grows with the number of points (the

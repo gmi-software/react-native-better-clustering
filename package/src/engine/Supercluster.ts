@@ -126,6 +126,22 @@ export class Supercluster<P extends AnyProps = AnyProps> {
    * @throws When the native module is missing from the app binary.
    */
   async loadAsync(points: PointFeature<P>[]): Promise<this> {
+    return this.loadAsyncFrom(points, null)
+  }
+
+  /**
+   * {@linkcode Supercluster.loadAsync loadAsync}, building the native index
+   * from the one `previous` has loaded where it can: when few points moved
+   * since, only the clustering around them (see `ClusterEngine.buildAsyncFrom`).
+   * The index is the one `loadAsync` builds.
+   *
+   * @internal `useClusterer` and the compat `MapView` load each new version
+   * of their data this way, from the instance that serves queries meanwhile.
+   */
+  async loadAsyncFrom(
+    points: PointFeature<P>[],
+    previous: Supercluster<P> | null
+  ): Promise<this> {
     this.throwIfDestroyed()
 
     if (this.engine != null) {
@@ -137,11 +153,13 @@ export class Supercluster<P extends AnyProps = AnyProps> {
     const engine = this.prepareEngine(points)
     this.engine = engine
     this.building = true
+    // Read by the native call below, so `previous` may be destroyed after.
+    const base = previous?.engine ?? null
 
     // destroy() leaves an engine that is still building to be disposed here,
     // once the build has settled.
     try {
-      await engine.buildAsync()
+      await (base != null ? engine.buildAsyncFrom(base) : engine.buildAsync())
     } catch (error) {
       this.engine = null
       engine.dispose()
