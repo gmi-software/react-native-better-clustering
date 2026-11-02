@@ -202,7 +202,7 @@ clusters, ids, children, aggregates and expansion zooms. Only the order in which
 
 It builds from scratch instead, with the same result, when `previous`:
 
-- is not built, or was disposed before the call;
+- is not built;
 - has other options;
 - clusters with `minPoints` above 2;
 - has more than about 1 point in 64 changed, added or removed since (points
@@ -213,7 +213,8 @@ It builds from scratch instead, with the same result, when `previous`:
 
 `buildAsyncFrom` reads `previous`'s index when you call it, so you can keep
 querying `previous` while the new index builds, and dispose of it right after
-the call:
+the call. Before the call, `previous` must not be disposed: passing a disposed
+engine throws, as any call on it does.
 
 ```tsx
 const next = createClusterEngine()
@@ -271,6 +272,7 @@ results:
 | `getChildren`, `getLeaves`, `getClusterBounds`, `getClusterExpansionZoom` | `clusterId` is not a 32-bit integer (`NaN`, `Infinity`, `1.5`) | throws |
 | `getLeaves` | fractional `limit` or `offset`, or `NaN` `offset` | throws |
 | any method or property | after `dispose()` | throws |
+| `buildAsyncFrom` | `previous` was disposed | throws |
 
 Invalid buffers, invalid numbers and missing `build()` throw with messages
 prefixed `ClusterEngine:`. Use `packPoints()` for buffers and check `isBuilt`

@@ -77,11 +77,13 @@ export interface ClusterEngine extends HybridObject<{
    * returns nodes in.
    *
    * For live data: a few points that move among many build in a small part of
-   * the time. When `previous` cannot serve (not built, disposed, other
-   * options, `minPoints` above 2, or more than about 1 point in 64 changed,
-   * added or removed), or reusing it would cost more than a build, this
-   * builds from scratch. It reads `previous`'s index at the time of the call,
-   * so `previous` can be disposed right after.
+   * the time. When `previous` cannot serve (not built, other options,
+   * `minPoints` above 2, or more than about 1 point in 64 changed, added or
+   * removed), or reusing it would cost more than a build, this builds from
+   * scratch. It reads `previous`'s index at the time of the call, so
+   * `previous` can be disposed right after.
+   *
+   * @throws When `previous` was disposed, as any call on it does.
    */
   buildAsyncFrom(previous: ClusterEngine): Promise<void>
 
