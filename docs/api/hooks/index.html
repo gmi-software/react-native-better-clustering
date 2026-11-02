@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="generator" content="Docusaurus v3.10.2">
 <title data-rh="true">Hooks | React Native Better Clustering</title><meta data-rh="true" name="viewport" content="width=device-width,initial-scale=1"><meta data-rh="true" name="twitter:card" content="summary_large_image"><meta data-rh="true" property="og:url" content="https://gmi-software.github.io/react-native-better-clustering/docs/api/hooks"><meta data-rh="true" property="og:locale" content="en"><meta data-rh="true" name="docusaurus_locale" content="en"><meta data-rh="true" name="docsearch:language" content="en"><meta data-rh="true" name="docusaurus_version" content="current"><meta data-rh="true" name="docusaurus_tag" content="docs-default-current"><meta data-rh="true" name="docsearch:version" content="current"><meta data-rh="true" name="docsearch:docusaurus_tag" content="docs-default-current"><meta data-rh="true" property="og:title" content="Hooks | React Native Better Clustering"><meta data-rh="true" name="description" content="Use these when you render your own react-native-maps MapView and only need"><meta data-rh="true" property="og:description" content="Use these when you render your own react-native-maps MapView and only need"><link data-rh="true" rel="icon" href="/react-native-better-clustering/img/favicon.svg"><link data-rh="true" rel="canonical" href="https://gmi-software.github.io/react-native-better-clustering/docs/api/hooks"><link data-rh="true" rel="alternate" href="https://gmi-software.github.io/react-native-better-clustering/docs/api/hooks" hreflang="en"><link data-rh="true" rel="alternate" href="https://gmi-software.github.io/react-native-better-clustering/docs/api/hooks" hreflang="x-default"><script data-rh="true" type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"API Reference","item":"https://gmi-software.github.io/react-native-better-clustering/docs/api/mapview"},{"@type":"ListItem","position":2,"name":"Hooks","item":"https://gmi-software.github.io/react-native-better-clustering/docs/api/hooks"}]}</script><link rel="stylesheet" href="/react-native-better-clustering/assets/css/styles.5d98aaef.css">
-<script src="/react-native-better-clustering/assets/js/runtime~main.ea466407.js" defer="defer"></script>
+<script src="/react-native-better-clustering/assets/js/runtime~main.596bb30c.js" defer="defer"></script>
 <script src="/react-native-better-clustering/assets/js/main.be0b3d47.js" defer="defer"></script>
 </head>
 <body>
@@ -41,7 +41,9 @@ methods directly.</p>
 <code>features</code> array. Leaf queries (<code>getLeaves</code>, <code>getChildren</code>) return the newest
 feature objects, so changed properties show up there without a rebuild.
 Point features already in <code>features</code> keep their identity until the region
-changes.</li>
+changes, and then come back as the newest objects. A region change in the
+same render as the new <code>data</code> still returns the previous objects; the next
+one returns the newest.</li>
 <li class="">When the content does change, the hook keeps returning the previous clusters
 while the new index builds, then swaps to the new engine and destroys the old
 one. A <code>supercluster</code> reference you hold goes stale after that swap; use the
