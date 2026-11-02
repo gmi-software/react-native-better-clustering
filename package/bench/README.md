@@ -65,6 +65,7 @@ The compat `MapView` with default props on a 390 × 844 pt phone: `radius` 23.4 
 | `bounds_top` | `getClusterBounds` of the top cluster: the box its leaves span, which a `MapView` cluster press fits the map to |
 | `expansion_top` | `getClusterExpansionZoom` of the top cluster |
 | `zoom_sweep` | `getClusters` at every zoom from `minZoom` to `maxZoom`, like a zoom-in animation |
+| `update` | `setPointsFromBuffer` and `buildFrom` on a fresh engine, from the built one, after 20 points spread over the data moved by about a metre: a live update, as `buildAsyncFrom` runs it. Its result is `1` when the update reused the index, `0` when it built afresh (`identical` does) |
 
 Each operation records its `result` (points indexed, nodes returned, the zoom, or `1` for a cluster that has a box), so a change in behaviour shows up next to a change in cost.
 

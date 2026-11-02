@@ -73,7 +73,9 @@ Call methods in this order:
 
 1. **`setOptions`**: radius, zoom range, reducers, tile extent, etc.
 2. **`setPoints`**: binary buffer from `packPoints()` (`/utils` export; must match options).
-3. **`build()`** or **`buildAsync()`**: build the spatial index.
+3. **`build()`** or **`buildAsync()`**: build the spatial index, or
+   **`buildAsyncFrom(previous)`** to build it from another engine's after a
+   few points moved (see [Live updates](#live-updates)).
 4. **Query**: `getClusters`, `getChildren`, `getLeaves`, `getClusterBounds`,
    `getClusterExpansionZoom`.
 5. **`dispose()`**: free the native index when you are done (see
@@ -179,6 +181,47 @@ const pending = engine.buildAsync()
 engine.setPoints(nextBuffer) // the pending build is now stale
 await pending
 engine.isBuilt // false: build again for nextBuffer
+```
+
+## Live updates
+
+When a few points move among many, such as vehicles over a fixed set of
+places, `buildAsyncFrom(previous)` builds the new index from the index of
+`previous`, the engine built for the last update: only the clustering around
+the points that moved, or whose aggregated values changed, is done again. With
+20 of 50,000 points moving, it takes about a twentieth of the time of a build in the
+[core benchmark](https://github.com/gmi-software/react-native-better-clustering/tree/main/package/bench)
+(its `update` operation).
+
+The index is the one `buildAsync()` builds from the same points: the same
+clusters, ids, children, aggregates and expansion zooms. Only the order in which
+`getClusters` returns a zoom's features can differ.
+
+It builds from scratch instead, with the same result, when `previous`:
+
+- is not built, or was disposed before the call;
+- has other options, a different number of points, or other point ids in
+  another order (`packPoints()` numbers points by their position, so keep each
+  point at the same index);
+- clusters with `minPoints` above 2;
+- has more than about 1 point in 64 changed since;
+- or would cost more to reuse than a build, as when many points lie within one
+  cluster radius of each other. Updates from it then build from scratch for a
+  while before trying again.
+
+`buildAsyncFrom` reads `previous`'s index when you call it, so you can keep
+querying `previous` while the new index builds, and dispose of it right after
+the call:
+
+```tsx
+const next = createClusterEngine()
+next.setOptions(options) // the same options as `current`
+next.setPoints(packPoints(movedPoints).buffer)
+const pending = next.buildAsyncFrom(current)
+// `current` keeps answering queries until `next` is ready.
+await pending
+current.dispose()
+current = next
 ```
 
 ## Native memory

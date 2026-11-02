@@ -114,6 +114,26 @@ std::shared_ptr<Promise<void>> HybridClusterEngine::buildAsync() {
   });
 }
 
+std::shared_ptr<Promise<void>> HybridClusterEngine::buildAsyncFrom(
+  const std::shared_ptr<HybridClusterEngineSpec>& previous
+) {
+  auto engine = _engine;
+  if (engine == nullptr) {
+    throw std::runtime_error(kDisposedError);
+  }
+  auto input = engine->snapshot();
+  // Read now, so `previous` can be disposed or rebuilt during the build. Any
+  // other engine, or a disposed one, leaves a build from scratch.
+  ThreadSafeClusterEngine::Snapshot base;
+  const auto other = std::dynamic_pointer_cast<HybridClusterEngine>(previous);
+  if (other != nullptr && other->_engine != nullptr) {
+    base = other->_engine->snapshot();
+  }
+  return Promise<void>::async([engine = std::move(engine), input = std::move(input), base = std::move(base)]() {
+    engine->build(input, base);
+  });
+}
+
 std::vector<EngineClusterNode> HybridClusterEngine::getClusters(const Viewport& viewport) {
   const auto core = requireBuilt(engine());
   ViewportBounds bounds;

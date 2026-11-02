@@ -23,6 +23,7 @@ public:
   void setOptions(const ClusterEngineOptions& options) override;
   void build() override;
   std::shared_ptr<Promise<void>> buildAsync() override;
+  std::shared_ptr<Promise<void>> buildAsyncFrom(const std::shared_ptr<HybridClusterEngineSpec>& previous) override;
   std::vector<EngineClusterNode> getClusters(const Viewport& viewport) override;
   std::vector<EngineClusterNode> getChildren(double clusterId) override;
   std::vector<EngineClusterNode> getLeaves(double clusterId, double limit, double offset) override;

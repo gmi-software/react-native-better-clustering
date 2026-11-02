@@ -134,6 +134,54 @@ void testDisposeReleasesTheIndex() {
   engine->dispose(); // idempotent natively; Nitro rejects a second JS call
 }
 
+// buildAsyncFrom() reads `previous` when called: disposing or rebuilding it
+// during the build, or passing a disposed or unbuilt one, still builds the
+// same index as buildAsync().
+void testBuildAsyncFrom() {
+  const Viewport world(85, -85, 180, -180, 6);
+  auto expected = makeEngine(20000);
+  expected->build();
+  const size_t clusters = expected->getClusters(world).size();
+
+  for (int i = 0; i < 5; i++) {
+    auto previous = makeEngine(20000);
+    previous->build();
+    auto next = makeEngine(20000);
+    auto build = next->buildAsyncFrom(previous);
+    if (i % 2 == 0) {
+      previous->dispose();
+    } else {
+      // Synchronously: two builds in Nitro's thread pool at once trip a race
+      // TSan reports inside ThreadPool::run itself.
+      previous->setPoints(packPoints(10));
+      previous->build();
+    }
+    previous.reset();
+    build->await().get();
+    assert(next->getIsBuilt());
+    assert(next->getClusters(world).size() == clusters);
+  }
+
+  auto disposed = makeEngine(20000);
+  disposed->dispose();
+  auto unbuilt = makeEngine(20000);
+  for (const auto& previous : {disposed, unbuilt}) {
+    auto next = makeEngine(20000);
+    next->buildAsyncFrom(previous)->await().get();
+    assert(next->getIsBuilt());
+    assert(next->getClusters(world).size() == clusters);
+  }
+
+  // From itself, built over the same points.
+  auto self = makeEngine(20000);
+  self->build();
+  self->buildAsyncFrom(self)->await().get();
+  assert(self->getIsBuilt());
+  assert(self->getClusters(world).size() == clusters);
+  self->dispose();
+  assert(throwsRuntimeError([](ProbeEngine& e) { e.buildAsyncFrom(nullptr); }, *self));
+}
+
 } // namespace
 
 int main() {
@@ -141,6 +189,7 @@ int main() {
   testReleaseDuringBuildAsync();
   testCallsDuringBuildAsync();
   testDisposeReleasesTheIndex();
+  testBuildAsyncFrom();
   std::puts("HybridClusterEngine tests passed");
   return 0;
 }

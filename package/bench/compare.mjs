@@ -292,7 +292,10 @@ function renderMarkdown(base, head, comparison, { details = true } = {}) {
   for (const row of rows) {
     const b = row.baseCase
     const h = row.headCase
-    const queryOps = Object.keys(h.ops).filter((op) => op !== 'build')
+    // `update` builds an index: it is gated on its own, not summed here.
+    const queryOps = Object.keys(h.ops).filter(
+      (op) => op !== 'build' && op !== 'update'
+    )
     lines.push(
       `| ${row.key} | ${cell(instructions, b.ops.build?.instructions, h.ops.build?.instructions, row.gated)} | ${cell(allocations, b.ops.build?.allocationCount, h.ops.build?.allocationCount, row.gated)} | ${cell(MEMORY_METRIC, b.memorySize, h.memorySize, row.gated)} | ${cell(instructions, sumOps(b, 'instructions', queryOps), sumOps(h, 'instructions', queryOps), row.gated)} | ${timeCell(b.ops.build?.time?.medianNs, h.ops.build?.time?.medianNs)} | ${h.peakRssBytes == null ? '–' : formatBytes(h.peakRssBytes)} |`
     )
