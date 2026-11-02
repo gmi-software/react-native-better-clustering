@@ -656,12 +656,14 @@ public:
           // push_back per member: a cluster of all the points has as many
           // members, and whether push_back is inlined is up to the compiler.
           if (members.size() < neighbors.size()) members.resize(neighbors.size());
+          const int32_t clusterId = _firstClusterId + static_cast<int32_t>(_nodes.size() - pointCount);
           size_t memberCount = 0;
           int32_t lowest = std::numeric_limits<int32_t>::max();
           int32_t highest = -1;
           for (const int32_t nb : neighbors) {
             if (processedAt[nb] <= z) continue;
             processedAt[nb] = z;
+            _nodes[nb].parentId = clusterId;
             members[memberCount++] = nb;
             lowest = std::min(lowest, nb);
             highest = std::max(highest, nb);
@@ -670,14 +672,11 @@ public:
           sortForFold(folded, lowest, highest, foldBits);
           ClusterNode cluster =
             foldCluster(_nodes[index], folded, z, [this](int32_t i) -> const ClusterNode& { return _nodes[i]; });
-          cluster.id = _firstClusterId + static_cast<int32_t>(_nodes.size() - pointCount);
+          cluster.id = clusterId;
 
-          _nodes[index].parentId = cluster.id;
+          _nodes[index].parentId = clusterId;
           _childNodes.push_back(index);
           _childNodes.insert(_childNodes.end(), folded.begin(), folded.end());
-          for (const int32_t nb : folded) {
-            _nodes[nb].parentId = cluster.id;
-          }
 
           next.push_back(static_cast<int32_t>(_nodes.size()));
           _childOffsets.push_back(static_cast<int32_t>(_childNodes.size()));
@@ -1294,9 +1293,12 @@ private:
   // The point nodes, the first `_points.size()` of `_nodes`, unlinked.
   void addPointNodes() {
     const size_t np = _options.reducers.size();
-    _nodes.reserve(_points.size());
-    for (const PointData& point : _points) {
-      ClusterNode node;
+    // Made in place rather than pushed one by one: whether push_back is
+    // inlined is up to the compiler, and this runs once per point.
+    _nodes.resize(_points.size());
+    for (size_t i = 0; i < _points.size(); i++) {
+      const PointData& point = _points[i];
+      ClusterNode& node = _nodes[i];
       node.id = point.id;
       node.x = point.x;
       node.y = point.y;
@@ -1312,7 +1314,6 @@ private:
           node.values[k] = point.values[k];
         }
       }
-      _nodes.push_back(std::move(node));
     }
     _childOffsets.push_back(0);
   }
