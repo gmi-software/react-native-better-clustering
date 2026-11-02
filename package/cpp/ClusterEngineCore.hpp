@@ -758,16 +758,16 @@ public:
 
   /**
    * Builds the index build() would, from the index of `base`: an engine built
-   * with the same options over the same point ids, in the same order, of
-   * which a few points have moved or changed their values since. Only the
-   * clustering those points can reach is done again, level by level, so an
-   * update of a few points among many costs a small part of a build. The
-   * index is the one build() makes, but for the order getClusters() returns
-   * a level's nodes in.
+   * with the same options over points of which a few have moved, changed
+   * their values, come or gone since, the others in the same order (their
+   * ids may differ). Only the clustering those points can reach is done
+   * again, level by level, so an update of a few points among many costs a
+   * small part of a build. The index is the one build() makes, but for the
+   * order getClusters() returns a level's nodes in.
    *
    * False, leaving the engine unbuilt, when `base` cannot serve: it is not
-   * built, has other options or point ids, clusters with minPoints above 2,
-   * or too many points changed. Call build() then.
+   * built, has other options, clusters with minPoints above 2, too many
+   * points changed, or reusing it costs more than a build. Call build() then.
    */
   bool buildFrom(const ClusterEngineCore& base);
 
@@ -1500,8 +1500,10 @@ private:
 // base: an origin whose cluster gained, lost or changed a node, moved, or
 // appeared or went away, is a change of the level below, where it starts over.
 //
-// Nodes are referred to by handles while the update runs: base's node
-// indices, which for points hold their new data, then the nodes it makes.
+// The points are paired with base's in order first (see align()). Nodes are
+// referred to by handles while the update runs: base's node indices, which
+// for points paired with new ones hold their new data, then the points
+// added, then the clusters the update makes.
 // Each level's tree is a copy of base's, patched by the level's changes; the
 // last step numbers every node as build() would and renumbers the trees.
 class ClusterEngineCore::IndexUpdate {
@@ -1510,7 +1512,8 @@ public:
       : _out(out),
         _base(base),
         _options(out._options),
-        _pointCount(out._points.size()),
+        _basePoints(base._points.size()),
+        _newPoints(out._points.size()),
         _baseCount(base._nodes.size()) {}
 
   enum class Outcome {
@@ -1522,23 +1525,13 @@ public:
   };
 
   Outcome run() {
-    _out._firstClusterId = _base._firstClusterId;
     _out.addPointNodes();
 
     std::vector<Change> changes;
-    for (size_t i = 0; i < _pointCount; i++) {
-      const ClusterNode& now = _out._nodes[i];
-      const ClusterNode& was = _base._nodes[i];
-      if (!sameBits(now.x, was.x) || !sameBits(now.y, was.y) || !sameValues(now.values, was.values)) {
-        const int32_t point = static_cast<int32_t>(i);
-        changes.push_back({point, point, point});
-        _changedPoints.push_back(point);
-      }
-    }
-    if (_changedPoints.size() * kChangedShare > _pointCount) return Outcome::TooManyChanged;
+    if (!align(changes)) return Outcome::TooManyChanged;
 
     prepare();
-    if (_out._capUpdateCost) _maxVisits = _pointCount * kVisitsPerPoint;
+    if (_out._capUpdateCost) _maxVisits = _newPoints * kVisitsPerPoint;
 
     const int32_t levels = _options.maxZoom - _options.minZoom + 1;
     _treeOfSlot.assign(static_cast<size_t>(levels), -1);
@@ -1557,15 +1550,18 @@ public:
 private:
   // A node of a level that may differ from base's: base's node with this
   // seed, `before`, and the update's, `after`, either -1 when that level has
-  // none. A point that changed is both: its handle.
+  // none. A point paired with one of base's that changed is both: its handle.
   struct Change {
     int32_t seed;
     int32_t before;
     int32_t after;
   };
 
-  // Above this share of the points changed, a build costs less.
+  // Above this share of the points changed, added or removed, a build costs
+  // less.
   static constexpr size_t kChangedShare = 64;
+  // How far align() looks ahead for the next point both have.
+  static constexpr size_t kAlignReach = 16;
   // An update gives up for a build once its queries have returned this many
   // nodes per point, or one query returned more than one point in
   // kCrowdedShare: where nodes crowd within one radius, every node it visits
@@ -1580,15 +1576,31 @@ private:
   ClusterEngineCore& _out;
   const ClusterEngineCore& _base;
   const ClusterEngineConfig& _options;
-  const size_t _pointCount;
+  const size_t _basePoints;
+  const size_t _newPoints;
   const size_t _baseCount;
 
+  // How align() paired the points: the new index of each of base's points,
+  // -1 for one removed, and the seed it gave each, the position of the pair,
+  // or of the point alone, in both orders merged.
+  std::vector<int32_t> _newOfBase;
+  std::vector<int32_t> _baseSeed;
+  // The points added, in order: handle `_baseCount + k` is new point
+  // `_addedNew[k]`, with seed `_addedSeed[k]`.
+  std::vector<int32_t> _addedNew;
+  std::vector<int32_t> _addedSeed;
+  size_t _seedCount = 0;
+  // Whether a point kept by the update has another id now.
+  bool _idsChanged = false;
+  // The first handle of the clusters this update makes.
+  size_t _freshBase = 0;
+  // The points that are new or have changed, by handle.
   std::vector<int32_t> _changedPoints;
   // How many nodes the update's queries have returned, and how many make it
   // give up.
   size_t _visited = 0;
   size_t _maxVisits = std::numeric_limits<size_t>::max();
-  // The nodes this update makes: handle `_baseCount + k` is `_fresh[k]`, and
+  // The clusters this update makes: handle `_freshBase + k` is `_fresh[k]`, and
   // its children are `_freshChildren[_freshChildOffsets[k]]` up to the next
   // offset, its origin first.
   std::vector<ClusterNode> _fresh;
@@ -1643,9 +1655,89 @@ private:
   // The node a handle stands for in the update: points with their new data.
   const ClusterNode& node(int32_t handle) const {
     const size_t h = static_cast<size_t>(handle);
-    if (h < _pointCount) return _out._nodes[h];
+    if (h < _basePoints) {
+      const int32_t now = _newOfBase[h];
+      return now >= 0 ? _out._nodes[static_cast<size_t>(now)] : _base._nodes[h];
+    }
     if (h < _baseCount) return _base._nodes[h];
-    return _fresh[h - _baseCount];
+    if (h < _freshBase) return _out._nodes[static_cast<size_t>(_addedNew[h - _baseCount])];
+    return _fresh[h - _freshBase];
+  }
+
+  // Pairs base's points with the new ones, in order: a pair with the same
+  // position and values is unchanged, one without is a point that changed,
+  // and the points left over were removed or added. Ids play no part:
+  // packPoints() numbers points by position, so one added shifts the ids of
+  // all after it. Any pairing in order makes the same index, so this only
+  // looks a little ahead for the next point both have, and pairs the points
+  // up to it otherwise. False once more points changed than an update is
+  // worth.
+  bool align(std::vector<Change>& changes) {
+    const auto same = [this](size_t b, size_t n) {
+      const ClusterNode& was = _base._nodes[b];
+      const ClusterNode& now = _out._nodes[n];
+      return sameBits(was.x, now.x) && sameBits(was.y, now.y) && sameValues(was.values, now.values);
+    };
+    _newOfBase.assign(_basePoints, -1);
+    _baseSeed.assign(_basePoints, -1);
+    const size_t maxChanges = _newPoints / kChangedShare;
+    size_t b = 0;
+    size_t n = 0;
+    const auto pair = [&](bool changed) {
+      const int32_t seed = static_cast<int32_t>(_seedCount++);
+      const int32_t handle = static_cast<int32_t>(b);
+      _newOfBase[b] = static_cast<int32_t>(n);
+      _baseSeed[b] = seed;
+      _idsChanged = _idsChanged || _base._points[b].id != _out._points[n].id;
+      if (changed) {
+        changes.push_back({seed, handle, handle});
+        _changedPoints.push_back(handle);
+      }
+      b++;
+      n++;
+    };
+    const auto remove = [&]() {
+      const int32_t seed = static_cast<int32_t>(_seedCount++);
+      _baseSeed[b] = seed;
+      changes.push_back({seed, static_cast<int32_t>(b), -1});
+      b++;
+    };
+    const auto add = [&]() {
+      const int32_t seed = static_cast<int32_t>(_seedCount++);
+      const int32_t handle = static_cast<int32_t>(_baseCount + _addedNew.size());
+      _addedNew.push_back(static_cast<int32_t>(n));
+      _addedSeed.push_back(seed);
+      changes.push_back({seed, -1, handle});
+      _changedPoints.push_back(handle);
+      n++;
+    };
+
+    while (b < _basePoints || n < _newPoints) {
+      if (b < _basePoints && n < _newPoints && same(b, n)) {
+        pair(false);
+        continue;
+      }
+      if (b == _basePoints) {
+        add();
+      } else if (n == _newPoints) {
+        remove();
+      } else if (b + 1 == _basePoints || n + 1 == _newPoints || same(b + 1, n + 1)) {
+        // One point changed, the most common case: the next pair is the same.
+        pair(true);
+      } else {
+        size_t removed = 0;
+        size_t added = 0;
+        for (size_t k = 1; k <= kAlignReach && removed == 0 && added == 0; k++) {
+          if (b + k < _basePoints && same(b + k, n)) removed = k;
+          else if (n + k < _newPoints && same(b, n + k)) added = k;
+        }
+        if (removed == 0 && added == 0) pair(true);
+        for (; removed > 0; removed--) remove();
+        for (; added > 0; added--) add();
+      }
+      if (changes.size() > maxChanges) return false;
+    }
+    return true;
   }
 
   // The cluster base folded `handle`, a node of its level z + 1, into at
@@ -1653,12 +1745,12 @@ private:
   int32_t baseParentAt(int32_t handle, int32_t z) const {
     const int32_t parentId = _base._nodes[static_cast<size_t>(handle)].parentId;
     if (parentId < 0) return -1;
-    const int32_t parent = static_cast<int32_t>(_pointCount) + (parentId - _base._firstClusterId);
+    const int32_t parent = static_cast<int32_t>(_basePoints) + (parentId - _base._firstClusterId);
     return _base._nodes[static_cast<size_t>(parent)].zoom == z ? parent : -1;
   }
 
   int32_t baseFirstChild(int32_t cluster) const {
-    return _base._childNodes[static_cast<size_t>(_base._childOffsets[static_cast<size_t>(cluster) - _pointCount])];
+    return _base._childNodes[static_cast<size_t>(_base._childOffsets[static_cast<size_t>(cluster) - _basePoints])];
   }
 
   // The origin that base's node `handle` of level z + 1 folded into at level
@@ -1681,34 +1773,34 @@ private:
   bool changedAt(int32_t seed, int32_t z) const { return _changedAt[static_cast<size_t>(seed)] == z; }
 
   void prepare() {
-    _seed.resize(_baseCount);
-    for (size_t i = 0; i < _pointCount; i++) {
-      _seed[i] = static_cast<int32_t>(i);
-    }
+    _freshBase = _baseCount + _addedNew.size();
+    _seed.resize(_freshBase);
+    std::copy(_baseSeed.begin(), _baseSeed.end(), _seed.begin());
     // Children precede their cluster.
-    for (size_t i = _pointCount; i < _baseCount; i++) {
+    for (size_t i = _basePoints; i < _baseCount; i++) {
       _seed[i] = _seed[static_cast<size_t>(baseFirstChild(static_cast<int32_t>(i)))];
     }
-    _queuedAt.assign(_baseCount, kNever);
-    _evaluatedAt.assign(_baseCount, kNever);
-    _owner.assign(_baseCount, -1);
+    std::copy(_addedSeed.begin(), _addedSeed.end(), _seed.begin() + static_cast<std::ptrdiff_t>(_baseCount));
+    _queuedAt.assign(_freshBase, kNever);
+    _evaluatedAt.assign(_freshBase, kNever);
+    _owner.assign(_freshBase, -1);
 
-    _changedAt.assign(_pointCount, kNever);
-    _before.assign(_pointCount, -1);
-    _after.assign(_pointCount, -1);
-    _touchedAt.assign(_pointCount, kNever);
-    _touchHandle.assign(_pointCount, -1);
+    _changedAt.assign(_seedCount, kNever);
+    _before.assign(_seedCount, -1);
+    _after.assign(_seedCount, -1);
+    _touchedAt.assign(_seedCount, kNever);
+    _touchHandle.assign(_seedCount, -1);
 
     // Base formed its clusters level by level, from maxZoom down.
     const size_t levels = slot(_options.maxZoom) + 1;
     _baseLevelBegin.assign(levels, 0);
     _baseLevelEnd.assign(levels, 0);
-    for (size_t i = _baseCount; i-- > _pointCount;) {
+    for (size_t i = _baseCount; i-- > _basePoints;) {
       const size_t s = slot(_base._nodes[i].zoom);
       if (_baseLevelEnd[s] == 0) _baseLevelEnd[s] = static_cast<int32_t>(i) + 1;
       _baseLevelBegin[s] = static_cast<int32_t>(i);
     }
-    _replaced.assign(_baseCount - _pointCount, false);
+    _replaced.assign(_baseCount - _basePoints, false);
     _replacedAt.assign(levels, 0);
   }
 
@@ -1721,28 +1813,28 @@ private:
     }
     // The points: base keeps no tree of them, but its maxZoom tree reaches
     // every point through the clusters formed there, each within twice the
-    // radius of its centroid (see pointsInBounds). Changed points are read
-    // where they are now.
+    // radius of its centroid (see pointsInBounds). Points that changed, were
+    // removed or added are read where they are now, if anywhere.
     out.clear();
     const double r2 = r * r;
     const auto addIfWithin = [&](int32_t point) {
-      const ClusterNode& p = _out._nodes[static_cast<size_t>(point)];
+      const ClusterNode& p = node(point);
       const double dx = p.x - x;
       const double dy = p.y - y;
       if (dx * dx + dy * dy <= r2) out.push_back(point);
     };
     const double margin = 2.0 * r * (1.0 + 1e-9) + static_cast<double>(_options.extent) *
-                                                         static_cast<double>(_pointCount) *
+                                                         static_cast<double>(_basePoints) *
                                                          std::numeric_limits<double>::epsilon();
     const KDTree& tree = _base._trees[static_cast<size_t>(_base._treeByZoom[slot(_options.maxZoom)])];
     tree.forEachWithin(x, y, r + margin, [&](int32_t index) {
-      if (static_cast<size_t>(index) >= _pointCount) {
-        const size_t cluster = static_cast<size_t>(index) - _pointCount;
+      if (static_cast<size_t>(index) >= _basePoints) {
+        const size_t cluster = static_cast<size_t>(index) - _basePoints;
         for (int32_t c = _base._childOffsets[cluster]; c < _base._childOffsets[cluster + 1]; c++) {
           const int32_t point = _base._childNodes[static_cast<size_t>(c)];
-          if (!changedAt(point, z)) addIfWithin(point);
+          if (!changedAt(_seed[static_cast<size_t>(point)], z)) addIfWithin(point);
         }
-      } else if (!changedAt(index, z)) {
+      } else if (!changedAt(_seed[static_cast<size_t>(index)], z)) {
         addIfWithin(index);
       }
     });
@@ -1905,7 +1997,7 @@ private:
 
     if (now == was && (now < 0 || !changed)) return;
     if (baseCluster >= 0) {
-      _replaced[static_cast<size_t>(baseCluster) - _pointCount] = true;
+      _replaced[static_cast<size_t>(baseCluster) - _basePoints] = true;
       _replacedAt[slot(z)]++;
     }
     next.push_back({seed, was, now});
@@ -1923,7 +2015,7 @@ private:
 
   // Whether base's cluster holds `origin` and `_members`, none of them changed.
   bool sameChildren(int32_t cluster, int32_t origin, int32_t z) const {
-    const size_t k = static_cast<size_t>(cluster) - _pointCount;
+    const size_t k = static_cast<size_t>(cluster) - _basePoints;
     const int32_t begin = _base._childOffsets[k];
     const int32_t end = _base._childOffsets[k + 1];
     if (static_cast<size_t>(end - begin) != _members.size() + 1 || _base._childNodes[static_cast<size_t>(begin)] != origin) {
@@ -1941,7 +2033,7 @@ private:
 
   // Adds the cluster `origin` forms at level z with `_members`.
   int32_t addCluster(int32_t origin, int32_t z) {
-    const int32_t handle = static_cast<int32_t>(_baseCount + _fresh.size());
+    const int32_t handle = static_cast<int32_t>(_freshBase + _fresh.size());
     _fresh.push_back(
       _out.foldCluster(node(origin), _members, z, [this](int32_t h) -> const ClusterNode& { return node(h); }));
     _freshChildren.push_back(origin);
@@ -2001,19 +2093,20 @@ private:
   }
 
   // Numbers the nodes as build() does, points first, then the clusters of
-  // each level from maxZoom down by seed, and links them.
+  // each level from maxZoom down by seed, and links them. When the points
+  // kept have other ids, as after one was added or removed, each cluster's
+  // smallest leaf is taken from its children again.
   void assemble() {
-    std::vector<int32_t> finalIndex(_baseCount + _fresh.size(), -1);
-    for (size_t i = 0; i < _pointCount; i++) {
-      finalIndex[i] = static_cast<int32_t>(i);
-    }
+    std::vector<int32_t> finalIndex(_freshBase + _fresh.size(), -1);
+    std::copy(_newOfBase.begin(), _newOfBase.end(), finalIndex.begin());
+    std::copy(_addedNew.begin(), _addedNew.end(), finalIndex.begin() + static_cast<std::ptrdiff_t>(_baseCount));
 
     size_t clusterCount = 0;
     for (int32_t z = _options.maxZoom; z >= _options.minZoom; z--) {
       const size_t s = slot(z);
       clusterCount += static_cast<size_t>(_baseLevelEnd[s] - _baseLevelBegin[s] - _replacedAt[s]) + _freshByLevel[s].size();
     }
-    _out._nodes.reserve(_pointCount + clusterCount);
+    _out._nodes.reserve(_newPoints + clusterCount);
     _out._childOffsets.reserve(clusterCount + 1);
     _out._childNodes.reserve(_base._childNodes.size() + _freshChildren.size());
 
@@ -2021,21 +2114,24 @@ private:
       const size_t index = _out._nodes.size();
       finalIndex[static_cast<size_t>(handle)] = static_cast<int32_t>(index);
       ClusterNode cluster = node(handle);
-      cluster.id = _out._firstClusterId + static_cast<int32_t>(index - _pointCount);
+      cluster.id = _out._firstClusterId + static_cast<int32_t>(index - _newPoints);
       cluster.parentId = -1;
+      if (_idsChanged) cluster.minLeafId = std::numeric_limits<int32_t>::max();
 
       const auto link = [&](int32_t child) {
         const int32_t childIndex = finalIndex[static_cast<size_t>(child)];
         _out._childNodes.push_back(childIndex);
-        _out._nodes[static_cast<size_t>(childIndex)].parentId = cluster.id;
+        ClusterNode& linked = _out._nodes[static_cast<size_t>(childIndex)];
+        linked.parentId = cluster.id;
+        if (_idsChanged) cluster.minLeafId = std::min(cluster.minLeafId, linked.minLeafId);
       };
       if (static_cast<size_t>(handle) < _baseCount) {
-        const size_t k = static_cast<size_t>(handle) - _pointCount;
+        const size_t k = static_cast<size_t>(handle) - _basePoints;
         for (int32_t c = _base._childOffsets[k]; c < _base._childOffsets[k + 1]; c++) {
           link(_base._childNodes[static_cast<size_t>(c)]);
         }
       } else {
-        const size_t k = static_cast<size_t>(handle) - _baseCount;
+        const size_t k = static_cast<size_t>(handle) - _freshBase;
         for (int32_t c = _freshChildOffsets[k]; c < _freshChildOffsets[k + 1]; c++) {
           link(_freshChildren[static_cast<size_t>(c)]);
         }
@@ -2051,7 +2147,7 @@ private:
       const std::vector<int32_t>& fresh = _freshByLevel[s];
       size_t f = 0;
       while (baseCluster < _baseLevelEnd[s] || f < fresh.size()) {
-        if (baseCluster < _baseLevelEnd[s] && _replaced[static_cast<size_t>(baseCluster) - _pointCount]) {
+        if (baseCluster < _baseLevelEnd[s] && _replaced[static_cast<size_t>(baseCluster) - _basePoints]) {
           baseCluster++;
           continue;
         }
@@ -2069,8 +2165,12 @@ private:
     }
     _out._trees = std::move(_trees);
     _out._treeByZoom = std::move(_treeOfSlot);
-    _out._nodeByPointId = _base._nodeByPointId;
-    _out._sparsePointIds = _base._sparsePointIds;
+    if (_idsChanged || _basePoints != _newPoints || !_addedNew.empty()) {
+      _out.indexPointIds();
+    } else {
+      _out._nodeByPointId = _base._nodeByPointId;
+      _out._sparsePointIds = _base._sparsePointIds;
+    }
   }
 };
 
@@ -2083,11 +2183,8 @@ inline bool ClusterEngineCore::buildFrom(const ClusterEngineCore& base) {
                            a.maxZoom == b.maxZoom && a.extent == b.extent && a.nodeSize == b.nodeSize &&
                            a.clusteringEnabled == b.clusteringEnabled && a.reducers == b.reducers;
   if (!base._built || !sameOptions || !a.clusteringEnabled || a.minPoints > 2 || _points.empty() ||
-      base._points.size() != _points.size() || base._firstClusterId != _firstClusterId) {
+      base._points.empty()) {
     return false;
-  }
-  for (size_t i = 0; i < _points.size(); i++) {
-    if (_points[i].id != base._points[i].id) return false;
   }
 
   // After an update that cost more than a build, the next ones are left to

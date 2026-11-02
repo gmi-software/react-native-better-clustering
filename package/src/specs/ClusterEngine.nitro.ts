@@ -69,18 +69,19 @@ export interface ClusterEngine extends HybridObject<{
 
   /**
    * {@linkcode ClusterEngine.buildAsync buildAsync}, reusing the index of
-   * `previous`, an engine built with the same options over the same point ids
-   * in the same order: only the clustering around the points that moved or
-   * changed their aggregated values is done again. The index is the one
-   * `buildAsync()` builds, but for the order
-   * {@linkcode ClusterEngine.getClusters getClusters} returns nodes in.
+   * `previous`, an engine built with the same options: only the clustering
+   * around the points that moved, changed their aggregated values, were added
+   * or were removed is done again. The points that stay must keep their
+   * order; their ids may change. The index is the one `buildAsync()` builds,
+   * but for the order {@linkcode ClusterEngine.getClusters getClusters}
+   * returns nodes in.
    *
    * For live data: a few points that move among many build in a small part of
-   * the time. When `previous` cannot serve (not built, disposed, other options
-   * or ids, `minPoints` above 2, or more than about 1 point in 64 changed),
-   * or reusing it would cost more than a build, this builds from scratch. It
-   * reads `previous`'s index at the time of the call, so `previous` can be
-   * disposed right after.
+   * the time. When `previous` cannot serve (not built, disposed, other
+   * options, `minPoints` above 2, or more than about 1 point in 64 changed,
+   * added or removed), or reusing it would cost more than a build, this
+   * builds from scratch. It reads `previous`'s index at the time of the call,
+   * so `previous` can be disposed right after.
    */
   buildAsyncFrom(previous: ClusterEngine): Promise<void>
 

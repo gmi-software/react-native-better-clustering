@@ -10,6 +10,7 @@
 #include <cstdint>
 #include <cstdio>
 #include <cstring>
+#include <iterator>
 #include <limits>
 #include <stdexcept>
 #include <string>
@@ -2023,7 +2024,10 @@ static void checkSameIndex(const ClusterEngineCore& got, const ClusterEngineCore
 
 // buildFrom() makes the index build() makes over the new points, update after
 // update on the same chain, whatever the points do: move a little or far, land
-// on another point, change only their values, or cross the antimeridian.
+// on another point, change only their values, cross the antimeridian, or come
+// and go. Ids are numbered by position, as packPoints() does, so each point
+// added or removed shifts the ids after it; one chain keeps sparse ids with
+// their points instead.
 static void testBuildFromMatchesBuild() {
   struct Config {
     double radius;
@@ -2041,20 +2045,23 @@ static void testBuildFromMatchesBuild() {
     {2.0, 2, 64, false, 30, 1 << 20},
   };
 
-  const int32_t size = 3000;
+  const int32_t initialSize = 3000;
   const int32_t steps = 8;
   for (const char* name : bench::kDatasetNames) {
-    const bench::Dataset dataset = bench::generateDataset(name, size);
+    const bench::Dataset dataset = bench::generateDataset(name, initialSize);
     for (const Config& c : configs) {
-      std::vector<int32_t> ids(static_cast<size_t>(size));
+      // The last configuration keeps sparse ids with the points.
+      const bool stableIds = &c == &configs[std::size(configs) - 1];
+      std::vector<int32_t> ids(static_cast<size_t>(initialSize));
       std::vector<double> lats = dataset.lats;
       std::vector<double> lngs = dataset.lngs;
       std::vector<double> values;
-      for (int32_t i = 0; i < size; i++) {
-        ids[static_cast<size_t>(i)] = i;
+      for (int32_t i = 0; i < initialSize; i++) {
+        ids[static_cast<size_t>(i)] = stableIds ? i * 5 + 3 : i;
         const double weight = static_cast<double>(i % 7 + 1);
         values.insert(values.end(), {weight, weight * 2});
       }
+      int32_t nextId = initialSize * 5 + 3;
       const auto engineFor = [&]() {
         ClusterEngineCore engine;
         ClusterEngineConfig config;
@@ -2077,10 +2084,28 @@ static void testBuildFromMatchesBuild() {
       for (int32_t step = 0; step < steps; step++) {
         const int32_t moves = 1 + static_cast<int32_t>(parityRandom(state) % 8);
         for (int32_t m = 0; m < moves; m++) {
-          const size_t i = parityRandom(state) % static_cast<size_t>(size);
-          const size_t other = parityRandom(state) % static_cast<size_t>(size);
+          const size_t size = lats.size();
+          const size_t i = parityRandom(state) % size;
+          const size_t other = parityRandom(state) % size;
           const double unit = static_cast<double>(parityRandom(state) % 2001) / 1000.0 - 1.0;
-          switch (parityRandom(state) % 5) {
+          const uint32_t kind = parityRandom(state) % 7;
+          if (kind == 5) { // a point comes, next to another
+            const auto at = static_cast<std::ptrdiff_t>(i);
+            lats.insert(lats.begin() + at, std::clamp(lats[other] + unit * 1e-4, -85.0, 85.0));
+            lngs.insert(lngs.begin() + at, lngs[other]);
+            values.insert(values.begin() + at * 2, {unit, unit + 1});
+            ids.insert(ids.begin() + at, stableIds ? nextId++ : 0);
+            continue;
+          }
+          if (kind == 6) { // a point goes
+            const auto at = static_cast<std::ptrdiff_t>(i);
+            lats.erase(lats.begin() + at);
+            lngs.erase(lngs.begin() + at);
+            values.erase(values.begin() + at * 2, values.begin() + at * 2 + 2);
+            ids.erase(ids.begin() + at);
+            continue;
+          }
+          switch (kind) {
             case 0: // a few metres
               lats[i] += unit * 1e-4;
               lngs[i] -= unit * 1e-4;
@@ -2106,6 +2131,9 @@ static void testBuildFromMatchesBuild() {
           }
           lats[i] = std::clamp(lats[i], -85.0, 85.0);
         }
+        if (!stableIds) {
+          for (size_t i = 0; i < ids.size(); i++) ids[i] = static_cast<int32_t>(i);
+        }
 
         ClusterEngineCore next = engineFor();
         ClusterEngineCore want = engineFor();
@@ -2126,7 +2154,7 @@ static void testBuildFromMatchesBuild() {
 }
 
 // A live feed: the same few points move a little every update, for many
-// updates, among many that stay.
+// updates, among many that stay, while others join and leave.
 static void testBuildFromFollowsMovingPoints() {
   const int32_t size = 5000;
   const bench::Dataset dataset = bench::generateDataset("city", size);
@@ -2152,6 +2180,17 @@ static void testBuildFromFollowsMovingPoints() {
       lats[vehicle * 97] += (static_cast<double>(parityRandom(state) % 201) - 100.0) * 2e-6;
       lngs[vehicle * 97] += (static_cast<double>(parityRandom(state) % 201) - 100.0) * 3e-6;
     }
+    // Now and then a vehicle joins the feed at its end, or one leaves it.
+    if (step % 7 == 3) {
+      lats.push_back(lats[step * 11] + 1e-5);
+      lngs.push_back(lngs[step * 11]);
+    }
+    if (step % 9 == 5) {
+      lats.erase(lats.begin() + 2500 + step);
+      lngs.erase(lngs.begin() + 2500 + step);
+    }
+    ids.resize(lats.size());
+    for (size_t i = 0; i < ids.size(); i++) ids[i] = static_cast<int32_t>(i);
     ClusterEngineCore next = engineFor();
     assert(next.buildFrom(base));
     ClusterEngineCore want = engineFor();
@@ -2162,7 +2201,8 @@ static void testBuildFromFollowsMovingPoints() {
 }
 
 // buildFrom() declines what it cannot carry over, leaving the engine unbuilt,
-// and carries over an index whose points did not change at all.
+// and carries over an index whose points did not change, or only lost one or
+// swapped ids.
 static void testBuildFromDeclinesOtherIndexes() {
   const int32_t size = 1000;
   const bench::Dataset dataset = bench::generateDataset("blobs", size);
@@ -2186,7 +2226,14 @@ static void testBuildFromDeclinesOtherIndexes() {
 
   ClusterEngineCore next = engineFor(config, size);
   assert(!next.buildFrom(unbuilt) && !next.isBuilt());
-  assert(!engineFor(config, size - 1).buildFrom(base));
+
+  // A point fewer, which shifts the ids after it, and points that swapped
+  // ids, are updates like any other.
+  ClusterEngineCore fewer = engineFor(config, size - 1);
+  assert(fewer.buildFrom(base));
+  ClusterEngineCore fewerBuilt = engineFor(config, size - 1);
+  fewerBuilt.build();
+  checkSameIndex(fewer, fewerBuilt, "buildFrom with a point removed");
 
   ClusterEngineConfig wider = config;
   wider.radius = 60.0;
@@ -2198,12 +2245,15 @@ static void testBuildFromDeclinesOtherIndexes() {
   base3.build();
   assert(!engineFor(minPoints3, size).buildFrom(base3));
 
-  ClusterEngineCore renamed;
-  renamed.setOptions(config);
   std::vector<int32_t> otherIds = ids;
   std::swap(otherIds[3], otherIds[4]);
+  ClusterEngineCore renamed;
+  renamed.setOptions(config);
   renamed.setPoints(otherIds.data(), dataset.lats.data(), dataset.lngs.data(), ids.size());
-  assert(!renamed.buildFrom(base));
+  ClusterEngineCore renamedBuilt = renamed.withoutIndex();
+  renamedBuilt.build();
+  assert(renamed.buildFrom(base));
+  checkSameIndex(renamed, renamedBuilt, "buildFrom with swapped ids");
 
   // Too many changed points cost more to carry over than to build.
   std::vector<double> lats = dataset.lats;

@@ -188,7 +188,10 @@ engine.isBuilt // false: build again for nextBuffer
 When a few points move among many, such as vehicles over a fixed set of
 places, `buildAsyncFrom(previous)` builds the new index from the index of
 `previous`, the engine built for the last update: only the clustering around
-the points that moved, or whose aggregated values changed, is done again. With
+the points that moved, changed their aggregated values, were added or were
+removed is done again. The points that stay must keep their order, as a list
+of markers does when some move, some join at any position and some leave;
+their ids may change, as `packPoints()` numbers points by position. With
 20 of 50,000 points moving, it takes about a twentieth of the time of a build in the
 [core benchmark](https://github.com/gmi-software/react-native-better-clustering/tree/main/package/bench)
 (its `update` operation).
@@ -200,11 +203,10 @@ clusters, ids, children, aggregates and expansion zooms. Only the order in which
 It builds from scratch instead, with the same result, when `previous`:
 
 - is not built, or was disposed before the call;
-- has other options, a different number of points, or other point ids in
-  another order (`packPoints()` numbers points by their position, so keep each
-  point at the same index);
+- has other options;
 - clusters with `minPoints` above 2;
-- has more than about 1 point in 64 changed since;
+- has more than about 1 point in 64 changed, added or removed since (points
+  that stay but are reordered count as changed);
 - or would cost more to reuse than a build, as when many points lie within one
   cluster radius of each other. Updates from it then build from scratch for a
   while before trying again.
