@@ -213,8 +213,9 @@ It builds from scratch instead, with the same result, when `previous`:
 
 `buildAsyncFrom` reads `previous`'s index when you call it, so you can keep
 querying `previous` while the new index builds, and dispose of it right after
-the call. Before the call, `previous` must not be disposed: passing a disposed
-engine throws, as any call on it does.
+the call. Before the call, `previous` must not be disposed: Nitro rejects a
+disposed engine as an argument with an error in debug builds, and release builds
+do not check it, so the result is undefined there.
 
 ```tsx
 const next = createClusterEngine()
@@ -223,6 +224,7 @@ next.setPoints(packPoints(movedPoints).buffer)
 const pending = next.buildAsyncFrom(current)
 // `current` keeps answering queries until `next` is ready.
 await pending
+NitroModules.updateMemorySize(next) // see Native memory
 current.dispose()
 current = next
 ```
@@ -272,7 +274,7 @@ results:
 | `getChildren`, `getLeaves`, `getClusterBounds`, `getClusterExpansionZoom` | `clusterId` is not a 32-bit integer (`NaN`, `Infinity`, `1.5`) | throws |
 | `getLeaves` | fractional `limit` or `offset`, or `NaN` `offset` | throws |
 | any method or property | after `dispose()` | throws |
-| `buildAsyncFrom` | `previous` was disposed | throws |
+| `buildAsyncFrom` | `previous` was disposed | throws in debug builds; undefined in release builds |
 
 Invalid buffers, invalid numbers and missing `build()` throw with messages
 prefixed `ClusterEngine:`. Use `packPoints()` for buffers and check `isBuilt`

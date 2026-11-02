@@ -83,7 +83,9 @@ export interface ClusterEngine extends HybridObject<{
    * scratch. It reads `previous`'s index at the time of the call, so
    * `previous` can be disposed right after.
    *
-   * @throws When `previous` was disposed, as any call on it does.
+   * `previous` must not be disposed: Nitro rejects a disposed engine as an
+   * argument with an error in debug builds, and release builds do not check
+   * it, so the result is undefined there.
    */
   buildAsyncFrom(previous: ClusterEngine): Promise<void>
 
