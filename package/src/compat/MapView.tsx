@@ -441,6 +441,11 @@ const CompatMapView = forwardRef(function CompatMapView(
   // Mirrors `isMapMoving` so the per-frame `onRegionChange` sets it only once
   // per gesture: React bails out of an equal update only after rendering again.
   const isMapMovingRef = useRef(false)
+  // `true` while the camera flies to a pressed cluster, until it settles or the
+  // user takes over. A cluster update for a region the camera only passes
+  // through would be replaced as soon as it lands, and at 10k markers on a
+  // mid-range phone it blocks JS for ~530 ms, which delays the settled one.
+  const isFlyingToClusterRef = useRef(false)
   const regionThrottleStateRef = useRef(createThrottleRegionSyncState())
   const [mapDimensions, setMapDimensions] = useState(() => ({
     width: width ?? WINDOW_WIDTH,
@@ -696,6 +701,15 @@ const CompatMapView = forwardRef(function CompatMapView(
           mapDimensions.height > 0
 
         if (canFitToCoordinates) {
+          // Only a ready map reports the flight's region changes, so only this
+          // branch is sure to get the `onRegionChangeComplete` that ends it.
+          isFlyingToClusterRef.current = map != null
+          // A sync still due from a move before the press would land during
+          // the flight. Its move had not settled, so the settle that ends the
+          // flight syncs the region instead.
+          if (map != null) {
+            cancelThrottledRegionSync(regionThrottleStateRef.current)
+          }
           map?.fitToCoordinates(bboxToFitCoordinates(bounds), { edgePadding })
         } else {
           map?.animateToRegion(cluster.properties.getExpansionRegion(), 300)
@@ -734,14 +748,23 @@ const CompatMapView = forwardRef(function CompatMapView(
         isMapMovingRef.current = true
         setIsMapMoving(true)
       }
+      // Google Maps reports a user gesture that interrupts the flight; Apple
+      // Maps reports none, so there the flight lasts until the camera settles.
+      // A fit that does not move the camera leaves it set until the next
+      // settle, which only skips the updates of that next move.
+      if (details?.isGesture === true) {
+        isFlyingToClusterRef.current = false
+      }
       // Keep clusters in sync while the map moves, but throttle recomputation so
       // pinch/pan does not trigger a full re-cluster on every native frame.
-      scheduleThrottledRegionSync(
-        region,
-        syncCurrentRegion,
-        regionThrottleStateRef.current,
-        { intervalMs: clusterUpdateIntervalMs }
-      )
+      if (!isFlyingToClusterRef.current) {
+        scheduleThrottledRegionSync(
+          region,
+          syncCurrentRegion,
+          regionThrottleStateRef.current,
+          { intervalMs: clusterUpdateIntervalMs }
+        )
+      }
       onRegionChange?.(region, details)
     },
     [clusterUpdateIntervalMs, onRegionChange, syncCurrentRegion]
@@ -753,6 +776,7 @@ const CompatMapView = forwardRef(function CompatMapView(
       // animates, while intermediate frames during the move stayed instant.
       isMapMovingRef.current = false
       setIsMapMoving(false)
+      isFlyingToClusterRef.current = false
       flushThrottledRegionSync(
         region,
         syncCurrentRegion,

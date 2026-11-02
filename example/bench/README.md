@@ -58,7 +58,7 @@ node bench/summarize.mjs bench/results/ios.json
 
 Android needs a real Maps SDK key: with the placeholder in `app.json`, Google Maps draws no markers and ignores camera moves, so the zoom and press phases time out.
 
-An Android emulator slows down within a few runs in a row, every phase with it. Cold-boot it before each run (`--counts` and `--libs` with one value each, `--runs 1`), as the [29 October results](results/android-emulator-2026-10-29/README.md) did, and give each run its own `--out`: `summarize.mjs` takes them all.
+An Android emulator slows down within a few runs in a row, every phase with it. Cold-boot it before each run (`--counts` and `--libs` with one value each, `--runs 1`), as the [29 October results](results/android-emulator-2026-10-29/README.md) did, and give each run its own `--out`: `summarize.mjs` takes them all. A phone does not slow down that way: the [2 November results](results/android-phone-2026-11-02/README.md) ran 27 runs in a row with only a pause between them.
 
 ### Against a published version
 
