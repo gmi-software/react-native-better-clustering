@@ -66,6 +66,10 @@ export function useFadePresence<T>(
     }
   }
 
+  // No cleanup on purpose: an exit timer must outlive the `items` change that
+  // started it, or the bubble would never finish fading out. The effect below
+  // clears every pending timer on unmount.
+  // react-doctor-disable-next-line react-doctor/effect-needs-cleanup
   useEffect(() => {
     const entries = entriesRef.current
     const timers = timersRef.current
