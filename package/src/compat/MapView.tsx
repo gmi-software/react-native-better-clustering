@@ -446,7 +446,7 @@ const CompatMapView = forwardRef(function CompatMapView(
   // through would be replaced as soon as it lands, and at 10k markers on a
   // mid-range phone it blocks JS for ~530 ms, which delays the settled one.
   const isFlyingToClusterRef = useRef(false)
-  const regionThrottleStateRef = useRef(createThrottleRegionSyncState())
+  const [regionThrottleState] = useState(createThrottleRegionSyncState)
   const [mapDimensions, setMapDimensions] = useState(() => ({
     width: width ?? WINDOW_WIDTH,
     height: height ?? WINDOW_HEIGHT,
@@ -708,7 +708,7 @@ const CompatMapView = forwardRef(function CompatMapView(
           // the flight. Its move had not settled, so the settle that ends the
           // flight syncs the region instead.
           if (map != null) {
-            cancelThrottledRegionSync(regionThrottleStateRef.current)
+            cancelThrottledRegionSync(regionThrottleState)
           }
           map?.fitToCoordinates(bboxToFitCoordinates(bounds), { edgePadding })
         } else {
@@ -728,6 +728,7 @@ const CompatMapView = forwardRef(function CompatMapView(
       layoutReady,
       mapDimensions.width,
       mapDimensions.height,
+      regionThrottleState,
     ]
   )
 
@@ -736,11 +737,10 @@ const CompatMapView = forwardRef(function CompatMapView(
   }, [])
 
   useEffect(() => {
-    const regionThrottleState = regionThrottleStateRef.current
     return () => {
       cancelThrottledRegionSync(regionThrottleState)
     }
-  }, [])
+  }, [regionThrottleState])
 
   const handleRegionChange = useCallback(
     (region: Region, details: Details) => {
@@ -761,13 +761,18 @@ const CompatMapView = forwardRef(function CompatMapView(
         scheduleThrottledRegionSync(
           region,
           syncCurrentRegion,
-          regionThrottleStateRef.current,
+          regionThrottleState,
           { intervalMs: clusterUpdateIntervalMs }
         )
       }
       onRegionChange?.(region, details)
     },
-    [clusterUpdateIntervalMs, onRegionChange, syncCurrentRegion]
+    [
+      clusterUpdateIntervalMs,
+      onRegionChange,
+      regionThrottleState,
+      syncCurrentRegion,
+    ]
   )
 
   const handleRegionChangeComplete = useCallback(
@@ -777,11 +782,7 @@ const CompatMapView = forwardRef(function CompatMapView(
       isMapMovingRef.current = false
       setIsMapMoving(false)
       isFlyingToClusterRef.current = false
-      flushThrottledRegionSync(
-        region,
-        syncCurrentRegion,
-        regionThrottleStateRef.current
-      )
+      flushThrottledRegionSync(region, syncCurrentRegion, regionThrottleState)
 
       // Defer notifying the consumer until `clusters` is recomputed for the
       // settled region, so we reuse that single computation instead of querying
@@ -790,7 +791,7 @@ const CompatMapView = forwardRef(function CompatMapView(
       // no `onRegionChangeComplete` callback was provided).
       pendingRegionChangeRef.current = { region, details }
     },
-    [syncCurrentRegion]
+    [regionThrottleState, syncCurrentRegion]
   )
 
   // `currentRegion` is a fresh object on every settle, so this runs once per
