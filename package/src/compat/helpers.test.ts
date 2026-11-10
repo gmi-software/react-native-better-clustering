@@ -9,8 +9,10 @@ import {
   flattenChildren,
   markerToGeoJSONFeature,
   sortByKey,
+  splitClusterRegion,
   splitMarkerChildren,
 } from './helpers'
+import { cameraZoomFromRegion } from '../engine/geometry'
 import { isClusterFeature } from '../geojson'
 
 describe('markerToGeoJSONFeature', () => {
@@ -616,6 +618,101 @@ describe('bboxToFitCoordinates', () => {
 
     expect(centre!.longitude - southWest!.longitude).toBe(100)
     expect(northEast!.longitude - centre!.longitude).toBe(100)
+  })
+})
+
+describe('splitClusterRegion', () => {
+  const portrait = { width: 390, height: 844 }
+  const edgePadding = { top: 50, left: 50, right: 50, bottom: 50 }
+
+  it('flies one zoom level past the expansion zoom, centred on the bounds', () => {
+    // About 100 m wide: fitting it would zoom in to 18
+    const region = splitClusterRegion(
+      [21.0, 52.2, 21.0015, 52.2009],
+      15,
+      portrait,
+      edgePadding
+    )
+
+    expect(region).not.toBeNull()
+    expect(cameraZoomFromRegion(region!, portrait)).toBeCloseTo(16.25)
+    expect(region!.latitude).toBeCloseTo(52.20045)
+    expect(region!.longitude).toBeCloseTo(21.00075)
+  })
+
+  it('centres the markers inside an uneven edgePadding, as the fit does', () => {
+    const sheet = { top: 50, left: 100, right: 20, bottom: 300 }
+    const region = splitClusterRegion(
+      [21.0, 52.2, 21.0015, 52.2009],
+      15,
+      portrait,
+      sheet
+    )!
+    const longitudePerPt = region.longitudeDelta / portrait.width
+    const latitudePerPt = longitudePerPt * Math.cos((52.20045 * Math.PI) / 180)
+
+    expect(cameraZoomFromRegion(region, portrait)).toBeCloseTo(16.25)
+    // Points the markers' centre sits right of and below the map's centre
+    expect((21.00075 - region.longitude) / longitudePerPt).toBeCloseTo(
+      (sheet.left - sheet.right) / 2
+    )
+    expect((region.latitude - 52.20045) / latitudePerPt).toBeCloseTo(
+      (sheet.top - sheet.bottom) / 2
+    )
+  })
+
+  it('keeps the latitude span inside a wide map far north', () => {
+    const wide = { width: 800, height: 300 }
+    const region = splitClusterRegion(
+      [18.95, 69.65, 18.952, 69.6505],
+      15,
+      wide,
+      edgePadding
+    )!
+    const shownLatitudeDelta =
+      region.longitudeDelta *
+      (wide.height / wide.width) *
+      Math.cos((region.latitude * Math.PI) / 180)
+
+    expect(region.latitudeDelta).toBeLessThan(shownLatitudeDelta)
+  })
+
+  it('still caps the zoom for markers along one latitude', () => {
+    const region = splitClusterRegion(
+      [21.0, 52.2, 21.0015, 52.2],
+      15,
+      portrait,
+      edgePadding
+    )
+
+    expect(region).not.toBeNull()
+    expect(cameraZoomFromRegion(region!, portrait)).toBeCloseTo(16.25)
+  })
+
+  it('flies when the fit zooms in past the split by less than a level', () => {
+    // A span the 290 pt between the paddings fits at camera zoom 16.5
+    const span = (290 * 360) / (256 * 2 ** 16.5)
+    const region = splitClusterRegion(
+      [21.0, 52.2, 21.0 + span, 52.2],
+      15,
+      portrait,
+      edgePadding
+    )
+
+    expect(region).not.toBeNull()
+    expect(cameraZoomFromRegion(region!, portrait)).toBeCloseTo(16.25)
+  })
+
+  it('leaves the fit when it zooms in no further than the split', () => {
+    expect(
+      splitClusterRegion([20.9, 52.1, 21.1, 52.3], 12, portrait, edgePadding)
+    ).toBeNull()
+  })
+
+  it('leaves the fit for markers at one spot, which no zoom splits', () => {
+    expect(
+      splitClusterRegion([21, 52.2, 21, 52.2], 18, portrait, edgePadding)
+    ).toBeNull()
   })
 })
 

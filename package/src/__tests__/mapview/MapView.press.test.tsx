@@ -26,6 +26,7 @@ import {
   settleRegion,
 } from './harness'
 import { SPIRAL_SPACING_PT } from '../../compat/spiral'
+import { cameraZoomFromRegion } from '../../engine/geometry'
 
 const { default: MapView } = await import('../../compat/MapView')
 
@@ -119,6 +120,53 @@ describe('MapView cluster press', () => {
     press(theCluster(container))
 
     expect(mapState.fitToCoordinates[0]!.options).toEqual({ edgePadding })
+  })
+
+  it('zooms in only until the cluster splits with clusterPressZoom split', async () => {
+    const { container } = render(<Map clusterPressZoom="split" />)
+    await flush()
+
+    press(theCluster(container))
+
+    expect(mapState.fitToCoordinates).toHaveLength(0)
+    expect(mapState.animateToRegion).toHaveLength(1)
+    const { region } = mapState.animateToRegion[0]!
+    const latitudes = GROUP.map((point) => point.latitude)
+    const center = {
+      latitude: (Math.min(...latitudes) + Math.max(...latitudes)) / 2,
+      longitude: region.longitude,
+    }
+    expect(region.latitude).toBeCloseTo(center.latitude)
+
+    // The map settles on the full height it shows, not the half span asked for
+    const zoom = cameraZoomFromRegion(region, harnessControls.layout)
+    const landed = regionAt(center, zoom)
+    expect(region.latitudeDelta).toBeLessThan(landed.latitudeDelta)
+
+    await settleRegion(regionAt(center, zoom - 1))
+    expect(clusterLabels(container)).toContain('5')
+
+    await settleRegion(landed)
+    expect(clusterLabels(container)).not.toContain('5')
+  })
+
+  it('fits a cluster that never splits with clusterPressZoom split', async () => {
+    // About 20 cm apart: one cluster even at maxZoom, and too far apart to
+    // count as one spot
+    const tight = Array.from({ length: 3 }, (_, i) => ({
+      id: `t${i}`,
+      latitude: CENTER.latitude + i * 0.000002,
+      longitude: CENTER.longitude + i * 0.000002,
+    }))
+    const { container } = render(
+      <Map points={tight} clusterPressZoom="split" spiralEnabled={false} />
+    )
+    await flush()
+
+    press(theCluster(container))
+
+    expect(mapState.animateToRegion).toHaveLength(0)
+    expect(mapState.fitToCoordinates).toHaveLength(1)
   })
 
   it('leaves the camera alone with preserveClusterPressBehavior', async () => {
