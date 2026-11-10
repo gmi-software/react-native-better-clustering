@@ -52,6 +52,7 @@ import {
   isMarker,
   markerElementOf,
   sortByKey,
+  splitClusterRegion,
   splitMarkerChildren,
 } from './helpers'
 import { reanimated, warnFadeUnavailable } from './reanimated'
@@ -97,6 +98,10 @@ function isSameMarkerFeature(previous: PointFeature, next: PointFeature) {
  * `clusterUpdateIntervalMs` can keep more.
  */
 const MOVING_EXIT_HOLD_MS = 100
+
+// How long a `clusterPressZoom` `'split'` press flies to its region. Apple Maps
+// ignores it: react-native-maps runs MapKit's own `setRegion` animation there.
+const CLUSTER_SPLIT_FLIGHT_MS = 500
 
 /**
  * How far, in cluster radii, a bubble may glide from the bubble it split from
@@ -214,6 +219,17 @@ export interface ClusteredMapViewProps extends Omit<
   onError?: (error: Error) => void
   /** When `true`, cluster press does not auto-zoom (caller handles expansion). */
   preserveClusterPressBehavior?: boolean
+  /**
+   * How far a cluster press zooms in. `'fit'` fits the map to the cluster's
+   * markers, which for markers close together means all the way in. `'split'`
+   * zooms in only until the cluster splits, centred on its markers, and falls
+   * back to `'fit'` when fitting would not zoom past the split or the cluster
+   * does not split by `maxZoom`. Neither applies with
+   * `preserveClusterPressBehavior` or to a cluster that spiderfies.
+   *
+   * @default `'fit'`
+   */
+  clusterPressZoom?: 'fit' | 'split'
   /** Toggle clustering without unmounting the map. @default `true` */
   clusteringEnabled?: boolean
   /** Default cluster bubble color. */
@@ -396,6 +412,7 @@ const CompatMapView = forwardRef(function CompatMapView(
     onMarkersChange = noop,
     onError,
     preserveClusterPressBehavior = false,
+    clusterPressZoom = 'fit',
     clusteringEnabled = true,
     clusterColor = '#0F52FF',
     clusterTextColor = '#FFFFFF',
@@ -710,7 +727,28 @@ const CompatMapView = forwardRef(function CompatMapView(
           if (map != null) {
             cancelThrottledRegionSync(regionThrottleState)
           }
-          map?.fitToCoordinates(bboxToFitCoordinates(bounds), { edgePadding })
+          let splitRegion: MapRegion | null = null
+          if (clusterPressZoom === 'split') {
+            const expansionZoom =
+              supercluster.getClusterExpansionZoom(clusterId)
+            // The index is never queried past maxZoom, so a cluster still
+            // whole there never splits: fit it as before.
+            if (expansionZoom <= maxZoom) {
+              splitRegion = splitClusterRegion(
+                bounds,
+                expansionZoom,
+                { width: mapDimensions.width, height: mapDimensions.height },
+                edgePadding
+              )
+            }
+          }
+          if (splitRegion != null) {
+            map?.animateToRegion(splitRegion, CLUSTER_SPLIT_FLIGHT_MS)
+          } else {
+            map?.fitToCoordinates(bboxToFitCoordinates(bounds), {
+              edgePadding,
+            })
+          }
         } else {
           map?.animateToRegion(cluster.properties.getExpansionRegion(), 300)
         }
@@ -724,6 +762,8 @@ const CompatMapView = forwardRef(function CompatMapView(
       canSpiderfy,
       onClusterPress,
       edgePadding,
+      clusterPressZoom,
+      maxZoom,
       isMapReady,
       layoutReady,
       mapDimensions.width,

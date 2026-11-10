@@ -1,5 +1,8 @@
 import React from 'react'
 import type { BBox, PointFeature } from '../geojson/types'
+import { GEO_VIEWPORT_TILE_SIZE } from '../engine/defaults'
+import { bboxToCameraZoom, type MapDimensions } from '../engine/geometry'
+import type { MapRegion } from '../types'
 
 /**
  * Whether a React child is a clusterable `react-native-maps` `Marker`.
@@ -538,4 +541,53 @@ export function bboxToFitCoordinates([west, south, east, north]: BBox): Array<{
     { latitude: (south + north) / 2, longitude: (west + east) / 2 },
     { latitude: north, longitude: east },
   ]
+}
+
+// Above the zoom the cluster splits at, so rounding never keeps it whole
+const SPLIT_ZOOM_MARGIN = 0.25
+
+/**
+ * Region a cluster press flies to with `clusterPressZoom` `'split'`: centred
+ * on the cluster's bounds, at the camera zoom from which the index splits the
+ * cluster. `null` when fitting the bounds zooms in no further than that, or
+ * when the markers share one spot, which no zoom splits.
+ *
+ * The index is queried with a box twice the visible region, one zoom level
+ * below the camera's, so a cluster splits from camera zoom
+ * `expansionZoom + 1`. The longitude span sets the zoom: the latitude span is
+ * half of what the map shows at that zoom, so the fit never zooms out for it.
+ */
+export function splitClusterRegion(
+  bounds: BBox,
+  expansionZoom: number,
+  mapDimensions: MapDimensions,
+  edgePadding: { top: number; right: number; bottom: number; left: number }
+): MapRegion | null {
+  const [west, south, east, north] = bounds
+  if (east <= west && north <= south) {
+    return null
+  }
+
+  const splitZoom = expansionZoom + 1 + SPLIT_ZOOM_MARGIN
+  const fitZoom = bboxToCameraZoom(bounds, {
+    width: mapDimensions.width - edgePadding.left - edgePadding.right,
+    height: mapDimensions.height - edgePadding.top - edgePadding.bottom,
+  })
+  if (!(fitZoom > splitZoom)) {
+    return null
+  }
+
+  const latitude = (south + north) / 2
+  const longitudeDelta =
+    (360 * mapDimensions.width) / (GEO_VIEWPORT_TILE_SIZE * 2 ** splitZoom)
+  const shownLatitudeDelta =
+    longitudeDelta *
+    (mapDimensions.height / mapDimensions.width) *
+    Math.cos((latitude * Math.PI) / 180)
+  return {
+    latitude,
+    longitude: (west + east) / 2,
+    latitudeDelta: shownLatitudeDelta / 2,
+    longitudeDelta,
+  }
 }

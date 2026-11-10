@@ -203,6 +203,32 @@ export function cameraZoomFromRegion(
 }
 
 /**
+ * Camera zoom at which `bbox` just fits a map of the given size, counted like
+ * {@linkcode cameraZoomFromRegion}. Fractional, as `fitToCoordinates` lands,
+ * unlike {@linkcode bboxToZoom}, which floors for the cluster index.
+ *
+ * An axis the box has no extent along does not limit the zoom, so a box with
+ * no extent at all fits at `Infinity`. `-Infinity` for a map without size, a
+ * non-finite coordinate, or an inverted box.
+ */
+export function bboxToCameraZoom(
+  bbox: BBox,
+  mapDimensions: MapDimensions
+): number {
+  const { width, height } = mapDimensions
+  const [west, south, east, north] = bbox
+  const southWest = lngLatToPixel(west, south, 0, 256)
+  const northEast = lngLatToPixel(east, north, 0, 256)
+  const widthPx = northEast.x - southWest.x
+  const heightPx = southWest.y - northEast.y
+  if (!(width > 0 && height > 0 && widthPx >= 0 && heightPx >= 0)) {
+    return -Infinity
+  }
+
+  return Math.min(Math.log2(width / widthPx), Math.log2(height / heightPx))
+}
+
+/**
  * Builds a {@linkcode Viewport} from a {@linkcode BBox} and integer zoom.
  *
  * Consumed by `ClusterEngine.getClusters`.

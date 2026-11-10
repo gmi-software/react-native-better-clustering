@@ -5,6 +5,7 @@ import type { MapRegion } from '../types'
 
 import { DEFAULT_VIEWPORT_TILE_SIZE, GEO_VIEWPORT_TILE_SIZE } from './defaults'
 import {
+  bboxToCameraZoom,
   bboxToRegion,
   bboxToZoom,
   cameraZoomFromRegion,
@@ -55,6 +56,47 @@ describe('cameraZoomFromRegion', () => {
       )
     ).toBe(-Infinity)
     expect(cameraZoomFromRegion(VALID_REGION, { width: 0, height: 800 })).toBe(
+      -Infinity
+    )
+  })
+})
+
+describe('bboxToCameraZoom', () => {
+  it('returns the fractional zoom the longitude span fits at', () => {
+    const longitudeDelta = (360 * 400) / (256 * 2 ** 14.6)
+    const bbox: BBox = [21, 52.2, 21 + longitudeDelta, 52.2001]
+
+    expect(bboxToCameraZoom(bbox, { width: 400, height: 800 })).toBeCloseTo(
+      14.6,
+      9
+    )
+  })
+
+  it('lets the latitude span set the zoom of a box with no width', () => {
+    const flat: BBox = [21, 52.2, 21, 52.21]
+    const sliver: BBox = [21, 52.2, 21 + 1e-12, 52.21]
+
+    expect(bboxToCameraZoom(flat, MAP_DIMENSIONS)).toBeCloseTo(
+      bboxToCameraZoom(sliver, MAP_DIMENSIONS),
+      9
+    )
+  })
+
+  it('fits a point at any zoom', () => {
+    expect(bboxToCameraZoom([21, 52.2, 21, 52.2], MAP_DIMENSIONS)).toBe(
+      Infinity
+    )
+  })
+
+  it('is -Infinity for a map without size, a NaN or an inverted box', () => {
+    const bbox: BBox = [21, 52.2, 21.01, 52.21]
+
+    expect(bboxToCameraZoom(bbox, { width: 0, height: 800 })).toBe(-Infinity)
+    expect(bboxToCameraZoom(bbox, { width: 400, height: -10 })).toBe(-Infinity)
+    expect(
+      bboxToCameraZoom([Number.NaN, 52.2, 21, 52.21], MAP_DIMENSIONS)
+    ).toBe(-Infinity)
+    expect(bboxToCameraZoom([21.01, 52.2, 21, 52.21], MAP_DIMENSIONS)).toBe(
       -Infinity
     )
   })
