@@ -7,8 +7,8 @@ upgrading is the supported path.
 
 | Version | Supported       |
 | ------- | --------------- |
-| 1.1.x   | ✅ latest patch |
-| < 1.1   | ❌              |
+| 1.2.x   | ✅ latest patch |
+| < 1.2   | ❌              |
 
 ## Reporting a vulnerability
 
