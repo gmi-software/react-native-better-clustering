@@ -640,6 +640,27 @@ describe('splitClusterRegion', () => {
     expect(region!.longitude).toBeCloseTo(21.00075)
   })
 
+  it('centres the markers inside an uneven edgePadding, as the fit does', () => {
+    const sheet = { top: 50, left: 100, right: 20, bottom: 300 }
+    const region = splitClusterRegion(
+      [21.0, 52.2, 21.0015, 52.2009],
+      15,
+      portrait,
+      sheet
+    )!
+    const longitudePerPt = region.longitudeDelta / portrait.width
+    const latitudePerPt = longitudePerPt * Math.cos((52.20045 * Math.PI) / 180)
+
+    expect(cameraZoomFromRegion(region, portrait)).toBeCloseTo(16.25)
+    // Points the markers' centre sits right of and below the map's centre
+    expect((21.00075 - region.longitude) / longitudePerPt).toBeCloseTo(
+      (sheet.left - sheet.right) / 2
+    )
+    expect((region.latitude - 52.20045) / latitudePerPt).toBeCloseTo(
+      (sheet.top - sheet.bottom) / 2
+    )
+  })
+
   it('keeps the latitude span inside a wide map far north', () => {
     const wide = { width: 800, height: 300 }
     const region = splitClusterRegion(

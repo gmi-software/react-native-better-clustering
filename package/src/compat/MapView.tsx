@@ -222,10 +222,11 @@ export interface ClusteredMapViewProps extends Omit<
   /**
    * How far a cluster press zooms in. `'fit'` fits the map to the cluster's
    * markers, which for markers close together means all the way in. `'split'`
-   * zooms in only until the cluster splits, centred on its markers, and falls
-   * back to `'fit'` when fitting would not zoom past the split or the cluster
-   * does not split by `maxZoom`. Neither applies with
-   * `preserveClusterPressBehavior` or to a cluster that spiderfies.
+   * zooms in only until the cluster splits, with its markers centred inside
+   * `edgePadding` as `'fit'` places them, and falls back to `'fit'` when
+   * fitting would not zoom past the split or the cluster does not split by
+   * `maxZoom`. Neither applies with `preserveClusterPressBehavior` or to a
+   * cluster that spiderfies.
    *
    * @default `'fit'`
    */

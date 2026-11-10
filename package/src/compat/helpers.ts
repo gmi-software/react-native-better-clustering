@@ -547,9 +547,10 @@ export function bboxToFitCoordinates([west, south, east, north]: BBox): Array<{
 const SPLIT_ZOOM_MARGIN = 0.25
 
 /**
- * Region a cluster press flies to with `clusterPressZoom` `'split'`: centred
- * on the cluster's bounds, at the camera zoom from which the index splits the
- * cluster. `null` when fitting the bounds zooms in no further than that, or
+ * Region a cluster press flies to with `clusterPressZoom` `'split'`: at the
+ * camera zoom from which the index splits the cluster, with the cluster's
+ * bounds centred in the map inside `edgePadding`, where `fitToCoordinates`
+ * puts them. `null` when fitting the bounds zooms in no further than that, or
  * when the markers share one spot, which no zoom splits.
  *
  * The index is queried with a box twice the visible region, one zoom level
@@ -580,14 +581,17 @@ export function splitClusterRegion(
   const latitude = (south + north) / 2
   const longitudeDelta =
     (360 * mapDimensions.width) / (GEO_VIEWPORT_TILE_SIZE * 2 ** splitZoom)
-  const shownLatitudeDelta =
-    longitudeDelta *
-    (mapDimensions.height / mapDimensions.width) *
-    Math.cos((latitude * Math.PI) / 180)
+  // Degrees per point at that zoom
+  const longitudePerPt = longitudeDelta / mapDimensions.width
+  const latitudePerPt = longitudePerPt * Math.cos((latitude * Math.PI) / 180)
+  // The camera moves away from the wider padding by half the difference
   return {
-    latitude,
-    longitude: (west + east) / 2,
-    latitudeDelta: shownLatitudeDelta / 2,
+    latitude:
+      latitude + ((edgePadding.top - edgePadding.bottom) / 2) * latitudePerPt,
+    longitude:
+      (west + east) / 2 -
+      ((edgePadding.left - edgePadding.right) / 2) * longitudePerPt,
+    latitudeDelta: (latitudePerPt * mapDimensions.height) / 2,
     longitudeDelta,
   }
 }
